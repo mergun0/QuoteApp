@@ -37,29 +37,35 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textHomeGreeting" />
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardQuoteSearch"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutHomeSearch"
         android:layout_width="0dp"
-        android:layout_height="52dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="20dp"
-        app:cardBackgroundColor="@color/quote_surface"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp"
+        android:hint="@string/search_quotes"
+        app:boxBackgroundMode="outline"
+        app:boxCornerRadiusBottomEnd="16dp"
+        app:boxCornerRadiusBottomStart="16dp"
+        app:boxCornerRadiusTopEnd="16dp"
+        app:boxCornerRadiusTopStart="16dp"
+        app:endIconMode="clear_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textHomeDescription"
-        app:strokeColor="#E2D8DC"
-        app:strokeWidth="1dp">
+        app:startIconDrawable="@drawable/ic_search">
 
-        <androidx.appcompat.widget.SearchView
-            android:id="@+id/searchQuotes"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editHomeSearch"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:iconifiedByDefault="false"
-            android:queryHint="@string/search_quotes" />
-    </com.google.android.material.card.MaterialCardView>
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:inputType="text"
+            android:maxLines="1"
+            android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <HorizontalScrollView
         android:id="@+id/scrollQuoteFilters"
@@ -74,7 +80,7 @@
         android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardQuoteSearch">
+        app:layout_constraintTop_toBottomOf="@id/layoutHomeSearch">
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chipGroupQuoteFilters"

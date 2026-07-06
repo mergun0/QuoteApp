@@ -54,11 +54,46 @@
                 tools:visibility="visible" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/layoutCardUser"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <FrameLayout
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/bg_profile_avatar"
+                android:padding="7dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/nav_profile"
+                    android:src="@drawable/ic_person"
+                    app:tint="@color/quote_primary" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/textCardUsername"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="9dp"
+                android:textColor="@color/quote_primary_dark"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:text="@string/username" />
+        </LinearLayout>
+
         <TextView
             android:id="@+id/textCardTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="8dp"
             android:textColor="@color/quote_text_primary"
             android:textSize="18sp"
             android:textStyle="bold"

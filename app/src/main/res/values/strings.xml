@@ -71,7 +71,7 @@
     <string name="profile_loading">Profil yükleniyor…</string>
     <string name="home_greeting">Merhaba, %1$s 👋</string>
     <string name="home_greeting_fallback">Merhaba 👋</string>
-    <string name="home_description">Bugün hangi cümle sende iz bıraktı?</string>
+    <string name="home_description">Kendi alıntılarını yönet ve koleksiyonunu büyüt.</string>
     <string name="search_quotes">Alıntılarda ara…</string>
     <string name="filter_all">Hepsi</string>
     <string name="filter_movie">🎬 Film</string>
@@ -82,6 +82,11 @@
     <string name="no_filter_results_detail">Arama metnini veya seçili filtreyi değiştirmeyi dene.</string>
     <string name="favorite">Favori</string>
     <string name="share">Paylaş</string>
+    <string name="discover_subtitle">Diğer kullanıcıların paylaştığı alıntıları keşfet.</string>
+    <string name="search_discover">Keşfet akışında ara…</string>
+    <string name="discover_empty">Henüz keşfedilecek alıntı yok.</string>
+    <string name="discover_empty_detail">İlk paylaşımı sen yapabilirsin.</string>
+    <string name="discover_community">TOPLULUK AKIŞI</string>
 
     <string-array name="quote_types">
         <item>Film</item>

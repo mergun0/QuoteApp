@@ -34,9 +34,18 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
     private final List<Quote> quotes = new ArrayList<>();
     private final Set<String> revealedSpoilerQuoteIds = new HashSet<>();
     private final QuoteActionListener listener;
+    private final boolean showUsername;
+    private final String currentUserId;
 
     public QuoteAdapter(QuoteActionListener listener) {
+        this(listener, false, null);
+    }
+
+    public QuoteAdapter(QuoteActionListener listener, boolean showUsername,
+                        String currentUserId) {
         this.listener = listener;
+        this.showUsername = showUsername;
+        this.currentUserId = currentUserId;
     }
 
     public void submitList(List<Quote> newQuotes) {
@@ -61,7 +70,10 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         Quote quote = quotes.get(position);
         boolean spoilerRevealed = quote.getQuoteId() != null
                 && revealedSpoilerQuoteIds.contains(quote.getQuoteId());
-        holder.bind(quote, listener, spoilerRevealed, () -> revealSpoiler(holder, quote));
+        boolean canManage = !showUsername
+                || (currentUserId != null && currentUserId.equals(quote.getUserId()));
+        holder.bind(quote, listener, spoilerRevealed, showUsername, canManage,
+                () -> revealSpoiler(holder, quote));
     }
 
     private void revealSpoiler(QuoteViewHolder holder, Quote quote) {
@@ -84,12 +96,14 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
         private final TextView typeText;
         private final TextView titleText;
+        private final TextView usernameText;
         private final TextView quoteText;
         private final TextView authorText;
         private final TextView characterText;
         private final TextView seriesText;
         private final TextView tagsText;
         private final TextView spoilerText;
+        private final LinearLayout userContainer;
         private final LinearLayout quoteTextContainer;
         private final LinearLayout spoilerHiddenContainer;
         private final MaterialButton showSpoilerButton;
@@ -102,12 +116,14 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             super(itemView);
             typeText = itemView.findViewById(R.id.textCardType);
             titleText = itemView.findViewById(R.id.textCardTitle);
+            usernameText = itemView.findViewById(R.id.textCardUsername);
             quoteText = itemView.findViewById(R.id.textCardQuote);
             authorText = itemView.findViewById(R.id.textCardAuthor);
             characterText = itemView.findViewById(R.id.textCardCharacter);
             seriesText = itemView.findViewById(R.id.textCardSeries);
             tagsText = itemView.findViewById(R.id.textCardTags);
             spoilerText = itemView.findViewById(R.id.textCardSpoiler);
+            userContainer = itemView.findViewById(R.id.layoutCardUser);
             quoteTextContainer = itemView.findViewById(R.id.quoteTextContainer);
             spoilerHiddenContainer = itemView.findViewById(R.id.spoilerHiddenContainer);
             showSpoilerButton = itemView.findViewById(R.id.showSpoilerButton);
@@ -118,8 +134,10 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         }
 
         void bind(Quote quote, QuoteActionListener listener, boolean spoilerRevealed,
-                  Runnable revealSpoiler) {
+                  boolean showUsername, boolean canManage, Runnable revealSpoiler) {
             typeText.setText(safe(quote.getType()).toUpperCase());
+            usernameText.setText("@" + safe(quote.getUsername()));
+            userContainer.setVisibility(showUsername ? View.VISIBLE : View.GONE);
             titleText.setText(safe(quote.getTitle()));
             quoteText.setText("“" + safe(quote.getText()) + "”");
             authorText.setText(safe(quote.getAuthor()));
@@ -154,6 +172,8 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
             editButton.setOnClickListener(view -> listener.onEdit(quote));
             deleteButton.setOnClickListener(view -> listener.onDelete(quote));
+            editButton.setVisibility(canManage ? View.VISIBLE : View.GONE);
+            deleteButton.setVisibility(canManage ? View.VISIBLE : View.GONE);
             shareButton.setOnClickListener(view -> listener.onShare(quote));
             favoriteButton.setEnabled(false);
             favoriteButton.setOnClickListener(view -> listener.onFavorite(quote));

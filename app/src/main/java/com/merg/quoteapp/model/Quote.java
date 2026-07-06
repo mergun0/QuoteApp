@@ -9,6 +9,7 @@ public class Quote {
 
     private String quoteId;
     private String userId;
+    private String username;
     private String type;
     private String text;
     private String title;
@@ -39,6 +40,14 @@ public class Quote {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getType() {

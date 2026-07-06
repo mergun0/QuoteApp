@@ -64,6 +64,24 @@ public class QuoteRepository {
         quote.setQuoteId(document.getId());
         quote.setUserId(user.getUid());
 
+        firestore.collection("users")
+                .document(user.getUid())
+                .get()
+                .addOnCompleteListener(task -> {
+                    String username = task.isSuccessful() && task.getResult() != null
+                            ? task.getResult().getString("username") : null;
+                    if (username == null || username.trim().isEmpty()) {
+                        String email = user.getEmail();
+                        username = email != null && email.contains("@")
+                                ? email.substring(0, email.indexOf('@')) : "Kullanıcı";
+                    }
+                    quote.setUsername(username);
+                    writeNewQuote(document, quote, callback);
+                });
+    }
+
+    private void writeNewQuote(DocumentReference document, Quote quote,
+                               OperationCallback callback) {
         Map<String, Object> data = quoteData(quote);
         data.put("createdAt", FieldValue.serverTimestamp());
         data.put("updatedAt", FieldValue.serverTimestamp());
@@ -149,6 +167,9 @@ public class QuoteRepository {
         Map<String, Object> data = new HashMap<>();
         data.put("quoteId", quote.getQuoteId());
         data.put("userId", quote.getUserId());
+        if (quote.getUsername() != null && !quote.getUsername().trim().isEmpty()) {
+            data.put("username", quote.getUsername());
+        }
         data.put("type", quote.getType());
         data.put("text", quote.getText());
         data.put("title", quote.getTitle());

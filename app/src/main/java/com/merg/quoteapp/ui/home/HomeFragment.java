@@ -2,6 +2,8 @@ package com.merg.quoteapp.ui.home;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +13,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.SearchView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -21,6 +22,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.adapter.QuoteAdapter;
@@ -47,7 +49,7 @@ public class HomeFragment extends Fragment {
     private TextView greetingText;
     private TextView emptyTitleText;
     private TextView emptyDescriptionText;
-    private SearchView searchView;
+    private TextInputEditText searchInput;
     private SwipeRefreshLayout swipeRefreshLayout;
     private final List<Quote> allQuotes = new ArrayList<>();
     private String searchQuery = "";
@@ -97,7 +99,7 @@ public class HomeFragment extends Fragment {
         greetingText = view.findViewById(R.id.textHomeGreeting);
         emptyTitleText = view.findViewById(R.id.textEmptyQuotesTitle);
         emptyDescriptionText = view.findViewById(R.id.textEmptyQuotesDescription);
-        searchView = view.findViewById(R.id.searchQuotes);
+        searchInput = view.findViewById(R.id.editHomeSearch);
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshQuotes);
     }
 
@@ -182,18 +184,20 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupSearch() {
-        searchView.clearFocus();
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+        searchInput.addTextChangedListener(new TextWatcher() {
             @Override
-            public boolean onQueryTextSubmit(String query) {
-                return true;
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) {
             }
 
             @Override
-            public boolean onQueryTextChange(String newText) {
-                searchQuery = safe(newText).trim().toLowerCase(new Locale("tr", "TR"));
+            public void onTextChanged(CharSequence text, int start, int before, int count) {
+                searchQuery = text == null ? "" : text.toString().trim()
+                        .toLowerCase(new Locale("tr", "TR"));
                 applyFilters();
-                return true;
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
             }
         });
     }
