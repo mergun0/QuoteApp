@@ -32,6 +32,7 @@ import com.merg.quoteapp.model.QuoteState;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
 import com.merg.quoteapp.utils.ReportBottomSheetHelper;
+import com.merg.quoteapp.viewmodel.FavoriteViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
 import com.merg.quoteapp.viewmodel.ProfileViewModel;
 import com.merg.quoteapp.viewmodel.QuoteViewModel;
@@ -49,6 +50,7 @@ public class HomeFragment extends Fragment {
     private QuoteAdapter adapter;
     private QuoteViewModel viewModel;
     private LikeViewModel likeViewModel;
+    private FavoriteViewModel favoriteViewModel;
     private ReportViewModel reportViewModel;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
@@ -63,6 +65,8 @@ public class HomeFragment extends Fragment {
     private Map<String, Boolean> renderedLikedStates = new HashMap<>();
     private Map<String, Boolean> renderedLikeLoadingStates = new HashMap<>();
     private Map<String, Long> renderedLikeCounts = new HashMap<>();
+    private Map<String, Boolean> renderedSavedStates = new HashMap<>();
+    private Map<String, Boolean> renderedSaveLoadingStates = new HashMap<>();
     private String searchQuery = "";
     private QuoteFilter selectedFilter = QuoteFilter.ALL;
 
@@ -86,6 +90,7 @@ public class HomeFragment extends Fragment {
 
         viewModel = new ViewModelProvider(this).get(QuoteViewModel.class);
         likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
         reportViewModel = new ViewModelProvider(this).get(ReportViewModel.class);
         viewModel.getQuotes().observe(getViewLifecycleOwner(), this::renderQuotes);
         viewModel.getListState().observe(getViewLifecycleOwner(), this::renderListState);
@@ -95,6 +100,11 @@ public class HomeFragment extends Fragment {
                 getViewLifecycleOwner(), this::renderLikeLoadingStates);
         likeViewModel.getLikeCounts().observe(getViewLifecycleOwner(), this::renderLikeCounts);
         likeViewModel.getLoadingState().observe(getViewLifecycleOwner(), this::renderLikeState);
+        favoriteViewModel.getSavedStates().observe(getViewLifecycleOwner(), this::renderSavedStates);
+        favoriteViewModel.getItemLoadingStates().observe(
+                getViewLifecycleOwner(), this::renderSaveLoadingStates);
+        favoriteViewModel.getOperationState().observe(
+                getViewLifecycleOwner(), this::renderFavoriteState);
         observeReportState();
         viewModel.loadCurrentUserQuotes();
         setupSearch();
@@ -153,8 +163,14 @@ public class HomeFragment extends Fragment {
             public void onReport(Quote quote) {
                 showReportSheet(quote);
             }
+
+            @Override
+            public void onSave(Quote quote) {
+                toggleSave(quote);
+            }
         });
         adapter.setLikeActionsEnabled(true);
+        adapter.setSaveActionsEnabled(true);
         adapter.setReportActionsEnabled(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
@@ -168,6 +184,9 @@ public class HomeFragment extends Fragment {
         if (likeViewModel != null) {
             likeViewModel.loadLikedStates(allQuotes);
             likeViewModel.loadLikeCounts(allQuotes);
+        }
+        if (favoriteViewModel != null) {
+            favoriteViewModel.loadSavedStates(allQuotes);
         }
         applyFilters();
     }
@@ -209,6 +228,36 @@ public class HomeFragment extends Fragment {
     }
 
     private void renderLikeState(QuoteState state) {
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            showStatus(state.getMessage(), true);
+        }
+    }
+
+    private void renderSavedStates(Map<String, Boolean> savedStates) {
+        if (savedStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : savedStates.entrySet()) {
+            if (!entry.getValue().equals(renderedSavedStates.get(entry.getKey()))) {
+                adapter.updateSaveState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedSavedStates = new HashMap<>(savedStates);
+    }
+
+    private void renderSaveLoadingStates(Map<String, Boolean> loadingStates) {
+        if (loadingStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : loadingStates.entrySet()) {
+            if (!entry.getValue().equals(renderedSaveLoadingStates.get(entry.getKey()))) {
+                adapter.updateSaveLoadingState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedSaveLoadingStates = new HashMap<>(loadingStates);
+    }
+
+    private void renderFavoriteState(QuoteState state) {
         if (state.getStatus() == QuoteState.Status.ERROR) {
             showStatus(state.getMessage(), true);
         }
@@ -412,6 +461,10 @@ public class HomeFragment extends Fragment {
             return;
         }
         likeViewModel.toggleLike(quote.getQuoteId());
+    }
+
+    private void toggleSave(Quote quote) {
+        favoriteViewModel.toggleSaved(quote);
     }
 
     private void confirmDelete(Quote quote) {

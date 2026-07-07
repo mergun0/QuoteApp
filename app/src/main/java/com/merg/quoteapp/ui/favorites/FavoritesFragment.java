@@ -1,12 +1,283 @@
 package com.merg.quoteapp.ui.favorites;
 
-import androidx.fragment.app.Fragment;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.firebase.auth.FirebaseAuth;
 import com.merg.quoteapp.R;
+import com.merg.quoteapp.adapter.QuoteAdapter;
+import com.merg.quoteapp.model.Quote;
+import com.merg.quoteapp.model.QuoteState;
+import com.merg.quoteapp.ui.quote.AddQuoteActivity;
+import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
+import com.merg.quoteapp.viewmodel.FavoriteViewModel;
+import com.merg.quoteapp.viewmodel.LikeViewModel;
+import com.merg.quoteapp.viewmodel.QuoteViewModel;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FavoritesFragment extends Fragment {
 
+    private QuoteAdapter adapter;
+    private FavoriteViewModel favoriteViewModel;
+    private LikeViewModel likeViewModel;
+    private QuoteViewModel quoteViewModel;
+    private RecyclerView recyclerView;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private ProgressBar progressBar;
+    private LinearLayout emptyLayout;
+    private TextView statusText;
+    private Map<String, Boolean> renderedSavedStates = new HashMap<>();
+    private Map<String, Boolean> renderedSaveLoadingStates = new HashMap<>();
+    private Map<String, Boolean> renderedLikedStates = new HashMap<>();
+    private Map<String, Boolean> renderedLikeLoadingStates = new HashMap<>();
+    private Map<String, Long> renderedLikeCounts = new HashMap<>();
+
     public FavoritesFragment() {
         super(R.layout.fragment_favorites);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        bindViews(view);
+        setupRecyclerView();
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
+        likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
+        quoteViewModel = new ViewModelProvider(this).get(QuoteViewModel.class);
+
+        favoriteViewModel.getSavedQuotes().observe(getViewLifecycleOwner(), this::renderQuotes);
+        favoriteViewModel.getListState().observe(getViewLifecycleOwner(), this::renderListState);
+        favoriteViewModel.getOperationState().observe(getViewLifecycleOwner(), this::renderFavoriteState);
+        favoriteViewModel.getSavedStates().observe(getViewLifecycleOwner(), this::renderSavedStates);
+        favoriteViewModel.getItemLoadingStates().observe(
+                getViewLifecycleOwner(), this::renderSaveLoadingStates);
+        likeViewModel.getLikedStates().observe(getViewLifecycleOwner(), this::renderLikedStates);
+        likeViewModel.getItemLoadingStates().observe(
+                getViewLifecycleOwner(), this::renderLikeLoadingStates);
+        likeViewModel.getLikeCounts().observe(getViewLifecycleOwner(), this::renderLikeCounts);
+        likeViewModel.getLoadingState().observe(getViewLifecycleOwner(), this::renderLikeState);
+        quoteViewModel.getOperationState().observe(getViewLifecycleOwner(), this::renderQuoteOperationState);
+
+        swipeRefreshLayout.setColorSchemeResources(R.color.quote_primary, R.color.quote_secondary);
+        swipeRefreshLayout.setOnRefreshListener(favoriteViewModel::refreshSavedQuotes);
+        favoriteViewModel.loadSavedQuotes();
+    }
+
+    private void bindViews(View view) {
+        recyclerView = view.findViewById(R.id.recyclerFavorites);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshFavorites);
+        progressBar = view.findViewById(R.id.progressFavorites);
+        emptyLayout = view.findViewById(R.id.layoutEmptyFavorites);
+        statusText = view.findViewById(R.id.textFavoritesStatus);
+    }
+
+    private void setupRecyclerView() {
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null
+                ? null : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        adapter = new QuoteAdapter(new QuoteAdapter.QuoteActionListener() {
+            @Override
+            public void onEdit(Quote quote) {
+                openEditQuote(quote);
+            }
+
+            @Override
+            public void onDelete(Quote quote) {
+                confirmDelete(quote);
+            }
+
+            @Override
+            public void onShare(Quote quote) {
+                shareQuote(quote);
+            }
+
+            @Override
+            public void onFavorite(Quote quote) {
+                likeViewModel.toggleLike(quote.getQuoteId());
+            }
+
+            @Override
+            public void onSave(Quote quote) {
+                favoriteViewModel.toggleSaved(quote);
+            }
+
+            @Override
+            public void onOpen(Quote quote) {
+                Intent intent = new Intent(requireContext(), QuoteDetailActivity.class);
+                intent.putExtra(QuoteDetailActivity.EXTRA_QUOTE_ID, quote.getQuoteId());
+                startActivity(intent);
+            }
+        }, true, true, currentUserId);
+        adapter.setLikeActionsEnabled(true);
+        adapter.setSaveActionsEnabled(true);
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        recyclerView.setAdapter(adapter);
+    }
+
+    private void renderQuotes(List<Quote> quotes) {
+        adapter.submitList(quotes);
+        boolean empty = quotes == null || quotes.isEmpty();
+        recyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
+        emptyLayout.setVisibility(empty ? View.VISIBLE : View.GONE);
+        if (quotes != null) {
+            favoriteViewModel.loadSavedStates(quotes);
+            likeViewModel.loadLikedStates(quotes);
+            likeViewModel.loadLikeCounts(quotes);
+        }
+    }
+
+    private void renderListState(QuoteState state) {
+        boolean loading = state.getStatus() == QuoteState.Status.LOADING;
+        progressBar.setVisibility(loading && !swipeRefreshLayout.isRefreshing()
+                ? View.VISIBLE : View.GONE);
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            swipeRefreshLayout.setRefreshing(false);
+            recyclerView.setVisibility(View.GONE);
+            emptyLayout.setVisibility(View.GONE);
+            showStatus(state.getMessage(), true);
+        } else if (state.getStatus() == QuoteState.Status.SUCCESS) {
+            swipeRefreshLayout.setRefreshing(false);
+            statusText.setVisibility(View.GONE);
+        }
+    }
+
+    private void renderSavedStates(Map<String, Boolean> savedStates) {
+        if (savedStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : savedStates.entrySet()) {
+            if (!entry.getValue().equals(renderedSavedStates.get(entry.getKey()))) {
+                adapter.updateSaveState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedSavedStates = new HashMap<>(savedStates);
+    }
+
+    private void renderSaveLoadingStates(Map<String, Boolean> loadingStates) {
+        if (loadingStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : loadingStates.entrySet()) {
+            if (!entry.getValue().equals(renderedSaveLoadingStates.get(entry.getKey()))) {
+                adapter.updateSaveLoadingState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedSaveLoadingStates = new HashMap<>(loadingStates);
+    }
+
+    private void renderLikedStates(Map<String, Boolean> likedStates) {
+        if (likedStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : likedStates.entrySet()) {
+            if (!entry.getValue().equals(renderedLikedStates.get(entry.getKey()))) {
+                adapter.updateLikeState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedLikedStates = new HashMap<>(likedStates);
+    }
+
+    private void renderLikeLoadingStates(Map<String, Boolean> loadingStates) {
+        if (loadingStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : loadingStates.entrySet()) {
+            if (!entry.getValue().equals(renderedLikeLoadingStates.get(entry.getKey()))) {
+                adapter.updateLikeLoadingState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedLikeLoadingStates = new HashMap<>(loadingStates);
+    }
+
+    private void renderLikeCounts(Map<String, Long> likeCounts) {
+        if (likeCounts == null) {
+            return;
+        }
+        for (Map.Entry<String, Long> entry : likeCounts.entrySet()) {
+            if (!entry.getValue().equals(renderedLikeCounts.get(entry.getKey()))) {
+                adapter.updateLikeCount(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedLikeCounts = new HashMap<>(likeCounts);
+    }
+
+    private void renderFavoriteState(QuoteState state) {
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            showStatus(state.getMessage(), true);
+        }
+    }
+
+    private void renderLikeState(QuoteState state) {
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            showStatus(state.getMessage(), true);
+        }
+    }
+
+    private void renderQuoteOperationState(QuoteState state) {
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            showStatus(state.getMessage(), true);
+        }
+    }
+
+    private void openEditQuote(Quote quote) {
+        Intent intent = new Intent(requireContext(), AddQuoteActivity.class);
+        intent.putExtra(AddQuoteActivity.EXTRA_QUOTE_ID, quote.getQuoteId());
+        intent.putExtra(AddQuoteActivity.EXTRA_TYPE, quote.getType());
+        intent.putExtra(AddQuoteActivity.EXTRA_TEXT, quote.getText());
+        intent.putExtra(AddQuoteActivity.EXTRA_TITLE, quote.getTitle());
+        intent.putExtra(AddQuoteActivity.EXTRA_AUTHOR, quote.getAuthor());
+        intent.putExtra(AddQuoteActivity.EXTRA_CHARACTER, quote.getCharacterName());
+        intent.putExtra(AddQuoteActivity.EXTRA_SEASON, quote.getSeason());
+        intent.putExtra(AddQuoteActivity.EXTRA_EPISODE, quote.getEpisode());
+        intent.putExtra(AddQuoteActivity.EXTRA_TAGS, quote.getTags() == null ? ""
+                : String.join(", ", quote.getTags()));
+        intent.putExtra(AddQuoteActivity.EXTRA_SPOILER, quote.isSpoiler());
+        startActivity(intent);
+    }
+
+    private void confirmDelete(Quote quote) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.delete_quote_title)
+                .setMessage(R.string.delete_quote_message)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete, (dialog, which) ->
+                        quoteViewModel.deleteQuote(quote.getQuoteId()))
+                .show();
+    }
+
+    private void shareQuote(Quote quote) {
+        String shareText = "“" + safe(quote.getText()) + "”\n\n"
+                + safe(quote.getTitle()) + " — " + safe(quote.getAuthor());
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, shareText);
+        startActivity(Intent.createChooser(intent, getString(R.string.share)));
+    }
+
+    private void showStatus(String message, boolean error) {
+        statusText.setText(message);
+        statusText.setTextColor(ContextCompat.getColor(requireContext(), error
+                ? R.color.quote_status_error : R.color.quote_status_success));
+        statusText.setVisibility(View.VISIBLE);
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }

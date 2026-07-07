@@ -218,6 +218,16 @@
                 app:icon="@drawable/ic_favorite" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonDetailSave"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
+                android:text="@string/save_quote"
+                app:cornerRadius="15dp"
+                app:icon="@drawable/ic_bookmark" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonDetailShare"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"

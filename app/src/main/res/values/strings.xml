@@ -60,8 +60,9 @@
     <string name="discover_title">Topluluk Alıntıları</string>
     <string name="coming_soon">Yakında…</string>
     <string name="favorites_title">Favoriler</string>
-    <string name="favorites_empty">Henüz favori alıntın yok.</string>
-    <string name="favorites_empty_detail">Beğendiğin alıntılar burada görünecek.</string>
+    <string name="favorites_subtitle">Kaydettiğin alıntılar burada, sadece sana özel.</string>
+    <string name="favorites_empty">Henüz kaydedilen alıntı yok.</string>
+    <string name="favorites_empty_detail">Beğendiğin alıntıları daha sonra görmek için kaydedebilirsin.</string>
     <string name="profile_title">Profil</string>
     <string name="profile_total">Toplam</string>
     <string name="profile_movies">Film</string>
@@ -87,6 +88,8 @@
     <string name="more_actions">Diğer işlemler</string>
     <string name="copy_quote">Copy Quote</string>
     <string name="report_quote_menu">Report Quote</string>
+    <string name="save_quote">Kaydet</string>
+    <string name="unsave_quote">Kaydı Kaldır</string>
     <string name="save_coming_soon">Save (Soon)</string>
     <string name="block_user_coming_soon">Block User (Soon)</string>
     <string name="report">Report</string>

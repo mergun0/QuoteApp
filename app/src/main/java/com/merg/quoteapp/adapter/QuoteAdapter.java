@@ -37,6 +37,9 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
         void onFavorite(Quote quote);
 
+        default void onSave(Quote quote) {
+        }
+
         default void onReport(Quote quote) {
         }
 
@@ -51,12 +54,15 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
     private final Set<String> revealedSpoilerQuoteIds = new HashSet<>();
     private final Set<String> likedQuoteIds = new HashSet<>();
     private final Set<String> likeLoadingQuoteIds = new HashSet<>();
+    private final Set<String> savedQuoteIds = new HashSet<>();
+    private final Set<String> saveLoadingQuoteIds = new HashSet<>();
     private final java.util.Map<String, Long> likeCounts = new java.util.HashMap<>();
     private final QuoteActionListener listener;
     private final boolean showUsername;
     private final boolean restrictManagementToCurrentUser;
     private final String currentUserId;
     private boolean likeActionsEnabled;
+    private boolean saveActionsEnabled;
     private boolean reportActionsEnabled;
 
     public QuoteAdapter(QuoteActionListener listener) {
@@ -92,6 +98,16 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
      */
     public void setLikeActionsEnabled(boolean enabled) {
         likeActionsEnabled = enabled;
+        notifyDataSetChanged();
+    }
+
+    /**
+     * Enables or disables save actions for this adapter.
+     *
+     * @param enabled true when save action should be available
+     */
+    public void setSaveActionsEnabled(boolean enabled) {
+        saveActionsEnabled = enabled;
         notifyDataSetChanged();
     }
 
@@ -155,6 +171,42 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         notifyQuoteChanged(quoteId);
     }
 
+    /**
+     * Updates saved state for one quote item.
+     *
+     * @param quoteId quote id to update
+     * @param saved true if the quote is saved by current user
+     */
+    public void updateSaveState(String quoteId, boolean saved) {
+        if (quoteId == null || quoteId.trim().isEmpty()) {
+            return;
+        }
+        if (saved) {
+            savedQuoteIds.add(quoteId);
+        } else {
+            savedQuoteIds.remove(quoteId);
+        }
+        notifyQuoteChanged(quoteId);
+    }
+
+    /**
+     * Updates save loading state for one quote item.
+     *
+     * @param quoteId quote id to update
+     * @param loading true while save request is running
+     */
+    public void updateSaveLoadingState(String quoteId, boolean loading) {
+        if (quoteId == null || quoteId.trim().isEmpty()) {
+            return;
+        }
+        if (loading) {
+            saveLoadingQuoteIds.add(quoteId);
+        } else {
+            saveLoadingQuoteIds.remove(quoteId);
+        }
+        notifyQuoteChanged(quoteId);
+    }
+
     @NonNull
     @Override
     public QuoteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -175,9 +227,13 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                 && likeLoadingQuoteIds.contains(quote.getQuoteId());
         long likeCount = quote.getQuoteId() == null || likeCounts.get(quote.getQuoteId()) == null
                 ? 0L : likeCounts.get(quote.getQuoteId());
+        boolean saved = quote.getQuoteId() != null && savedQuoteIds.contains(quote.getQuoteId());
+        boolean saveLoading = quote.getQuoteId() != null
+                && saveLoadingQuoteIds.contains(quote.getQuoteId());
         holder.bind(quote, listener, spoilerRevealed, showUsername, canManage,
                 liked, likeLoading, likeCount, likeActionsEnabled,
-                reportActionsEnabled, () -> revealSpoiler(holder, quote));
+                saved, saveLoading, saveActionsEnabled, reportActionsEnabled,
+                () -> revealSpoiler(holder, quote));
     }
 
     private void notifyQuoteChanged(String quoteId) {
@@ -255,6 +311,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         void bind(Quote quote, QuoteActionListener listener, boolean spoilerRevealed,
                   boolean showUsername, boolean canManage, boolean liked,
                   boolean likeLoading, long likeCount, boolean likeActionsEnabled,
+                  boolean saved, boolean saveLoading, boolean saveActionsEnabled,
                   boolean reportActionsEnabled, Runnable revealSpoiler) {
             typeText.setText(safe(quote.getType()).toUpperCase());
             usernameText.setText("@" + safe(quote.getUsername()));
@@ -301,21 +358,26 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                     : null);
             moreButton.setOnClickListener(view ->
                     animateOverflowClick(view, () -> showOverflowMenu(
-                            quote, listener, canManage, reportActionsEnabled, showUsername)));
+                            quote, listener, canManage, saved, saveLoading,
+                            saveActionsEnabled, reportActionsEnabled, showUsername)));
             itemView.setOnClickListener(view -> listener.onOpen(quote));
         }
 
         private void showOverflowMenu(Quote quote, QuoteActionListener listener,
-                                      boolean canManage, boolean reportActionsEnabled,
+                                      boolean canManage, boolean saved, boolean saveLoading,
+                                      boolean saveActionsEnabled, boolean reportActionsEnabled,
                                       boolean showUsername) {
             PopupMenu popupMenu = new PopupMenu(itemView.getContext(), moreButton);
             Menu menu = popupMenu.getMenu();
             menu.add(Menu.NONE, MENU_COPY, Menu.NONE, R.string.copy_quote);
+            if (saveActionsEnabled) {
+                menu.add(Menu.NONE, MENU_SAVE, Menu.NONE,
+                        saved ? R.string.unsave_quote : R.string.save_quote)
+                        .setEnabled(!saveLoading);
+            }
             if (reportActionsEnabled) {
                 menu.add(Menu.NONE, MENU_REPORT, Menu.NONE, R.string.report_quote_menu);
             }
-            menu.add(Menu.NONE, MENU_SAVE, Menu.NONE, R.string.save_coming_soon)
-                    .setEnabled(false);
             if (showUsername) {
                 menu.add(Menu.NONE, MENU_BLOCK_USER, Menu.NONE, R.string.block_user_coming_soon)
                         .setEnabled(false);
@@ -327,6 +389,9 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             popupMenu.setOnMenuItemClickListener(item -> {
                 if (item.getItemId() == MENU_COPY) {
                     copyQuote(quote);
+                    return true;
+                } else if (item.getItemId() == MENU_SAVE) {
+                    listener.onSave(quote);
                     return true;
                 } else if (item.getItemId() == MENU_REPORT) {
                     listener.onReport(quote);

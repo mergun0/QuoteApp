@@ -22,6 +22,7 @@ import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
 import com.merg.quoteapp.utils.ReportBottomSheetHelper;
+import com.merg.quoteapp.viewmodel.FavoriteViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
 import com.merg.quoteapp.viewmodel.QuoteDetailViewModel;
 import com.merg.quoteapp.viewmodel.ReportViewModel;
@@ -37,6 +38,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
 
     private QuoteDetailViewModel viewModel;
     private LikeViewModel likeViewModel;
+    private FavoriteViewModel favoriteViewModel;
     private ReportViewModel reportViewModel;
     private Quote currentQuote;
     private ScrollView contentScroll;
@@ -48,7 +50,9 @@ public class QuoteDetailActivity extends AppCompatActivity {
     private LinearLayout ownerActions;
     private MaterialButton deleteButton;
     private MaterialButton favoriteButton;
+    private MaterialButton saveButton;
     private long currentLikeCount;
+    private boolean currentSaved;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +66,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         String quoteId = getIntent().getStringExtra(EXTRA_QUOTE_ID);
         viewModel = new ViewModelProvider(this).get(QuoteDetailViewModel.class);
         likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
         reportViewModel = new ViewModelProvider(this).get(ReportViewModel.class);
         viewModel.getQuote().observe(this, this::renderQuote);
         viewModel.getState().observe(this, this::renderLoadState);
@@ -70,6 +75,9 @@ public class QuoteDetailActivity extends AppCompatActivity {
         likeViewModel.getItemLoadingStates().observe(this, this::renderLikeLoadingState);
         likeViewModel.getLikeCount().observe(this, this::renderLikeCount);
         likeViewModel.getLoadingState().observe(this, this::renderLikeState);
+        favoriteViewModel.getSavedStates().observe(this, this::renderSavedState);
+        favoriteViewModel.getItemLoadingStates().observe(this, this::renderSaveLoadingState);
+        favoriteViewModel.getOperationState().observe(this, this::renderFavoriteState);
         observeReportState();
         viewModel.loadQuote(quoteId);
     }
@@ -84,12 +92,14 @@ public class QuoteDetailActivity extends AppCompatActivity {
         ownerActions = findViewById(R.id.layoutDetailOwnerActions);
         deleteButton = findViewById(R.id.buttonDetailDelete);
         favoriteButton = findViewById(R.id.buttonDetailFavorite);
+        saveButton = findViewById(R.id.buttonDetailSave);
 
         findViewById(R.id.buttonShowDetailSpoiler).setOnClickListener(view -> {
             spoilerContainer.setVisibility(View.GONE);
             quoteContainer.setVisibility(View.VISIBLE);
         });
         favoriteButton.setOnClickListener(view -> toggleLike());
+        saveButton.setOnClickListener(view -> toggleSave());
         findViewById(R.id.buttonDetailShare).setOnClickListener(view -> shareQuote());
         findViewById(R.id.buttonDetailReport).setOnClickListener(view -> showReportSheet());
         findViewById(R.id.buttonDetailEdit).setOnClickListener(view -> editQuote());
@@ -144,6 +154,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         boolean isOwner = currentUserId != null && currentUserId.equals(quote.getUserId());
         ownerActions.setVisibility(isOwner ? View.VISIBLE : View.GONE);
         likeViewModel.loadLikeState(quote.getQuoteId());
+        favoriteViewModel.loadSavedStates(java.util.Collections.singletonList(quote));
     }
 
     private void renderLoadState(QuoteState state) {
@@ -196,6 +207,28 @@ public class QuoteDetailActivity extends AppCompatActivity {
     }
 
     private void renderLikeState(QuoteState state) {
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            showStatus(state.getMessage(), true);
+        }
+    }
+
+    private void renderSavedState(Map<String, Boolean> savedStates) {
+        if (currentQuote == null || savedStates == null) {
+            return;
+        }
+        currentSaved = Boolean.TRUE.equals(savedStates.get(currentQuote.getQuoteId()));
+        renderSaveButton(false);
+    }
+
+    private void renderSaveLoadingState(Map<String, Boolean> loadingStates) {
+        if (currentQuote == null || loadingStates == null) {
+            return;
+        }
+        boolean loading = Boolean.TRUE.equals(loadingStates.get(currentQuote.getQuoteId()));
+        renderSaveButton(loading);
+    }
+
+    private void renderFavoriteState(QuoteState state) {
         if (state.getStatus() == QuoteState.Status.ERROR) {
             showStatus(state.getMessage(), true);
         }
@@ -256,6 +289,17 @@ public class QuoteDetailActivity extends AppCompatActivity {
         favoriteButton.setIconTint(ColorStateList.valueOf(color));
     }
 
+    private void renderSaveButton(boolean loading) {
+        int color = ContextCompat.getColor(this, currentSaved
+                ? R.color.quote_primary : R.color.quote_text_secondary);
+        saveButton.setEnabled(!loading);
+        saveButton.setAlpha(loading ? 0.55f : 1f);
+        saveButton.setSelected(currentSaved);
+        saveButton.setText(currentSaved ? R.string.unsave_quote : R.string.save_quote);
+        saveButton.setTextColor(color);
+        saveButton.setIconTint(ColorStateList.valueOf(color));
+    }
+
     private void editQuote() {
         if (currentQuote == null) {
             return;
@@ -307,6 +351,13 @@ public class QuoteDetailActivity extends AppCompatActivity {
             return;
         }
         likeViewModel.toggleLike(currentQuote.getQuoteId());
+    }
+
+    private void toggleSave() {
+        if (currentQuote == null) {
+            return;
+        }
+        favoriteViewModel.toggleSaved(currentQuote);
     }
 
     private void showReportSheet() {
