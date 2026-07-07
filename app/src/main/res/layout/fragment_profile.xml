@@ -113,6 +113,130 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp" />
 
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardProfileAchievements"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            app:cardBackgroundColor="@color/quote_surface"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="1dp"
+            app:strokeColor="#E2D8DC"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/textProfileLevel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/level_format"
+                            android:textColor="@color/quote_text_primary"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            tools:text="Seviye 1" />
+
+                        <TextView
+                            android:id="@+id/textProfileXp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@color/quote_text_secondary"
+                            android:textSize="13sp"
+                            tools:text="0 XP" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/textProfileAchievementCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_chip_soft"
+                        android:paddingStart="12dp"
+                        android:paddingTop="7dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="7dp"
+                        android:textColor="@color/quote_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        tools:text="0 başarım" />
+                </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/progressProfileXp"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="16dp"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressTint="@color/quote_primary"
+                    android:progressBackgroundTint="@color/bottom_nav_ripple" />
+
+                <TextView
+                    android:id="@+id/textProfileXpProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/quote_text_secondary"
+                    android:textSize="12sp"
+                    tools:text="0 / 100 XP" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:text="@string/achievements"
+                    android:textColor="@color/quote_text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerProfileAchievements"
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    android:layout_marginTop="10dp"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    tools:listitem="@layout/item_achievement_preview" />
+
+                <TextView
+                    android:id="@+id/textProfileAchievementEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:text="@string/achievement_empty"
+                    android:textColor="@color/quote_text_secondary"
+                    android:textSize="13sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonProfileAllAchievements"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/all_achievements" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <ProgressBar
             android:id="@+id/progressProfile"
             android:layout_width="wrap_content"

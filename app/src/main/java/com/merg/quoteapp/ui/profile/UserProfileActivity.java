@@ -18,17 +18,25 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.merg.quoteapp.R;
+import com.merg.quoteapp.adapter.AchievementPreviewAdapter;
 import com.merg.quoteapp.adapter.QuoteAdapter;
+import com.merg.quoteapp.model.Achievement;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
+import com.merg.quoteapp.model.UserAchievement;
 import com.merg.quoteapp.model.UserProfileData;
+import com.merg.quoteapp.model.UserStats;
 import com.merg.quoteapp.ui.auth.LoginActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
+import com.merg.quoteapp.viewmodel.AchievementViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
+import com.merg.quoteapp.viewmodel.UserStatsViewModel;
 import com.merg.quoteapp.viewmodel.UserProfileViewModel;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.Map;
@@ -39,7 +47,10 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private UserProfileViewModel viewModel;
     private LikeViewModel likeViewModel;
+    private UserStatsViewModel userStatsViewModel;
+    private AchievementViewModel achievementViewModel;
     private QuoteAdapter adapter;
+    private AchievementPreviewAdapter achievementAdapter;
     private LinearLayout contentLayout;
     private LinearLayout ownActions;
     private View followButton;
@@ -50,10 +61,17 @@ public class UserProfileActivity extends AppCompatActivity {
     private TextView statusText;
     private ProgressBar loadMoreProgress;
     private TextView noMoreText;
+    private TextView levelText;
+    private TextView xpText;
+    private TextView achievementCountText;
+    private TextView achievementEmptyText;
+    private RecyclerView achievementRecyclerView;
     private String profileUserId;
     private boolean ownProfile;
     private boolean firstResume = true;
     private Map<String, Long> renderedLikeCounts = new HashMap<>();
+    private List<Achievement> currentAchievements = new ArrayList<>();
+    private List<UserAchievement> currentUserAchievements = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,17 +86,22 @@ public class UserProfileActivity extends AppCompatActivity {
         bindViews();
         setupToolbar();
         setupRecyclerView(currentUserId);
+        setupAchievementPreview();
         setupActions();
 
         viewModel = new ViewModelProvider(this).get(UserProfileViewModel.class);
         likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
+        userStatsViewModel = new ViewModelProvider(this).get(UserStatsViewModel.class);
+        achievementViewModel = new ViewModelProvider(this).get(AchievementViewModel.class);
         viewModel.getProfile().observe(this, this::renderProfile);
         viewModel.getState().observe(this, this::renderState);
         viewModel.getOperationState().observe(this, this::renderOperationState);
         viewModel.getLoadMoreState().observe(this, this::renderLoadMoreState);
         viewModel.getHasMore().observe(this, this::renderHasMore);
         likeViewModel.getLikeCounts().observe(this, this::renderLikeCounts);
+        observeAchievementState();
         viewModel.loadProfile(profileUserId);
+        loadAchievementState();
     }
 
     @Override
@@ -102,6 +125,11 @@ public class UserProfileActivity extends AppCompatActivity {
         statusText = findViewById(R.id.textUserProfileStatus);
         loadMoreProgress = findViewById(R.id.progressUserQuotesLoadMore);
         noMoreText = findViewById(R.id.textUserQuotesNoMore);
+        levelText = findViewById(R.id.textUserProfileLevel);
+        xpText = findViewById(R.id.textUserProfileXp);
+        achievementCountText = findViewById(R.id.textUserProfileAchievementCount);
+        achievementEmptyText = findViewById(R.id.textUserProfileAchievementEmpty);
+        achievementRecyclerView = findViewById(R.id.recyclerUserProfileAchievements);
     }
 
     private void setupToolbar() {
@@ -168,6 +196,8 @@ public class UserProfileActivity extends AppCompatActivity {
         findViewById(R.id.buttonUserProfileLogout).setOnClickListener(view -> logout());
         followButton.setOnClickListener(view ->
                 showStatus(getString(R.string.follow_coming_soon), false));
+        findViewById(R.id.buttonUserProfileAllAchievements)
+                .setOnClickListener(view -> showAllAchievementsPlaceholder());
     }
 
     private void renderProfile(UserProfileData profile) {
@@ -269,6 +299,103 @@ public class UserProfileActivity extends AppCompatActivity {
         renderedLikeCounts = new HashMap<>(likeCounts);
     }
 
+    private void setupAchievementPreview() {
+        achievementAdapter = new AchievementPreviewAdapter();
+        achievementRecyclerView.setLayoutManager(new LinearLayoutManager(
+                this, LinearLayoutManager.HORIZONTAL, false));
+        achievementRecyclerView.setAdapter(achievementAdapter);
+        renderDefaultAchievementState();
+    }
+
+    private void observeAchievementState() {
+        if (userStatsViewModel == null || achievementViewModel == null) {
+            return;
+        }
+        userStatsViewModel.getUserStats().observe(this, stats ->
+                renderUserStats(stats == null ? defaultStats() : stats));
+        userStatsViewModel.getError().observe(this, message -> {
+            if (message != null) {
+                renderUserStats(defaultStats());
+            }
+        });
+        achievementViewModel.getActiveAchievements().observe(this, achievements -> {
+            currentAchievements = achievements == null ? new ArrayList<>() : achievements;
+            renderAchievementPreview();
+        });
+        achievementViewModel.getUserAchievements().observe(this, achievements -> {
+            currentUserAchievements = achievements == null ? new ArrayList<>() : achievements;
+            renderAchievementPreview();
+            UserStats current = userStatsViewModel.getUserStats().getValue();
+            renderUserStats(current == null ? defaultStats() : current);
+        });
+        achievementViewModel.getError().observe(this, message -> {
+            if (message != null && currentAchievements.isEmpty()) {
+                renderAchievementPreview();
+            }
+        });
+    }
+
+    private void loadAchievementState() {
+        if (isBlank(profileUserId)) {
+            renderDefaultAchievementState();
+            return;
+        }
+        if (userStatsViewModel == null || achievementViewModel == null) {
+            renderDefaultAchievementState();
+            return;
+        }
+        userStatsViewModel.loadUserStats(profileUserId);
+        achievementViewModel.loadActiveAchievements();
+        achievementViewModel.loadUserAchievements(profileUserId);
+    }
+
+    private void renderDefaultAchievementState() {
+        renderUserStats(defaultStats());
+        renderAchievementPreview();
+    }
+
+    private void renderUserStats(UserStats stats) {
+        if (levelText == null || xpText == null || achievementCountText == null) {
+            return;
+        }
+        int level = stats.getLevel() <= 0 ? 1 : stats.getLevel();
+        long totalXp = Math.max(0, stats.getTotalXp());
+        long unlockedCount = Math.max(stats.getUnlockedAchievementCount(),
+                currentUserAchievements == null ? 0 : currentUserAchievements.size());
+        levelText.setText(getString(R.string.level_format, level));
+        xpText.setText(getString(R.string.xp_total_format, totalXp));
+        achievementCountText.setText(getString(
+                R.string.unlocked_achievement_count_format, unlockedCount));
+    }
+
+    private void renderAchievementPreview() {
+        if (achievementAdapter == null || achievementRecyclerView == null
+                || achievementEmptyText == null) {
+            return;
+        }
+        achievementAdapter.submitData(currentAchievements, currentUserAchievements);
+        boolean empty = currentAchievements == null || currentAchievements.isEmpty();
+        achievementRecyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
+        achievementEmptyText.setVisibility(empty ? View.VISIBLE : View.GONE);
+    }
+
+    private UserStats defaultStats() {
+        UserStats stats = new UserStats();
+        stats.setUserId(profileUserId);
+        stats.setLevel(1);
+        stats.setTotalXp(0);
+        stats.setUnlockedAchievementCount(0);
+        return stats;
+    }
+
+    private void showAllAchievementsPlaceholder() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.all_achievements)
+                .setMessage(R.string.achievement_dialog_placeholder)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
     private void editQuote(Quote quote) {
         Intent intent = new Intent(this, AddQuoteActivity.class);
         intent.putExtra(AddQuoteActivity.EXTRA_QUOTE_ID, quote.getQuoteId());
@@ -321,5 +448,9 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

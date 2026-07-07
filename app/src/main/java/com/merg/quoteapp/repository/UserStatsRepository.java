@@ -1,0 +1,210 @@
+package com.merg.quoteapp.repository;
+
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.SetOptions;
+import com.merg.quoteapp.model.UserStats;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class UserStatsRepository {
+
+    public interface UserStatsCallback {
+        void onSuccess(UserStats stats);
+
+        void onError(String message);
+    }
+
+    public interface OperationCallback {
+        void onSuccess();
+
+        void onError(String message);
+    }
+
+    private static final String USER_STATS_COLLECTION = "userStats";
+    private static volatile UserStatsRepository instance;
+
+    private final FirebaseFirestore firestore;
+
+    private UserStatsRepository() {
+        firestore = FirebaseFirestore.getInstance();
+    }
+
+    /**
+     * Returns the shared UserStatsRepository instance.
+     *
+     * @return singleton repository instance
+     */
+    public static UserStatsRepository getInstance() {
+        if (instance == null) {
+            synchronized (UserStatsRepository.class) {
+                if (instance == null) {
+                    instance = new UserStatsRepository();
+                }
+            }
+        }
+        return instance;
+    }
+
+    /**
+     * Loads a user's stats document.
+     *
+     * @param userId user id whose stats will be loaded
+     * @param callback stats callback
+     */
+    public void getUserStats(String userId, UserStatsCallback callback) {
+        if (isBlank(userId)) {
+            callback.onError("Kullanıcı bilgisi bulunamadı.");
+            return;
+        }
+
+        firestore.collection(USER_STATS_COLLECTION)
+                .document(userId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (!document.exists()) {
+                        callback.onSuccess(defaultStats(userId));
+                        return;
+                    }
+                    UserStats stats = document.toObject(UserStats.class);
+                    callback.onSuccess(stats == null ? defaultStats(userId) : stats);
+                })
+                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
+    /**
+     * Creates a default stats document if it does not already exist.
+     *
+     * @param userId user id for the stats document
+     * @param callback operation callback
+     */
+    public void createDefaultUserStatsIfMissing(String userId, OperationCallback callback) {
+        if (isBlank(userId)) {
+            callback.onError("Kullanıcı bilgisi bulunamadı.");
+            return;
+        }
+
+        firestore.collection(USER_STATS_COLLECTION)
+                .document(userId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists()) {
+                        callback.onSuccess();
+                    } else {
+                        firestore.collection(USER_STATS_COLLECTION)
+                                .document(userId)
+                                .set(defaultStatsMap(userId), SetOptions.merge())
+                                .addOnSuccessListener(unused -> callback.onSuccess())
+                                .addOnFailureListener(error -> callback.onError(readableError(error)));
+                    }
+                })
+                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
+    /**
+     * Updates a user's stats document with the provided values.
+     *
+     * @param userId user id for the stats document
+     * @param stats stats values to persist
+     * @param callback operation callback
+     */
+    public void updateUserStats(String userId, UserStats stats, OperationCallback callback) {
+        if (isBlank(userId) || stats == null) {
+            callback.onError("Güncellenecek istatistik bulunamadı.");
+            return;
+        }
+
+        firestore.collection(USER_STATS_COLLECTION)
+                .document(userId)
+                .set(statsMap(userId, stats), SetOptions.merge())
+                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
+    /**
+     * Adds XP to a user's stats document.
+     *
+     * @param userId user id that will receive XP
+     * @param amount XP amount to add
+     * @param callback operation callback
+     */
+    public void addXp(String userId, long amount, OperationCallback callback) {
+        if (isBlank(userId)) {
+            callback.onError("Kullanıcı bilgisi bulunamadı.");
+            return;
+        }
+        if (amount <= 0) {
+            callback.onError("Eklenecek XP miktarı geçersiz.");
+            return;
+        }
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("userId", userId);
+        updates.put("totalXp", FieldValue.increment(amount));
+        updates.put("lastUpdatedAt", FieldValue.serverTimestamp());
+
+        firestore.collection(USER_STATS_COLLECTION)
+                .document(userId)
+                .set(updates, SetOptions.merge())
+                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
+    private UserStats defaultStats(String userId) {
+        UserStats stats = new UserStats();
+        stats.setUserId(userId);
+        stats.setLevel(1);
+        return stats;
+    }
+
+    private Map<String, Object> defaultStatsMap(String userId) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("userId", userId);
+        data.put("totalXp", 0);
+        data.put("level", 1);
+        data.put("totalQuotes", 0);
+        data.put("totalLikesReceived", 0);
+        data.put("maxSingleQuoteLikes", 0);
+        data.put("totalMovieQuotes", 0);
+        data.put("totalSeriesQuotes", 0);
+        data.put("totalBookQuotes", 0);
+        data.put("validReports", 0);
+        data.put("invalidReports", 0);
+        data.put("unlockedAchievementCount", 0);
+        data.put("lastUpdatedAt", FieldValue.serverTimestamp());
+        return data;
+    }
+
+    private Map<String, Object> statsMap(String userId, UserStats stats) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("userId", userId);
+        data.put("totalXp", stats.getTotalXp());
+        data.put("level", stats.getLevel());
+        data.put("totalQuotes", stats.getTotalQuotes());
+        data.put("totalLikesReceived", stats.getTotalLikesReceived());
+        data.put("maxSingleQuoteLikes", stats.getMaxSingleQuoteLikes());
+        data.put("totalMovieQuotes", stats.getTotalMovieQuotes());
+        data.put("totalSeriesQuotes", stats.getTotalSeriesQuotes());
+        data.put("totalBookQuotes", stats.getTotalBookQuotes());
+        data.put("validReports", stats.getValidReports());
+        data.put("invalidReports", stats.getInvalidReports());
+        data.put("unlockedAchievementCount", stats.getUnlockedAchievementCount());
+        data.put("lastUpdatedAt", FieldValue.serverTimestamp());
+        return data;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private String readableError(Exception error) {
+        if (error instanceof FirebaseFirestoreException
+                && ((FirebaseFirestoreException) error).getCode()
+                == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+            return "Kullanıcı istatistikleri için Firestore kurallarını kontrol edin.";
+        }
+        return "Kullanıcı istatistikleri güncellenemedi. Lütfen tekrar deneyin.";
+    }
+}
