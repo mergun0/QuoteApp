@@ -3,6 +3,7 @@ package com.merg.quoteapp.repository;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.SetOptions;
 import com.merg.quoteapp.model.UserStats;
 
@@ -19,6 +20,12 @@ public class UserStatsRepository {
 
     public interface OperationCallback {
         void onSuccess();
+
+        void onError(String message);
+    }
+
+    public interface UserStatsListenerCallback {
+        void onStatsChanged(UserStats stats);
 
         void onError(String message);
     }
@@ -72,6 +79,36 @@ public class UserStatsRepository {
                     callback.onSuccess(stats == null ? defaultStats(userId) : stats);
                 })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
+    /**
+     * Observes a user's stats document in real time.
+     *
+     * @param userId user id whose stats will be observed
+     * @param callback realtime stats callback
+     * @return listener registration that should be removed when no longer needed
+     */
+    public ListenerRegistration observeUserStats(String userId,
+                                                 UserStatsListenerCallback callback) {
+        if (isBlank(userId)) {
+            callback.onError("Kullanıcı bilgisi bulunamadı.");
+            return null;
+        }
+
+        return firestore.collection(USER_STATS_COLLECTION)
+                .document(userId)
+                .addSnapshotListener((document, error) -> {
+                    if (error != null) {
+                        callback.onError(readableError(error));
+                        return;
+                    }
+                    if (document == null || !document.exists()) {
+                        callback.onStatsChanged(defaultStats(userId));
+                        return;
+                    }
+                    UserStats stats = document.toObject(UserStats.class);
+                    callback.onStatsChanged(stats == null ? defaultStats(userId) : stats);
+                });
     }
 
     /**

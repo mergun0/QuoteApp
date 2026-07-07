@@ -1,3 +1,4 @@
+# Android Studio
 *.iml
 .gradle
 /local.properties
@@ -7,9 +8,23 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+
+# macOS
 .DS_Store
+
+# Build
 /build
-/captures
+**/build/
+captures/
 .externalNativeBuild
 .cxx
+
+# Local configuration
 local.properties
+
+# Firebase Admin SDK
+serviceAccountKey.json
+*serviceAccount*.json
+
+# Node.js (Firestore seed)
+node_modules/

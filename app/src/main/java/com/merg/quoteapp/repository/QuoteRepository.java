@@ -43,10 +43,12 @@ public class QuoteRepository {
 
     private final FirebaseAuth auth;
     private final FirebaseFirestore firestore;
+    private final AchievementEngineRepository achievementEngineRepository;
 
     private QuoteRepository() {
         auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
+        achievementEngineRepository = AchievementEngineRepository.getInstance();
     }
 
     public static QuoteRepository getInstance() {
@@ -94,7 +96,10 @@ public class QuoteRepository {
         data.put("updatedAt", FieldValue.serverTimestamp());
 
         document.set(data)
-                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnSuccessListener(unused -> {
+                    achievementEngineRepository.onQuoteCreated(quote);
+                    callback.onSuccess();
+                })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 

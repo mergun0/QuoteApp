@@ -3,6 +3,7 @@ package com.merg.quoteapp.repository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.AggregateSource;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -86,10 +87,12 @@ public class LikeRepository {
 
     private final FirebaseAuth auth;
     private final FirebaseFirestore firestore;
+    private final AchievementEngineRepository achievementEngineRepository;
 
     private LikeRepository() {
         auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
+        achievementEngineRepository = AchievementEngineRepository.getInstance();
     }
 
     /**
@@ -132,10 +135,20 @@ public class LikeRepository {
         data.put("userId", user.getUid());
         data.put("createdAt", FieldValue.serverTimestamp());
 
-        firestore.collection(LIKES_COLLECTION)
-                .document(likeId)
-                .set(data)
-                .addOnSuccessListener(unused -> callback.onSuccess())
+        DocumentReference document = firestore.collection(LIKES_COLLECTION).document(likeId);
+        document.get()
+                .addOnSuccessListener(existingLike -> {
+                    if (existingLike.exists()) {
+                        callback.onSuccess();
+                        return;
+                    }
+                    document.set(data)
+                            .addOnSuccessListener(unused -> {
+                                achievementEngineRepository.onQuoteLiked(quoteId, user.getUid());
+                                callback.onSuccess();
+                            })
+                            .addOnFailureListener(error -> callback.onError(readableError(error)));
+                })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 

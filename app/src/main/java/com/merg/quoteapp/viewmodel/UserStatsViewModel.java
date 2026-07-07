@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.google.firebase.firestore.ListenerRegistration;
 import com.merg.quoteapp.model.UserStats;
 import com.merg.quoteapp.repository.UserStatsRepository;
 
@@ -13,6 +14,7 @@ public class UserStatsViewModel extends ViewModel {
     private final MutableLiveData<UserStats> userStats = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
+    private ListenerRegistration statsListener;
 
     public LiveData<UserStats> getUserStats() {
         return userStats;
@@ -27,11 +29,15 @@ public class UserStatsViewModel extends ViewModel {
     }
 
     public void loadUserStats(String userId) {
+        if (statsListener != null) {
+            statsListener.remove();
+            statsListener = null;
+        }
         loading.setValue(true);
         error.setValue(null);
-        repository.getUserStats(userId, new UserStatsRepository.UserStatsCallback() {
+        statsListener = repository.observeUserStats(userId, new UserStatsRepository.UserStatsListenerCallback() {
             @Override
-            public void onSuccess(UserStats stats) {
+            public void onStatsChanged(UserStats stats) {
                 userStats.setValue(stats);
                 loading.setValue(false);
             }
@@ -96,5 +102,13 @@ public class UserStatsViewModel extends ViewModel {
                 loading.setValue(false);
             }
         });
+    }
+
+    @Override
+    protected void onCleared() {
+        if (statsListener != null) {
+            statsListener.remove();
+        }
+        super.onCleared();
     }
 }

@@ -1,0 +1,1546 @@
+{
+  "levels": {
+    "level_1": {
+      "level": 1,
+      "requiredTotalXp": 0,
+      "title": "Yeni Üye",
+      "badgeName": "Başlangıç",
+      "unlockedFeatures": []
+    },
+    "level_2": {
+      "level": 2,
+      "requiredTotalXp": 100,
+      "title": "Yeni Üye",
+      "badgeName": "Başlangıç",
+      "unlockedFeatures": []
+    },
+    "level_3": {
+      "level": 3,
+      "requiredTotalXp": 250,
+      "title": "Yeni Üye",
+      "badgeName": "Başlangıç",
+      "unlockedFeatures": []
+    },
+    "level_4": {
+      "level": 4,
+      "requiredTotalXp": 475,
+      "title": "Yeni Üye",
+      "badgeName": "Başlangıç",
+      "unlockedFeatures": []
+    },
+    "level_5": {
+      "level": 5,
+      "requiredTotalXp": 815,
+      "title": "Yeni Üye",
+      "badgeName": "Başlangıç",
+      "unlockedFeatures": []
+    },
+    "level_6": {
+      "level": 6,
+      "requiredTotalXp": 1700,
+      "title": "Yeni Üye",
+      "badgeName": "Başlangıç",
+      "unlockedFeatures": []
+    },
+    "level_7": {
+      "level": 7,
+      "requiredTotalXp": 2500,
+      "title": "Yeni Üye",
+      "badgeName": "Başlangıç",
+      "unlockedFeatures": []
+    },
+    "level_8": {
+      "level": 8,
+      "requiredTotalXp": 3300,
+      "title": "Yeni Üye",
+      "badgeName": "Başlangıç",
+      "unlockedFeatures": []
+    },
+    "level_9": {
+      "level": 9,
+      "requiredTotalXp": 4200,
+      "title": "Yeni Üye",
+      "badgeName": "Başlangıç",
+      "unlockedFeatures": []
+    },
+    "level_10": {
+      "level": 10,
+      "requiredTotalXp": 5000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_11": {
+      "level": 11,
+      "requiredTotalXp": 8000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_12": {
+      "level": 12,
+      "requiredTotalXp": 11000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_13": {
+      "level": 13,
+      "requiredTotalXp": 14000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_14": {
+      "level": 14,
+      "requiredTotalXp": 17000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_15": {
+      "level": 15,
+      "requiredTotalXp": 20000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_16": {
+      "level": 16,
+      "requiredTotalXp": 23000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_17": {
+      "level": 17,
+      "requiredTotalXp": 26000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_18": {
+      "level": 18,
+      "requiredTotalXp": 29000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_19": {
+      "level": 19,
+      "requiredTotalXp": 32000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_20": {
+      "level": 20,
+      "requiredTotalXp": 35000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_21": {
+      "level": 21,
+      "requiredTotalXp": 38000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_22": {
+      "level": 22,
+      "requiredTotalXp": 41000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_23": {
+      "level": 23,
+      "requiredTotalXp": 44000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_24": {
+      "level": 24,
+      "requiredTotalXp": 47000,
+      "title": "Alıntı Kaşifi",
+      "badgeName": "Bronz",
+      "unlockedFeatures": [
+        "profile_badge_bronze"
+      ]
+    },
+    "level_25": {
+      "level": 25,
+      "requiredTotalXp": 50000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_26": {
+      "level": 26,
+      "requiredTotalXp": 58000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_27": {
+      "level": 27,
+      "requiredTotalXp": 66000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_28": {
+      "level": 28,
+      "requiredTotalXp": 74000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_29": {
+      "level": 29,
+      "requiredTotalXp": 82000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_30": {
+      "level": 30,
+      "requiredTotalXp": 90000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_31": {
+      "level": 31,
+      "requiredTotalXp": 98000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_32": {
+      "level": 32,
+      "requiredTotalXp": 105000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_33": {
+      "level": 33,
+      "requiredTotalXp": 115000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_34": {
+      "level": 34,
+      "requiredTotalXp": 120000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_35": {
+      "level": 35,
+      "requiredTotalXp": 130000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_36": {
+      "level": 36,
+      "requiredTotalXp": 140000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_37": {
+      "level": 37,
+      "requiredTotalXp": 145000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_38": {
+      "level": 38,
+      "requiredTotalXp": 155000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_39": {
+      "level": 39,
+      "requiredTotalXp": 160000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_40": {
+      "level": 40,
+      "requiredTotalXp": 170000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_41": {
+      "level": 41,
+      "requiredTotalXp": 180000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_42": {
+      "level": 42,
+      "requiredTotalXp": 185000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_43": {
+      "level": 43,
+      "requiredTotalXp": 195000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_44": {
+      "level": 44,
+      "requiredTotalXp": 200000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_45": {
+      "level": 45,
+      "requiredTotalXp": 210000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_46": {
+      "level": 46,
+      "requiredTotalXp": 220000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_47": {
+      "level": 47,
+      "requiredTotalXp": 225000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_48": {
+      "level": 48,
+      "requiredTotalXp": 235000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_49": {
+      "level": 49,
+      "requiredTotalXp": 240000,
+      "title": "Düzenli Paylaşımcı",
+      "badgeName": "Gümüş",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver"
+      ]
+    },
+    "level_50": {
+      "level": 50,
+      "requiredTotalXp": 250000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_51": {
+      "level": 51,
+      "requiredTotalXp": 290000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_52": {
+      "level": 52,
+      "requiredTotalXp": 330000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_53": {
+      "level": 53,
+      "requiredTotalXp": 370000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_54": {
+      "level": 54,
+      "requiredTotalXp": 410000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_55": {
+      "level": 55,
+      "requiredTotalXp": 450000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_56": {
+      "level": 56,
+      "requiredTotalXp": 490000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_57": {
+      "level": 57,
+      "requiredTotalXp": 530000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_58": {
+      "level": 58,
+      "requiredTotalXp": 570000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_59": {
+      "level": 59,
+      "requiredTotalXp": 610000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_60": {
+      "level": 60,
+      "requiredTotalXp": 650000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_61": {
+      "level": 61,
+      "requiredTotalXp": 690000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_62": {
+      "level": 62,
+      "requiredTotalXp": 730000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_63": {
+      "level": 63,
+      "requiredTotalXp": 770000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_64": {
+      "level": 64,
+      "requiredTotalXp": 810000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_65": {
+      "level": 65,
+      "requiredTotalXp": 850000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_66": {
+      "level": 66,
+      "requiredTotalXp": 890000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_67": {
+      "level": 67,
+      "requiredTotalXp": 930000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_68": {
+      "level": 68,
+      "requiredTotalXp": 970000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_69": {
+      "level": 69,
+      "requiredTotalXp": 1000000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_70": {
+      "level": 70,
+      "requiredTotalXp": 1050000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_71": {
+      "level": 71,
+      "requiredTotalXp": 1100000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_72": {
+      "level": 72,
+      "requiredTotalXp": 1125000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_73": {
+      "level": 73,
+      "requiredTotalXp": 1175000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_74": {
+      "level": 74,
+      "requiredTotalXp": 1200000,
+      "title": "Usta Alıntıcı",
+      "badgeName": "Altın",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats"
+      ]
+    },
+    "level_75": {
+      "level": 75,
+      "requiredTotalXp": 1250000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_76": {
+      "level": 76,
+      "requiredTotalXp": 1400000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_77": {
+      "level": 77,
+      "requiredTotalXp": 1550000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_78": {
+      "level": 78,
+      "requiredTotalXp": 1700000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_79": {
+      "level": 79,
+      "requiredTotalXp": 1850000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_80": {
+      "level": 80,
+      "requiredTotalXp": 2000000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_81": {
+      "level": 81,
+      "requiredTotalXp": 2150000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_82": {
+      "level": 82,
+      "requiredTotalXp": 2300000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_83": {
+      "level": 83,
+      "requiredTotalXp": 2450000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_84": {
+      "level": 84,
+      "requiredTotalXp": 2600000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_85": {
+      "level": 85,
+      "requiredTotalXp": 2750000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_86": {
+      "level": 86,
+      "requiredTotalXp": 2900000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_87": {
+      "level": 87,
+      "requiredTotalXp": 3050000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_88": {
+      "level": 88,
+      "requiredTotalXp": 3200000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_89": {
+      "level": 89,
+      "requiredTotalXp": 3350000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_90": {
+      "level": 90,
+      "requiredTotalXp": 3500000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_91": {
+      "level": 91,
+      "requiredTotalXp": 3650000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_92": {
+      "level": 92,
+      "requiredTotalXp": 3800000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_93": {
+      "level": 93,
+      "requiredTotalXp": 3950000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_94": {
+      "level": 94,
+      "requiredTotalXp": 4100000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_95": {
+      "level": 95,
+      "requiredTotalXp": 4250000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_96": {
+      "level": 96,
+      "requiredTotalXp": 4400000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_97": {
+      "level": 97,
+      "requiredTotalXp": 4550000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_98": {
+      "level": 98,
+      "requiredTotalXp": 4700000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_99": {
+      "level": 99,
+      "requiredTotalXp": 4850000,
+      "title": "Topluluk Efsanesi",
+      "badgeName": "Platin",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum"
+      ]
+    },
+    "level_100": {
+      "level": 100,
+      "requiredTotalXp": 5000000,
+      "title": "Efsane",
+      "badgeName": "Efsanevi",
+      "unlockedFeatures": [
+        "profile_badge_bronze",
+        "profile_badge_silver",
+        "advanced_profile_stats",
+        "profile_badge_platinum",
+        "legend_profile_frame"
+      ]
+    }
+  },
+  "achievements": {
+    "likes_received_10": {
+      "achievementId": "likes_received_10",
+      "title": "İlk Alkış",
+      "description": "Toplam 10 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalLikesReceived",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 10,
+      "achievementGroup": "likes_received",
+      "tier": 1,
+      "xpReward": 50,
+      "iconName": "ic_badge_like",
+      "level": "BRONZE",
+      "isActive": true,
+      "sortOrder": 101
+    },
+    "likes_received_50": {
+      "achievementId": "likes_received_50",
+      "title": "Dikkat Çeken",
+      "description": "Toplam 50 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalLikesReceived",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 50,
+      "achievementGroup": "likes_received",
+      "tier": 2,
+      "xpReward": 75,
+      "iconName": "ic_badge_like",
+      "level": "BRONZE",
+      "isActive": true,
+      "sortOrder": 102
+    },
+    "likes_received_100": {
+      "achievementId": "likes_received_100",
+      "title": "Sevilen Yazar",
+      "description": "Toplam 100 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalLikesReceived",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 100,
+      "achievementGroup": "likes_received",
+      "tier": 3,
+      "xpReward": 100,
+      "iconName": "ic_badge_like",
+      "level": "SILVER",
+      "isActive": true,
+      "sortOrder": 103
+    },
+    "likes_received_500": {
+      "achievementId": "likes_received_500",
+      "title": "Topluluk Favorisi",
+      "description": "Toplam 500 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalLikesReceived",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 500,
+      "achievementGroup": "likes_received",
+      "tier": 4,
+      "xpReward": 150,
+      "iconName": "ic_badge_like",
+      "level": "SILVER",
+      "isActive": true,
+      "sortOrder": 104
+    },
+    "likes_received_1000": {
+      "achievementId": "likes_received_1000",
+      "title": "Efsane Alıntıcı",
+      "description": "Toplam 1000 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalLikesReceived",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 1000,
+      "achievementGroup": "likes_received",
+      "tier": 5,
+      "xpReward": 250,
+      "iconName": "ic_badge_like",
+      "level": "GOLD",
+      "isActive": true,
+      "sortOrder": 105
+    },
+    "likes_received_5000": {
+      "achievementId": "likes_received_5000",
+      "title": "Fenomen Alıntıcı",
+      "description": "Toplam 5000 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalLikesReceived",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 5000,
+      "achievementGroup": "likes_received",
+      "tier": 6,
+      "xpReward": 400,
+      "iconName": "ic_badge_like",
+      "level": "GOLD",
+      "isActive": true,
+      "sortOrder": 106
+    },
+    "likes_received_10000": {
+      "achievementId": "likes_received_10000",
+      "title": "Topluluğun Sesi",
+      "description": "Toplam 10000 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalLikesReceived",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 10000,
+      "achievementGroup": "likes_received",
+      "tier": 7,
+      "xpReward": 750,
+      "iconName": "ic_badge_like",
+      "level": "PLATINUM",
+      "isActive": true,
+      "sortOrder": 107
+    },
+    "quotes_shared_1": {
+      "achievementId": "quotes_shared_1",
+      "title": "İlk Satır",
+      "description": "Toplam 1 alıntı paylaş.",
+      "category": "QUOTE",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 1,
+      "achievementGroup": "quotes_shared",
+      "tier": 1,
+      "xpReward": 25,
+      "iconName": "ic_badge_quote",
+      "level": "BRONZE",
+      "isActive": true,
+      "sortOrder": 201
+    },
+    "quotes_shared_10": {
+      "achievementId": "quotes_shared_10",
+      "title": "Düzenli Paylaşımcı",
+      "description": "Toplam 10 alıntı paylaş.",
+      "category": "QUOTE",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 10,
+      "achievementGroup": "quotes_shared",
+      "tier": 2,
+      "xpReward": 50,
+      "iconName": "ic_badge_quote",
+      "level": "BRONZE",
+      "isActive": true,
+      "sortOrder": 202
+    },
+    "quotes_shared_50": {
+      "achievementId": "quotes_shared_50",
+      "title": "Arşivci",
+      "description": "Toplam 50 alıntı paylaş.",
+      "category": "QUOTE",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 50,
+      "achievementGroup": "quotes_shared",
+      "tier": 3,
+      "xpReward": 100,
+      "iconName": "ic_badge_quote",
+      "level": "SILVER",
+      "isActive": true,
+      "sortOrder": 203
+    },
+    "quotes_shared_100": {
+      "achievementId": "quotes_shared_100",
+      "title": "Üretken Yazar",
+      "description": "Toplam 100 alıntı paylaş.",
+      "category": "QUOTE",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 100,
+      "achievementGroup": "quotes_shared",
+      "tier": 4,
+      "xpReward": 150,
+      "iconName": "ic_badge_quote",
+      "level": "SILVER",
+      "isActive": true,
+      "sortOrder": 204
+    },
+    "quotes_shared_500": {
+      "achievementId": "quotes_shared_500",
+      "title": "Alıntı Ustası",
+      "description": "Toplam 500 alıntı paylaş.",
+      "category": "QUOTE",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 500,
+      "achievementGroup": "quotes_shared",
+      "tier": 5,
+      "xpReward": 300,
+      "iconName": "ic_badge_quote",
+      "level": "GOLD",
+      "isActive": true,
+      "sortOrder": 205
+    },
+    "quotes_shared_1000": {
+      "achievementId": "quotes_shared_1000",
+      "title": "Yaşayan Kütüphane",
+      "description": "Toplam 1000 alıntı paylaş.",
+      "category": "QUOTE",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 1000,
+      "achievementGroup": "quotes_shared",
+      "tier": 6,
+      "xpReward": 600,
+      "iconName": "ic_badge_quote",
+      "level": "PLATINUM",
+      "isActive": true,
+      "sortOrder": 206
+    },
+    "single_quote_likes_100": {
+      "achievementId": "single_quote_likes_100",
+      "title": "Parlayan Alıntı",
+      "description": "Tek bir alıntında 100 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "SINGLE_QUOTE_STAT",
+      "targetScope": "QUOTE",
+      "metric": "maxSingleQuoteLikes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 100,
+      "achievementGroup": "single_quote_likes",
+      "tier": 1,
+      "xpReward": 150,
+      "iconName": "ic_badge_viral",
+      "level": "SILVER",
+      "isActive": true,
+      "sortOrder": 301
+    },
+    "single_quote_likes_500": {
+      "achievementId": "single_quote_likes_500",
+      "title": "Viral Alıntı",
+      "description": "Tek bir alıntında 500 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "SINGLE_QUOTE_STAT",
+      "targetScope": "QUOTE",
+      "metric": "maxSingleQuoteLikes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 500,
+      "achievementGroup": "single_quote_likes",
+      "tier": 2,
+      "xpReward": 250,
+      "iconName": "ic_badge_viral",
+      "level": "GOLD",
+      "isActive": true,
+      "sortOrder": 302
+    },
+    "single_quote_likes_1000": {
+      "achievementId": "single_quote_likes_1000",
+      "title": "Efsane Replik",
+      "description": "Tek bir alıntında 1000 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "SINGLE_QUOTE_STAT",
+      "targetScope": "QUOTE",
+      "metric": "maxSingleQuoteLikes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 1000,
+      "achievementGroup": "single_quote_likes",
+      "tier": 3,
+      "xpReward": 400,
+      "iconName": "ic_badge_viral",
+      "level": "GOLD",
+      "isActive": true,
+      "sortOrder": 303
+    },
+    "single_quote_likes_5000": {
+      "achievementId": "single_quote_likes_5000",
+      "title": "Kült Alıntı",
+      "description": "Tek bir alıntında 5000 beğeniye ulaş.",
+      "category": "SOCIAL",
+      "ruleType": "SINGLE_QUOTE_STAT",
+      "targetScope": "QUOTE",
+      "metric": "maxSingleQuoteLikes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 5000,
+      "achievementGroup": "single_quote_likes",
+      "tier": 4,
+      "xpReward": 800,
+      "iconName": "ic_badge_viral",
+      "level": "PLATINUM",
+      "isActive": true,
+      "sortOrder": 304
+    },
+    "valid_reports_1": {
+      "achievementId": "valid_reports_1",
+      "title": "İlk İhbar",
+      "description": "Toplam 1 geçerli rapor gönder.",
+      "category": "MODERATION",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "validReports",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 1,
+      "achievementGroup": "valid_reports",
+      "tier": 1,
+      "xpReward": 25,
+      "iconName": "ic_badge_detective",
+      "level": "BRONZE",
+      "isActive": true,
+      "sortOrder": 401
+    },
+    "valid_reports_5": {
+      "achievementId": "valid_reports_5",
+      "title": "Gözlemci",
+      "description": "Toplam 5 geçerli rapor gönder.",
+      "category": "MODERATION",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "validReports",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 5,
+      "achievementGroup": "valid_reports",
+      "tier": 2,
+      "xpReward": 50,
+      "iconName": "ic_badge_detective",
+      "level": "BRONZE",
+      "isActive": true,
+      "sortOrder": 402
+    },
+    "valid_reports_25": {
+      "achievementId": "valid_reports_25",
+      "title": "Dedektif",
+      "description": "Toplam 25 geçerli rapor gönder.",
+      "category": "MODERATION",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "validReports",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 25,
+      "achievementGroup": "valid_reports",
+      "tier": 3,
+      "xpReward": 125,
+      "iconName": "ic_badge_detective",
+      "level": "SILVER",
+      "isActive": true,
+      "sortOrder": 403
+    },
+    "valid_reports_50": {
+      "achievementId": "valid_reports_50",
+      "title": "Keskin Göz",
+      "description": "Toplam 50 geçerli rapor gönder.",
+      "category": "MODERATION",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "validReports",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 50,
+      "achievementGroup": "valid_reports",
+      "tier": 4,
+      "xpReward": 250,
+      "iconName": "ic_badge_detective",
+      "level": "GOLD",
+      "isActive": true,
+      "sortOrder": 404
+    },
+    "valid_reports_100": {
+      "achievementId": "valid_reports_100",
+      "title": "Topluluk Koruyucusu",
+      "description": "Toplam 100 geçerli rapor gönder.",
+      "category": "MODERATION",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "validReports",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 100,
+      "achievementGroup": "valid_reports",
+      "tier": 5,
+      "xpReward": 500,
+      "iconName": "ic_badge_detective",
+      "level": "PLATINUM",
+      "isActive": true,
+      "sortOrder": 405
+    },
+    "movie_quotes_10": {
+      "achievementId": "movie_quotes_10",
+      "title": "Sinema Meraklısı",
+      "description": "10 film alıntısı paylaş.",
+      "category": "TYPE_MASTER",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalMovieQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 10,
+      "achievementGroup": "movie_quotes",
+      "tier": 1,
+      "xpReward": 75,
+      "iconName": "ic_badge_movie",
+      "level": "BRONZE",
+      "isActive": true,
+      "sortOrder": 501
+    },
+    "movie_quotes_50": {
+      "achievementId": "movie_quotes_50",
+      "title": "Film Arşivcisi",
+      "description": "50 film alıntısı paylaş.",
+      "category": "TYPE_MASTER",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalMovieQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 50,
+      "achievementGroup": "movie_quotes",
+      "tier": 2,
+      "xpReward": 150,
+      "iconName": "ic_badge_movie",
+      "level": "SILVER",
+      "isActive": true,
+      "sortOrder": 502
+    },
+    "series_quotes_10": {
+      "achievementId": "series_quotes_10",
+      "title": "Bölüm Bölüm",
+      "description": "10 dizi alıntısı paylaş.",
+      "category": "TYPE_MASTER",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalSeriesQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 10,
+      "achievementGroup": "series_quotes",
+      "tier": 1,
+      "xpReward": 75,
+      "iconName": "ic_badge_series",
+      "level": "BRONZE",
+      "isActive": true,
+      "sortOrder": 503
+    },
+    "series_quotes_50": {
+      "achievementId": "series_quotes_50",
+      "title": "Dizi Ustası",
+      "description": "50 dizi alıntısı paylaş.",
+      "category": "TYPE_MASTER",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalSeriesQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 50,
+      "achievementGroup": "series_quotes",
+      "tier": 2,
+      "xpReward": 150,
+      "iconName": "ic_badge_series",
+      "level": "SILVER",
+      "isActive": true,
+      "sortOrder": 504
+    },
+    "book_quotes_10": {
+      "achievementId": "book_quotes_10",
+      "title": "Kitap Kurdu",
+      "description": "10 kitap alıntısı paylaş.",
+      "category": "TYPE_MASTER",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalBookQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 10,
+      "achievementGroup": "book_quotes",
+      "tier": 1,
+      "xpReward": 75,
+      "iconName": "ic_badge_book",
+      "level": "BRONZE",
+      "isActive": true,
+      "sortOrder": 505
+    },
+    "book_quotes_50": {
+      "achievementId": "book_quotes_50",
+      "title": "Sayfa Avcısı",
+      "description": "50 kitap alıntısı paylaş.",
+      "category": "TYPE_MASTER",
+      "ruleType": "USER_STAT",
+      "targetScope": "USER",
+      "metric": "totalBookQuotes",
+      "operator": "GREATER_OR_EQUAL",
+      "targetValue": 50,
+      "achievementGroup": "book_quotes",
+      "tier": 2,
+      "xpReward": 150,
+      "iconName": "ic_badge_book",
+      "level": "SILVER",
+      "isActive": true,
+      "sortOrder": 506
+    }
+  }
+}
