@@ -11,6 +11,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.QuoteApp">
         <activity
+            android:name=".ui.profile.UserProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.quote.QuoteDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.quote.AddQuoteActivity"
             android:exported="false" />
         <activity

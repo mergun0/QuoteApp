@@ -29,22 +29,35 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         void onShare(Quote quote);
 
         void onFavorite(Quote quote);
+
+        default void onOpen(Quote quote) {
+        }
+
+        default void onUserProfile(String userId) {
+        }
     }
 
     private final List<Quote> quotes = new ArrayList<>();
     private final Set<String> revealedSpoilerQuoteIds = new HashSet<>();
     private final QuoteActionListener listener;
     private final boolean showUsername;
+    private final boolean restrictManagementToCurrentUser;
     private final String currentUserId;
 
     public QuoteAdapter(QuoteActionListener listener) {
-        this(listener, false, null);
+        this(listener, false, false, null);
     }
 
     public QuoteAdapter(QuoteActionListener listener, boolean showUsername,
                         String currentUserId) {
+        this(listener, showUsername, true, currentUserId);
+    }
+
+    public QuoteAdapter(QuoteActionListener listener, boolean showUsername,
+                        boolean restrictManagementToCurrentUser, String currentUserId) {
         this.listener = listener;
         this.showUsername = showUsername;
+        this.restrictManagementToCurrentUser = restrictManagementToCurrentUser;
         this.currentUserId = currentUserId;
     }
 
@@ -70,7 +83,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         Quote quote = quotes.get(position);
         boolean spoilerRevealed = quote.getQuoteId() != null
                 && revealedSpoilerQuoteIds.contains(quote.getQuoteId());
-        boolean canManage = !showUsername
+        boolean canManage = !restrictManagementToCurrentUser
                 || (currentUserId != null && currentUserId.equals(quote.getUserId()));
         holder.bind(quote, listener, spoilerRevealed, showUsername, canManage,
                 () -> revealSpoiler(holder, quote));
@@ -138,6 +151,9 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             typeText.setText(safe(quote.getType()).toUpperCase());
             usernameText.setText("@" + safe(quote.getUsername()));
             userContainer.setVisibility(showUsername ? View.VISIBLE : View.GONE);
+            userContainer.setOnClickListener(showUsername
+                    ? view -> listener.onUserProfile(quote.getUserId())
+                    : null);
             titleText.setText(safe(quote.getTitle()));
             quoteText.setText("“" + safe(quote.getText()) + "”");
             authorText.setText(safe(quote.getAuthor()));
@@ -177,6 +193,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             shareButton.setOnClickListener(view -> listener.onShare(quote));
             favoriteButton.setEnabled(false);
             favoriteButton.setOnClickListener(view -> listener.onFavorite(quote));
+            itemView.setOnClickListener(view -> listener.onOpen(quote));
         }
 
         private void setOptionalText(TextView view, String value, String displayValue) {

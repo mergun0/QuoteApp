@@ -30,6 +30,7 @@ import com.merg.quoteapp.model.ProfileStats;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
+import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
 import com.merg.quoteapp.viewmodel.ProfileViewModel;
 import com.merg.quoteapp.viewmodel.QuoteViewModel;
 
@@ -123,6 +124,11 @@ public class HomeFragment extends Fragment {
             @Override
             public void onFavorite(Quote quote) {
                 // Favoriler sonraki sürümde etkinleştirilecek.
+            }
+
+            @Override
+            public void onOpen(Quote quote) {
+                openQuoteDetail(quote);
             }
         });
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -286,6 +292,15 @@ public class HomeFragment extends Fragment {
         intent.putExtra(AddQuoteActivity.EXTRA_TAGS, quote.getTags() == null ? ""
                 : quote.getTags().stream().collect(Collectors.joining(", ")));
         intent.putExtra(AddQuoteActivity.EXTRA_SPOILER, quote.isSpoiler());
+        startActivity(intent);
+    }
+
+    private void openQuoteDetail(Quote quote) {
+        if (quote == null || quote.getQuoteId() == null || quote.getQuoteId().trim().isEmpty()) {
+            return;
+        }
+        Intent intent = new Intent(requireContext(), QuoteDetailActivity.class);
+        intent.putExtra(QuoteDetailActivity.EXTRA_QUOTE_ID, quote.getQuoteId());
         startActivity(intent);
     }
 

@@ -3,6 +3,7 @@ package com.merg.quoteapp.repository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -27,6 +28,12 @@ public class QuoteRepository {
 
     public interface QuotesCallback {
         void onQuotesChanged(List<Quote> quotes);
+
+        void onError(String message);
+    }
+
+    public interface QuoteCallback {
+        void onSuccess(Quote quote);
 
         void onError(String message);
     }
@@ -120,6 +127,56 @@ public class QuoteRepository {
                         });
                     }
                     callback.onQuotesChanged(quotes);
+                });
+    }
+
+    public void getQuoteById(String quoteId, QuoteCallback callback) {
+        if (quoteId == null || quoteId.trim().isEmpty()) {
+            callback.onError("Alıntı bilgisi bulunamadı.");
+            return;
+        }
+
+        firestore.collection(QUOTES_COLLECTION)
+                .document(quoteId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (!document.exists()) {
+                        callback.onError("Bu alıntı artık mevcut değil.");
+                        return;
+                    }
+                    Quote quote = document.toObject(Quote.class);
+                    if (quote == null) {
+                        callback.onError("Alıntı bilgileri okunamadı.");
+                        return;
+                    }
+                    if (quote.getQuoteId() == null || quote.getQuoteId().isEmpty()) {
+                        quote.setQuoteId(document.getId());
+                    }
+                    completeQuoteUsername(quote, callback);
+                })
+                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
+    private void completeQuoteUsername(Quote quote, QuoteCallback callback) {
+        if (quote.getUsername() != null && !quote.getUsername().trim().isEmpty()) {
+            callback.onSuccess(quote);
+            return;
+        }
+        if (quote.getUserId() == null || quote.getUserId().isEmpty()) {
+            quote.setUsername("Kullanıcı");
+            callback.onSuccess(quote);
+            return;
+        }
+
+        firestore.collection("users")
+                .document(quote.getUserId())
+                .get()
+                .addOnCompleteListener(task -> {
+                    String username = task.isSuccessful() && task.getResult() != null
+                            ? task.getResult().getString("username") : null;
+                    quote.setUsername(username == null || username.trim().isEmpty()
+                            ? "Kullanıcı" : username);
+                    callback.onSuccess(quote);
                 });
     }
 

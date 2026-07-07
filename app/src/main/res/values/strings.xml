@@ -87,6 +87,19 @@
     <string name="discover_empty">Henüz keşfedilecek alıntı yok.</string>
     <string name="discover_empty_detail">İlk paylaşımı sen yapabilirsin.</string>
     <string name="discover_community">TOPLULUK AKIŞI</string>
+    <string name="quote_detail_title">Alıntı Detayı</string>
+    <string name="show_spoiler_detail">Spoileri Göster</string>
+    <string name="created_at">Paylaşılma tarihi</string>
+    <string name="character_label">Karakter: %1$s</string>
+    <string name="series_detail">Sezon %1$s • Bölüm %2$s</string>
+    <string name="user_profile_title">Kullanıcı Profili</string>
+    <string name="joined_at">Katılım: %1$s</string>
+    <string name="edit_profile">Profili Düzenle</string>
+    <string name="follow_coming_soon">Takip özelliği yakında</string>
+    <string name="profile_edit_coming_soon">Profil düzenleme yakında.</string>
+    <string name="user_quotes">Paylaşımlar</string>
+    <string name="user_has_no_quotes">Bu kullanıcının henüz alıntısı yok.</string>
+    <string name="no_more_quotes">Daha fazla alıntı yok</string>
 
     <string-array name="quote_types">
         <item>Film</item>

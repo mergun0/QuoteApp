@@ -26,7 +26,9 @@ import com.merg.quoteapp.R;
 import com.merg.quoteapp.adapter.QuoteAdapter;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
+import com.merg.quoteapp.ui.profile.UserProfileActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
+import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
 import com.merg.quoteapp.viewmodel.DiscoverViewModel;
 
 import java.util.ArrayList;
@@ -116,6 +118,16 @@ public class DiscoverFragment extends Fragment {
             @Override
             public void onFavorite(Quote quote) {
                 // Favoriler sonraki sürümde etkinleştirilecek.
+            }
+
+            @Override
+            public void onOpen(Quote quote) {
+                openQuoteDetail(quote);
+            }
+
+            @Override
+            public void onUserProfile(String userId) {
+                openUserProfile(userId);
             }
         }, true, currentUserId);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -267,6 +279,24 @@ public class DiscoverFragment extends Fragment {
                 .setPositiveButton(R.string.delete, (dialog, which) ->
                         viewModel.deleteQuote(quote.getQuoteId()))
                 .show();
+    }
+
+    private void openUserProfile(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return;
+        }
+        Intent intent = new Intent(requireContext(), UserProfileActivity.class);
+        intent.putExtra(UserProfileActivity.EXTRA_USER_ID, userId);
+        startActivity(intent);
+    }
+
+    private void openQuoteDetail(Quote quote) {
+        if (quote == null || quote.getQuoteId() == null || quote.getQuoteId().trim().isEmpty()) {
+            return;
+        }
+        Intent intent = new Intent(requireContext(), QuoteDetailActivity.class);
+        intent.putExtra(QuoteDetailActivity.EXTRA_QUOTE_ID, quote.getQuoteId());
+        startActivity(intent);
     }
 
     private void shareQuote(Quote quote) {
