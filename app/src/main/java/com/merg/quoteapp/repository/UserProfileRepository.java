@@ -15,6 +15,7 @@ import com.merg.quoteapp.model.UserProfilePage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class UserProfileRepository {
 
@@ -26,6 +27,7 @@ public class UserProfileRepository {
 
     private static final int PAGE_SIZE = 20;
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+    private final LikeRepository likeRepository = LikeRepository.getInstance();
     private DocumentSnapshot lastDocument;
     private boolean endReached;
     private boolean pageLoading;
@@ -36,6 +38,7 @@ public class UserProfileRepository {
     private int movieCount;
     private int seriesCount;
     private int bookCount;
+    private int totalLikeCount;
 
     public void resetPagination(String userId) {
         lastDocument = null;
@@ -44,6 +47,7 @@ public class UserProfileRepository {
         cachedUserId = userId;
         cachedUsername = null;
         cachedJoinedAt = null;
+        totalLikeCount = 0;
     }
 
     public void getNextPage(String userId, UserProfileCallback callback) {
@@ -103,7 +107,41 @@ public class UserProfileRepository {
                     movieCount = (int) ((AggregateQuerySnapshot) results.get(1)).getCount();
                     seriesCount = (int) ((AggregateQuerySnapshot) results.get(2)).getCount();
                     bookCount = (int) ((AggregateQuerySnapshot) results.get(3)).getCount();
-                    loadQuotePage(userId, callback);
+                    loadTotalLikeCount(userId, callback);
+                })
+                .addOnFailureListener(error -> {
+                    pageLoading = false;
+                    callback.onError(readableError(error));
+                });
+    }
+
+    private void loadTotalLikeCount(String userId, UserProfileCallback callback) {
+        firestore.collection("quotes")
+                .whereEqualTo("userId", userId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<String> quoteIds = new ArrayList<>();
+                    for (DocumentSnapshot document : snapshot.getDocuments()) {
+                        String quoteId = document.getString("quoteId");
+                        quoteIds.add(quoteId == null || quoteId.trim().isEmpty()
+                                ? document.getId() : quoteId);
+                    }
+                    likeRepository.getLikeCounts(quoteIds, new LikeRepository.LikeCountsCallback() {
+                        @Override
+                        public void onSuccess(Map<String, Long> counts) {
+                            totalLikeCount = 0;
+                            for (Long count : counts.values()) {
+                                totalLikeCount += count == null ? 0 : count.intValue();
+                            }
+                            loadQuotePage(userId, callback);
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            pageLoading = false;
+                            callback.onError(message);
+                        }
+                    });
                 })
                 .addOnFailureListener(error -> {
                     pageLoading = false;
@@ -158,6 +196,7 @@ public class UserProfileRepository {
                 movieCount,
                 seriesCount,
                 bookCount,
+                totalLikeCount,
                 quotes);
         return new UserProfilePage(profile, hasMore);
     }

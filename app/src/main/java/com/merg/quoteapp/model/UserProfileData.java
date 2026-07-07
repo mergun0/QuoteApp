@@ -13,11 +13,12 @@ public class UserProfileData {
     private final int movieQuotes;
     private final int seriesQuotes;
     private final int bookQuotes;
+    private final int totalLikes;
     private final List<Quote> quotes;
 
     public UserProfileData(String userId, String username, Timestamp joinedAt,
                            int totalQuotes, int movieQuotes, int seriesQuotes,
-                           int bookQuotes, List<Quote> quotes) {
+                           int bookQuotes, int totalLikes, List<Quote> quotes) {
         this.userId = userId;
         this.username = username;
         this.joinedAt = joinedAt;
@@ -25,6 +26,7 @@ public class UserProfileData {
         this.movieQuotes = movieQuotes;
         this.seriesQuotes = seriesQuotes;
         this.bookQuotes = bookQuotes;
+        this.totalLikes = totalLikes;
         this.quotes = quotes;
     }
 
@@ -54,6 +56,10 @@ public class UserProfileData {
 
     public int getBookQuotes() {
         return bookQuotes;
+    }
+
+    public int getTotalLikes() {
+        return totalLikes;
     }
 
     public List<Quote> getQuotes() {

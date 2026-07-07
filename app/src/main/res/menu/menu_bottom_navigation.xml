@@ -10,7 +10,7 @@
         android:title="@string/nav_discover" />
     <item
         android:id="@+id/navigation_favorites"
-        android:icon="@drawable/ic_favorite"
+        android:icon="@drawable/ic_bookmark"
         android:title="@string/nav_favorites" />
     <item
         android:id="@+id/navigation_profile"

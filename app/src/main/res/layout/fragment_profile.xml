@@ -106,6 +106,13 @@
                 android:layout_weight="1" />
         </LinearLayout>
 
+        <include
+            android:id="@+id/statLikes"
+            layout="@layout/item_profile_stat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" />
+
         <ProgressBar
             android:id="@+id/progressProfile"
             android:layout_width="wrap_content"

@@ -52,6 +52,7 @@ public class ProfileFragment extends Fragment {
         setStatLabel(view.findViewById(R.id.statMovies), R.string.profile_movies);
         setStatLabel(view.findViewById(R.id.statSeries), R.string.profile_series);
         setStatLabel(view.findViewById(R.id.statBooks), R.string.profile_books);
+        setStatLabel(view.findViewById(R.id.statLikes), R.string.profile_likes);
     }
 
     private void setStatLabel(View statView, int labelRes) {
@@ -65,6 +66,7 @@ public class ProfileFragment extends Fragment {
         setStatValue(root.findViewById(R.id.statMovies), stats.getMovieQuotes());
         setStatValue(root.findViewById(R.id.statSeries), stats.getSeriesQuotes());
         setStatValue(root.findViewById(R.id.statBooks), stats.getBookQuotes());
+        setStatValue(root.findViewById(R.id.statLikes), stats.getTotalLikes());
     }
 
     private void setStatValue(View statView, int value) {

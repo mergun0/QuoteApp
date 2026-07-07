@@ -1,5 +1,6 @@
 package com.merg.quoteapp.ui.quote;
 
+import android.content.res.ColorStateList;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -19,10 +21,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
+import com.merg.quoteapp.viewmodel.LikeViewModel;
 import com.merg.quoteapp.viewmodel.QuoteDetailViewModel;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class QuoteDetailActivity extends AppCompatActivity {
@@ -30,6 +34,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
     public static final String EXTRA_QUOTE_ID = "quoteId";
 
     private QuoteDetailViewModel viewModel;
+    private LikeViewModel likeViewModel;
     private Quote currentQuote;
     private ScrollView contentScroll;
     private ProgressBar progressBar;
@@ -39,6 +44,8 @@ public class QuoteDetailActivity extends AppCompatActivity {
     private LinearLayout spoilerContainer;
     private LinearLayout ownerActions;
     private MaterialButton deleteButton;
+    private MaterialButton favoriteButton;
+    private long currentLikeCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,9 +58,14 @@ public class QuoteDetailActivity extends AppCompatActivity {
 
         String quoteId = getIntent().getStringExtra(EXTRA_QUOTE_ID);
         viewModel = new ViewModelProvider(this).get(QuoteDetailViewModel.class);
+        likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
         viewModel.getQuote().observe(this, this::renderQuote);
         viewModel.getState().observe(this, this::renderLoadState);
         viewModel.getDeleteState().observe(this, this::renderDeleteState);
+        likeViewModel.getLikedStates().observe(this, this::renderLikedState);
+        likeViewModel.getItemLoadingStates().observe(this, this::renderLikeLoadingState);
+        likeViewModel.getLikeCount().observe(this, this::renderLikeCount);
+        likeViewModel.getLoadingState().observe(this, this::renderLikeState);
         viewModel.loadQuote(quoteId);
     }
 
@@ -66,11 +78,13 @@ public class QuoteDetailActivity extends AppCompatActivity {
         spoilerContainer = findViewById(R.id.layoutDetailSpoilerHidden);
         ownerActions = findViewById(R.id.layoutDetailOwnerActions);
         deleteButton = findViewById(R.id.buttonDetailDelete);
+        favoriteButton = findViewById(R.id.buttonDetailFavorite);
 
         findViewById(R.id.buttonShowDetailSpoiler).setOnClickListener(view -> {
             spoilerContainer.setVisibility(View.GONE);
             quoteContainer.setVisibility(View.VISIBLE);
         });
+        favoriteButton.setOnClickListener(view -> toggleLike());
         findViewById(R.id.buttonDetailShare).setOnClickListener(view -> shareQuote());
         findViewById(R.id.buttonDetailEdit).setOnClickListener(view -> editQuote());
         deleteButton.setOnClickListener(view -> confirmDelete());
@@ -123,6 +137,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
                 ? null : FirebaseAuth.getInstance().getCurrentUser().getUid();
         boolean isOwner = currentUserId != null && currentUserId.equals(quote.getUserId());
         ownerActions.setVisibility(isOwner ? View.VISIBLE : View.GONE);
+        likeViewModel.loadLikeState(quote.getQuoteId());
     }
 
     private void renderLoadState(QuoteState state) {
@@ -152,6 +167,55 @@ public class QuoteDetailActivity extends AppCompatActivity {
             showStatus(getString(R.string.quote_deleted), false);
             statusText.postDelayed(this::finish, 700L);
         }
+    }
+
+    private void renderLikedState(Map<String, Boolean> likedStates) {
+        if (currentQuote == null || likedStates == null) {
+            return;
+        }
+        Boolean liked = likedStates.get(currentQuote.getQuoteId());
+        if (liked != null) {
+            renderFavoriteButton(liked, false);
+        }
+    }
+
+    private void renderLikeLoadingState(Map<String, Boolean> loadingStates) {
+        if (currentQuote == null || loadingStates == null) {
+            return;
+        }
+        boolean loading = Boolean.TRUE.equals(loadingStates.get(currentQuote.getQuoteId()));
+        Boolean liked = likeViewModel.getLikedStates().getValue() == null
+                ? false : likeViewModel.getLikedStates().getValue().get(currentQuote.getQuoteId());
+        renderFavoriteButton(Boolean.TRUE.equals(liked), loading);
+    }
+
+    private void renderLikeState(QuoteState state) {
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            showStatus(state.getMessage(), true);
+        }
+    }
+
+    private void renderLikeCount(Long count) {
+        currentLikeCount = count == null ? 0L : count;
+        boolean liked = false;
+        if (currentQuote != null && likeViewModel.getLikedStates().getValue() != null) {
+            liked = Boolean.TRUE.equals(
+                    likeViewModel.getLikedStates().getValue().get(currentQuote.getQuoteId()));
+        }
+        renderFavoriteButton(liked, false);
+    }
+
+    private void renderFavoriteButton(boolean liked, boolean loading) {
+        int color = ContextCompat.getColor(this, liked
+                ? R.color.quote_status_error : R.color.quote_text_secondary);
+        favoriteButton.setEnabled(!loading);
+        favoriteButton.setAlpha(loading ? 0.55f : 1f);
+        favoriteButton.setSelected(liked);
+        favoriteButton.setText(currentLikeCount > 0
+                ? getString(R.string.like_button_with_count, currentLikeCount)
+                : getString(R.string.favorite));
+        favoriteButton.setTextColor(color);
+        favoriteButton.setIconTint(ColorStateList.valueOf(color));
     }
 
     private void editQuote() {
@@ -197,6 +261,14 @@ public class QuoteDetailActivity extends AppCompatActivity {
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, shareText);
         startActivity(Intent.createChooser(intent, getString(R.string.share)));
+    }
+
+    private void toggleLike() {
+        if (currentQuote == null || currentQuote.getQuoteId() == null
+                || currentQuote.getQuoteId().trim().isEmpty()) {
+            return;
+        }
+        likeViewModel.toggleLike(currentQuote.getQuoteId());
     }
 
     private String formatCreatedAt(Timestamp timestamp) {

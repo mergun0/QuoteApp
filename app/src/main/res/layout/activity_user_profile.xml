@@ -124,6 +124,13 @@
                 android:layout_weight="1" />
         </LinearLayout>
 
+        <include
+            android:id="@+id/userStatLikes"
+            layout="@layout/item_profile_stat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" />
+
         <LinearLayout
             android:id="@+id/layoutOwnProfileActions"
             android:layout_width="match_parent"

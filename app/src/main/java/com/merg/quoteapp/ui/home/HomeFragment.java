@@ -31,18 +31,22 @@ import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
+import com.merg.quoteapp.viewmodel.LikeViewModel;
 import com.merg.quoteapp.viewmodel.ProfileViewModel;
 import com.merg.quoteapp.viewmodel.QuoteViewModel;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class HomeFragment extends Fragment {
 
     private QuoteAdapter adapter;
     private QuoteViewModel viewModel;
+    private LikeViewModel likeViewModel;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private LinearLayout emptyLayout;
@@ -53,6 +57,9 @@ public class HomeFragment extends Fragment {
     private TextInputEditText searchInput;
     private SwipeRefreshLayout swipeRefreshLayout;
     private final List<Quote> allQuotes = new ArrayList<>();
+    private Map<String, Boolean> renderedLikedStates = new HashMap<>();
+    private Map<String, Boolean> renderedLikeLoadingStates = new HashMap<>();
+    private Map<String, Long> renderedLikeCounts = new HashMap<>();
     private String searchQuery = "";
     private QuoteFilter selectedFilter = QuoteFilter.ALL;
 
@@ -75,9 +82,15 @@ public class HomeFragment extends Fragment {
         setupRecyclerView();
 
         viewModel = new ViewModelProvider(this).get(QuoteViewModel.class);
+        likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
         viewModel.getQuotes().observe(getViewLifecycleOwner(), this::renderQuotes);
         viewModel.getListState().observe(getViewLifecycleOwner(), this::renderListState);
         viewModel.getOperationState().observe(getViewLifecycleOwner(), this::renderOperationState);
+        likeViewModel.getLikedStates().observe(getViewLifecycleOwner(), this::renderLikedStates);
+        likeViewModel.getItemLoadingStates().observe(
+                getViewLifecycleOwner(), this::renderLikeLoadingStates);
+        likeViewModel.getLikeCounts().observe(getViewLifecycleOwner(), this::renderLikeCounts);
+        likeViewModel.getLoadingState().observe(getViewLifecycleOwner(), this::renderLikeState);
         viewModel.loadCurrentUserQuotes();
         setupSearch();
         setupFilters(view);
@@ -123,7 +136,7 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onFavorite(Quote quote) {
-                // Favoriler sonraki sürümde etkinleştirilecek.
+                toggleLike(quote);
             }
 
             @Override
@@ -131,6 +144,7 @@ public class HomeFragment extends Fragment {
                 openQuoteDetail(quote);
             }
         });
+        adapter.setLikeActionsEnabled(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
     }
@@ -140,7 +154,53 @@ public class HomeFragment extends Fragment {
         if (quotes != null) {
             allQuotes.addAll(quotes);
         }
+        if (likeViewModel != null) {
+            likeViewModel.loadLikedStates(allQuotes);
+            likeViewModel.loadLikeCounts(allQuotes);
+        }
         applyFilters();
+    }
+
+    private void renderLikedStates(Map<String, Boolean> likedStates) {
+        if (likedStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : likedStates.entrySet()) {
+            if (!entry.getValue().equals(renderedLikedStates.get(entry.getKey()))) {
+                adapter.updateLikeState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedLikedStates = new HashMap<>(likedStates);
+    }
+
+    private void renderLikeLoadingStates(Map<String, Boolean> loadingStates) {
+        if (loadingStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : loadingStates.entrySet()) {
+            if (!entry.getValue().equals(renderedLikeLoadingStates.get(entry.getKey()))) {
+                adapter.updateLikeLoadingState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedLikeLoadingStates = new HashMap<>(loadingStates);
+    }
+
+    private void renderLikeCounts(Map<String, Long> likeCounts) {
+        if (likeCounts == null) {
+            return;
+        }
+        for (Map.Entry<String, Long> entry : likeCounts.entrySet()) {
+            if (!entry.getValue().equals(renderedLikeCounts.get(entry.getKey()))) {
+                adapter.updateLikeCount(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedLikeCounts = new HashMap<>(likeCounts);
+    }
+
+    private void renderLikeState(QuoteState state) {
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            showStatus(state.getMessage(), true);
+        }
     }
 
     private void applyFilters() {
@@ -302,6 +362,13 @@ public class HomeFragment extends Fragment {
         Intent intent = new Intent(requireContext(), QuoteDetailActivity.class);
         intent.putExtra(QuoteDetailActivity.EXTRA_QUOTE_ID, quote.getQuoteId());
         startActivity(intent);
+    }
+
+    private void toggleLike(Quote quote) {
+        if (quote == null || quote.getQuoteId() == null || quote.getQuoteId().trim().isEmpty()) {
+            return;
+        }
+        likeViewModel.toggleLike(quote.getQuoteId());
     }
 
     private void confirmDelete(Quote quote) {

@@ -1,5 +1,6 @@
 package com.merg.quoteapp.adapter;
 
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,6 +8,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
@@ -39,10 +41,14 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
     private final List<Quote> quotes = new ArrayList<>();
     private final Set<String> revealedSpoilerQuoteIds = new HashSet<>();
+    private final Set<String> likedQuoteIds = new HashSet<>();
+    private final Set<String> likeLoadingQuoteIds = new HashSet<>();
+    private final java.util.Map<String, Long> likeCounts = new java.util.HashMap<>();
     private final QuoteActionListener listener;
     private final boolean showUsername;
     private final boolean restrictManagementToCurrentUser;
     private final String currentUserId;
+    private boolean likeActionsEnabled;
 
     public QuoteAdapter(QuoteActionListener listener) {
         this(listener, false, false, null);
@@ -70,6 +76,66 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         notifyDataSetChanged();
     }
 
+    /**
+     * Enables or disables like button interaction for this adapter.
+     *
+     * @param enabled true when like button should call the listener
+     */
+    public void setLikeActionsEnabled(boolean enabled) {
+        likeActionsEnabled = enabled;
+        notifyDataSetChanged();
+    }
+
+    /**
+     * Updates liked state for one quote item.
+     *
+     * @param quoteId quote id to update
+     * @param liked true if the quote is liked by current user
+     */
+    public void updateLikeState(String quoteId, boolean liked) {
+        if (quoteId == null || quoteId.trim().isEmpty()) {
+            return;
+        }
+        if (liked) {
+            likedQuoteIds.add(quoteId);
+        } else {
+            likedQuoteIds.remove(quoteId);
+        }
+        notifyQuoteChanged(quoteId);
+    }
+
+    /**
+     * Updates loading state for one quote like button.
+     *
+     * @param quoteId quote id to update
+     * @param loading true while a like request is running
+     */
+    public void updateLikeLoadingState(String quoteId, boolean loading) {
+        if (quoteId == null || quoteId.trim().isEmpty()) {
+            return;
+        }
+        if (loading) {
+            likeLoadingQuoteIds.add(quoteId);
+        } else {
+            likeLoadingQuoteIds.remove(quoteId);
+        }
+        notifyQuoteChanged(quoteId);
+    }
+
+    /**
+     * Updates like count for one quote item.
+     *
+     * @param quoteId quote id to update
+     * @param count total like count
+     */
+    public void updateLikeCount(String quoteId, long count) {
+        if (quoteId == null || quoteId.trim().isEmpty()) {
+            return;
+        }
+        likeCounts.put(quoteId, count);
+        notifyQuoteChanged(quoteId);
+    }
+
     @NonNull
     @Override
     public QuoteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -85,8 +151,24 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                 && revealedSpoilerQuoteIds.contains(quote.getQuoteId());
         boolean canManage = !restrictManagementToCurrentUser
                 || (currentUserId != null && currentUserId.equals(quote.getUserId()));
+        boolean liked = quote.getQuoteId() != null && likedQuoteIds.contains(quote.getQuoteId());
+        boolean likeLoading = quote.getQuoteId() != null
+                && likeLoadingQuoteIds.contains(quote.getQuoteId());
+        long likeCount = quote.getQuoteId() == null || likeCounts.get(quote.getQuoteId()) == null
+                ? 0L : likeCounts.get(quote.getQuoteId());
         holder.bind(quote, listener, spoilerRevealed, showUsername, canManage,
+                liked, likeLoading, likeCount, likeActionsEnabled,
                 () -> revealSpoiler(holder, quote));
+    }
+
+    private void notifyQuoteChanged(String quoteId) {
+        for (int index = 0; index < quotes.size(); index++) {
+            Quote quote = quotes.get(index);
+            if (quoteId.equals(quote.getQuoteId())) {
+                notifyItemChanged(index);
+                return;
+            }
+        }
     }
 
     private void revealSpoiler(QuoteViewHolder holder, Quote quote) {
@@ -147,7 +229,9 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         }
 
         void bind(Quote quote, QuoteActionListener listener, boolean spoilerRevealed,
-                  boolean showUsername, boolean canManage, Runnable revealSpoiler) {
+                  boolean showUsername, boolean canManage, boolean liked,
+                  boolean likeLoading, long likeCount, boolean likeActionsEnabled,
+                  Runnable revealSpoiler) {
             typeText.setText(safe(quote.getType()).toUpperCase());
             usernameText.setText("@" + safe(quote.getUsername()));
             userContainer.setVisibility(showUsername ? View.VISIBLE : View.GONE);
@@ -191,9 +275,26 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             editButton.setVisibility(canManage ? View.VISIBLE : View.GONE);
             deleteButton.setVisibility(canManage ? View.VISIBLE : View.GONE);
             shareButton.setOnClickListener(view -> listener.onShare(quote));
-            favoriteButton.setEnabled(false);
-            favoriteButton.setOnClickListener(view -> listener.onFavorite(quote));
+            renderFavoriteButton(liked, likeLoading, likeCount, likeActionsEnabled);
+            favoriteButton.setOnClickListener(likeActionsEnabled
+                    ? view -> listener.onFavorite(quote)
+                    : null);
             itemView.setOnClickListener(view -> listener.onOpen(quote));
+        }
+
+        private void renderFavoriteButton(boolean liked, boolean likeLoading,
+                                          long likeCount, boolean likeActionsEnabled) {
+            int color = ContextCompat.getColor(itemView.getContext(), liked
+                    ? R.color.quote_status_error : R.color.quote_text_secondary);
+            ColorStateList tint = ColorStateList.valueOf(color);
+            favoriteButton.setEnabled(likeActionsEnabled && !likeLoading);
+            favoriteButton.setAlpha(likeLoading ? 0.55f : 1f);
+            favoriteButton.setSelected(liked);
+            favoriteButton.setText(likeCount > 0
+                    ? itemView.getContext().getString(R.string.like_button_with_count, likeCount)
+                    : itemView.getContext().getString(R.string.favorite));
+            favoriteButton.setTextColor(color);
+            favoriteButton.setIconTint(tint);
         }
 
         private void setOptionalText(TextView view, String value, String displayValue) {

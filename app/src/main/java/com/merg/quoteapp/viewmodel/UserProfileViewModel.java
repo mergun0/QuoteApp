@@ -105,6 +105,7 @@ public class UserProfileViewModel extends ViewModel {
                                 source.getMovieQuotes(),
                                 source.getSeriesQuotes(),
                                 source.getBookQuotes(),
+                                source.getTotalLikes(),
                                 combined));
                         hasMore.setValue(page.hasMore());
                         loadMoreState.setValue(QuoteState.success(null));

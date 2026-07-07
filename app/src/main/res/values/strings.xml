@@ -67,6 +67,7 @@
     <string name="profile_movies">Film</string>
     <string name="profile_series">Dizi</string>
     <string name="profile_books">Kitap</string>
+    <string name="profile_likes">Alınan Beğeni</string>
     <string name="logout">Çıkış Yap</string>
     <string name="profile_loading">Profil yükleniyor…</string>
     <string name="home_greeting">Merhaba, %1$s 👋</string>
@@ -80,7 +81,8 @@
     <string name="filter_spoiler">🚨 Spoiler</string>
     <string name="no_filter_results">Aramana uygun alıntı bulunamadı.</string>
     <string name="no_filter_results_detail">Arama metnini veya seçili filtreyi değiştirmeyi dene.</string>
-    <string name="favorite">Favori</string>
+    <string name="favorite">Beğen</string>
+    <string name="like_button_with_count">Beğen · %1$d</string>
     <string name="share">Paylaş</string>
     <string name="discover_subtitle">Diğer kullanıcıların paylaştığı alıntıları keşfet.</string>
     <string name="search_discover">Keşfet akışında ara…</string>

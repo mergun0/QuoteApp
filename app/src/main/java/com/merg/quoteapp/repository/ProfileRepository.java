@@ -5,6 +5,10 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.merg.quoteapp.model.ProfileStats;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 public class ProfileRepository {
 
     public interface ProfileCallback {
@@ -15,6 +19,7 @@ public class ProfileRepository {
 
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+    private final LikeRepository likeRepository = LikeRepository.getInstance();
 
     public void getProfile(ProfileCallback callback) {
         FirebaseUser currentUser = auth.getCurrentUser();
@@ -50,8 +55,14 @@ public class ProfileRepository {
                     int movieCount = 0;
                     int seriesCount = 0;
                     int bookCount = 0;
+                    List<String> quoteIds = new ArrayList<>();
 
                     for (int index = 0; index < snapshot.size(); index++) {
+                        String quoteId = snapshot.getDocuments().get(index).getString("quoteId");
+                        if (quoteId == null || quoteId.trim().isEmpty()) {
+                            quoteId = snapshot.getDocuments().get(index).getId();
+                        }
+                        quoteIds.add(quoteId);
                         String type = snapshot.getDocuments().get(index).getString("type");
                         if ("Film".equals(type)) {
                             movieCount++;
@@ -62,13 +73,31 @@ public class ProfileRepository {
                         }
                     }
 
-                    callback.onSuccess(new ProfileStats(
-                            username,
-                            email,
-                            snapshot.size(),
-                            movieCount,
-                            seriesCount,
-                            bookCount));
+                    int finalMovieCount = movieCount;
+                    int finalSeriesCount = seriesCount;
+                    int finalBookCount = bookCount;
+                    likeRepository.getLikeCounts(quoteIds, new LikeRepository.LikeCountsCallback() {
+                        @Override
+                        public void onSuccess(Map<String, Long> counts) {
+                            int totalLikes = 0;
+                            for (Long count : counts.values()) {
+                                totalLikes += count == null ? 0 : count.intValue();
+                            }
+                            callback.onSuccess(new ProfileStats(
+                                    username,
+                                    email,
+                                    snapshot.size(),
+                                    finalMovieCount,
+                                    finalSeriesCount,
+                                    finalBookCount,
+                                    totalLikes));
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            callback.onError(message);
+                        }
+                    });
                 })
                 .addOnFailureListener(error ->
                         callback.onError("Alıntı istatistikleri yüklenemedi."));

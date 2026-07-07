@@ -8,15 +8,17 @@ public class ProfileStats {
     private final int movieQuotes;
     private final int seriesQuotes;
     private final int bookQuotes;
+    private final int totalLikes;
 
     public ProfileStats(String username, String email, int totalQuotes,
-                        int movieQuotes, int seriesQuotes, int bookQuotes) {
+                        int movieQuotes, int seriesQuotes, int bookQuotes, int totalLikes) {
         this.username = username;
         this.email = email;
         this.totalQuotes = totalQuotes;
         this.movieQuotes = movieQuotes;
         this.seriesQuotes = seriesQuotes;
         this.bookQuotes = bookQuotes;
+        this.totalLikes = totalLikes;
     }
 
     public String getUsername() {
@@ -41,5 +43,9 @@ public class ProfileStats {
 
     public int getBookQuotes() {
         return bookQuotes;
+    }
+
+    public int getTotalLikes() {
+        return totalLikes;
     }
 }

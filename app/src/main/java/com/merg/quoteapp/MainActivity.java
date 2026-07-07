@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
                 fragment = new ProfileFragment();
             } else {
                 fragment = new HomeFragment();
-            }
+            }   
             showFragment(fragment);
             return true;
         });

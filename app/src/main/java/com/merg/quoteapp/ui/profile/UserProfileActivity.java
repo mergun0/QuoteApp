@@ -25,16 +25,20 @@ import com.merg.quoteapp.model.UserProfileData;
 import com.merg.quoteapp.ui.auth.LoginActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
+import com.merg.quoteapp.viewmodel.LikeViewModel;
 import com.merg.quoteapp.viewmodel.UserProfileViewModel;
 
+import java.util.HashMap;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.Map;
 
 public class UserProfileActivity extends AppCompatActivity {
 
     public static final String EXTRA_USER_ID = "userId";
 
     private UserProfileViewModel viewModel;
+    private LikeViewModel likeViewModel;
     private QuoteAdapter adapter;
     private LinearLayout contentLayout;
     private LinearLayout ownActions;
@@ -49,6 +53,7 @@ public class UserProfileActivity extends AppCompatActivity {
     private String profileUserId;
     private boolean ownProfile;
     private boolean firstResume = true;
+    private Map<String, Long> renderedLikeCounts = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,11 +71,13 @@ public class UserProfileActivity extends AppCompatActivity {
         setupActions();
 
         viewModel = new ViewModelProvider(this).get(UserProfileViewModel.class);
+        likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
         viewModel.getProfile().observe(this, this::renderProfile);
         viewModel.getState().observe(this, this::renderState);
         viewModel.getOperationState().observe(this, this::renderOperationState);
         viewModel.getLoadMoreState().observe(this, this::renderLoadMoreState);
         viewModel.getHasMore().observe(this, this::renderHasMore);
+        likeViewModel.getLikeCounts().observe(this, this::renderLikeCounts);
         viewModel.loadProfile(profileUserId);
     }
 
@@ -175,8 +182,11 @@ public class UserProfileActivity extends AppCompatActivity {
                 R.string.profile_series, profile.getSeriesQuotes());
         setStat(findViewById(R.id.userStatBooks),
                 R.string.profile_books, profile.getBookQuotes());
+        setStat(findViewById(R.id.userStatLikes),
+                R.string.profile_likes, profile.getTotalLikes());
 
         adapter.submitList(profile.getQuotes());
+        likeViewModel.loadLikeCounts(profile.getQuotes());
         boolean empty = profile.getQuotes() == null || profile.getQuotes().isEmpty();
         recyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
         emptyText.setVisibility(empty ? View.VISIBLE : View.GONE);
@@ -245,6 +255,18 @@ public class UserProfileActivity extends AppCompatActivity {
                 && !current.getQuotes().isEmpty();
         noMoreText.setVisibility(Boolean.FALSE.equals(hasMore) && hasQuotes
                 ? View.VISIBLE : View.GONE);
+    }
+
+    private void renderLikeCounts(Map<String, Long> likeCounts) {
+        if (likeCounts == null) {
+            return;
+        }
+        for (Map.Entry<String, Long> entry : likeCounts.entrySet()) {
+            if (!entry.getValue().equals(renderedLikeCounts.get(entry.getKey()))) {
+                adapter.updateLikeCount(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedLikeCounts = new HashMap<>(likeCounts);
     }
 
     private void editQuote(Quote quote) {
