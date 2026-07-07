@@ -8,6 +8,9 @@ public class User {
     private String username;
     private String email;
     private Timestamp createdAt;
+    private int validReports;
+    private int invalidReports;
+    private Timestamp reportRestrictionUntil;
 
     public User() {
         // Required by Firestore.
@@ -50,5 +53,29 @@ public class User {
 
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getValidReports() {
+        return validReports;
+    }
+
+    public void setValidReports(int validReports) {
+        this.validReports = validReports;
+    }
+
+    public int getInvalidReports() {
+        return invalidReports;
+    }
+
+    public void setInvalidReports(int invalidReports) {
+        this.invalidReports = invalidReports;
+    }
+
+    public Timestamp getReportRestrictionUntil() {
+        return reportRestrictionUntil;
+    }
+
+    public void setReportRestrictionUntil(Timestamp reportRestrictionUntil) {
+        this.reportRestrictionUntil = reportRestrictionUntil;
     }
 }

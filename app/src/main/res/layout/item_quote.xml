@@ -8,9 +8,12 @@
     android:layout_marginTop="8dp"
     android:layout_marginEnd="20dp"
     android:layout_marginBottom="8dp"
+    android:clickable="true"
+    android:focusable="true"
     app:cardBackgroundColor="@color/quote_surface"
     app:cardCornerRadius="18dp"
     app:cardElevation="1dp"
+    app:rippleColor="@color/bottom_nav_ripple"
     app:strokeColor="#E2D8DC"
     app:strokeWidth="1dp">
 
@@ -213,34 +216,18 @@
                 android:text="@string/share"
                 app:icon="@drawable/ic_share"
                 app:iconGravity="textStart" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonEditQuote"
+                android:id="@+id/buttonMoreQuote"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="0dp"
+                android:layout_width="48dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/edit"
-                app:icon="@drawable/ic_edit"
-                app:iconGravity="textStart" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonDeleteQuote"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/delete"
-                android:textColor="@color/quote_status_error"
-                app:icon="@drawable/ic_delete"
+                android:contentDescription="@string/more_actions"
+                android:minWidth="0dp"
+                android:text=""
+                app:icon="@drawable/ic_more_vert"
                 app:iconGravity="textStart"
-                app:iconTint="@color/quote_status_error" />
+                app:iconTint="@color/quote_text_secondary" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

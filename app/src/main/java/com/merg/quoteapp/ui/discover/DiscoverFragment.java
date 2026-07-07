@@ -29,8 +29,10 @@ import com.merg.quoteapp.model.QuoteState;
 import com.merg.quoteapp.ui.profile.UserProfileActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
+import com.merg.quoteapp.utils.ReportBottomSheetHelper;
 import com.merg.quoteapp.viewmodel.DiscoverViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
+import com.merg.quoteapp.viewmodel.ReportViewModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,6 +54,7 @@ public class DiscoverFragment extends Fragment {
     private final List<Quote> allQuotes = new ArrayList<>();
     private DiscoverViewModel viewModel;
     private LikeViewModel likeViewModel;
+    private ReportViewModel reportViewModel;
     private QuoteAdapter adapter;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -81,6 +84,7 @@ public class DiscoverFragment extends Fragment {
 
         viewModel = new ViewModelProvider(this).get(DiscoverViewModel.class);
         likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
+        reportViewModel = new ViewModelProvider(this).get(ReportViewModel.class);
         viewModel.getQuotes().observe(getViewLifecycleOwner(), this::renderQuotes);
         viewModel.getListState().observe(getViewLifecycleOwner(), this::renderListState);
         viewModel.getOperationState().observe(
@@ -90,6 +94,7 @@ public class DiscoverFragment extends Fragment {
                 getViewLifecycleOwner(), this::renderLikeLoadingStates);
         likeViewModel.getLikeCounts().observe(getViewLifecycleOwner(), this::renderLikeCounts);
         likeViewModel.getLoadingState().observe(getViewLifecycleOwner(), this::renderLikeState);
+        observeReportState();
         viewModel.loadQuotes();
 
         swipeRefreshLayout.setColorSchemeResources(
@@ -142,8 +147,14 @@ public class DiscoverFragment extends Fragment {
             public void onUserProfile(String userId) {
                 openUserProfile(userId);
             }
+
+            @Override
+            public void onReport(Quote quote) {
+                showReportSheet(quote);
+            }
         }, true, currentUserId);
         adapter.setLikeActionsEnabled(true);
+        adapter.setReportActionsEnabled(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
     }
@@ -239,6 +250,38 @@ public class DiscoverFragment extends Fragment {
         if (state.getStatus() == QuoteState.Status.ERROR) {
             showStatus(state.getMessage(), true);
         }
+    }
+
+    private void observeReportState() {
+        reportViewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
+            if (Boolean.TRUE.equals(loading)) {
+                showStatus(getString(R.string.operation_in_progress), false);
+            }
+        });
+        reportViewModel.getSuccess().observe(getViewLifecycleOwner(), success -> {
+            if (Boolean.TRUE.equals(success)) {
+                showStatus(getString(R.string.report_sent), false);
+                reportViewModel.clearResultStates();
+            }
+        });
+        reportViewModel.getAlreadyReported().observe(getViewLifecycleOwner(), already -> {
+            if (Boolean.TRUE.equals(already)) {
+                showStatus(getString(R.string.report_already_sent), true);
+                reportViewModel.clearResultStates();
+            }
+        });
+        reportViewModel.getDailyLimitReached().observe(getViewLifecycleOwner(), reached -> {
+            if (Boolean.TRUE.equals(reached)) {
+                showStatus(getString(R.string.report_daily_limit_reached), true);
+                reportViewModel.clearResultStates();
+            }
+        });
+        reportViewModel.getError().observe(getViewLifecycleOwner(), message -> {
+            if (message != null && !message.trim().isEmpty()) {
+                showStatus(message, true);
+                reportViewModel.clearResultStates();
+            }
+        });
     }
 
     private void applyFilters() {
@@ -373,6 +416,11 @@ public class DiscoverFragment extends Fragment {
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, shareText);
         startActivity(Intent.createChooser(intent, getString(R.string.share)));
+    }
+
+    private void showReportSheet(Quote quote) {
+        ReportBottomSheetHelper.show(requireContext(),
+                (reason, description) -> reportViewModel.submitReport(quote, reason, description));
     }
 
     private void showStatus(String message, boolean error) {

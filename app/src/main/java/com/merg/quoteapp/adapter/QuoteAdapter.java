@@ -1,10 +1,15 @@
 package com.merg.quoteapp.adapter;
 
 import android.content.res.ColorStateList;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -32,6 +37,9 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
         void onFavorite(Quote quote);
 
+        default void onReport(Quote quote) {
+        }
+
         default void onOpen(Quote quote) {
         }
 
@@ -49,6 +57,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
     private final boolean restrictManagementToCurrentUser;
     private final String currentUserId;
     private boolean likeActionsEnabled;
+    private boolean reportActionsEnabled;
 
     public QuoteAdapter(QuoteActionListener listener) {
         this(listener, false, false, null);
@@ -83,6 +92,16 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
      */
     public void setLikeActionsEnabled(boolean enabled) {
         likeActionsEnabled = enabled;
+        notifyDataSetChanged();
+    }
+
+    /**
+     * Enables or disables report button visibility for this adapter.
+     *
+     * @param enabled true when report button should be visible
+     */
+    public void setReportActionsEnabled(boolean enabled) {
+        reportActionsEnabled = enabled;
         notifyDataSetChanged();
     }
 
@@ -158,7 +177,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                 ? 0L : likeCounts.get(quote.getQuoteId());
         holder.bind(quote, listener, spoilerRevealed, showUsername, canManage,
                 liked, likeLoading, likeCount, likeActionsEnabled,
-                () -> revealSpoiler(holder, quote));
+                reportActionsEnabled, () -> revealSpoiler(holder, quote));
     }
 
     private void notifyQuoteChanged(String quoteId) {
@@ -189,6 +208,13 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
     static class QuoteViewHolder extends RecyclerView.ViewHolder {
 
+        private static final int MENU_COPY = 1;
+        private static final int MENU_REPORT = 2;
+        private static final int MENU_SAVE = 3;
+        private static final int MENU_BLOCK_USER = 4;
+        private static final int MENU_EDIT = 5;
+        private static final int MENU_DELETE = 6;
+
         private final TextView typeText;
         private final TextView titleText;
         private final TextView usernameText;
@@ -202,10 +228,9 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         private final LinearLayout quoteTextContainer;
         private final LinearLayout spoilerHiddenContainer;
         private final MaterialButton showSpoilerButton;
-        private final MaterialButton editButton;
-        private final MaterialButton deleteButton;
         private final MaterialButton shareButton;
         private final MaterialButton favoriteButton;
+        private final MaterialButton moreButton;
 
         QuoteViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -222,16 +247,15 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             quoteTextContainer = itemView.findViewById(R.id.quoteTextContainer);
             spoilerHiddenContainer = itemView.findViewById(R.id.spoilerHiddenContainer);
             showSpoilerButton = itemView.findViewById(R.id.showSpoilerButton);
-            editButton = itemView.findViewById(R.id.buttonEditQuote);
-            deleteButton = itemView.findViewById(R.id.buttonDeleteQuote);
             shareButton = itemView.findViewById(R.id.buttonShareQuote);
             favoriteButton = itemView.findViewById(R.id.buttonFavoriteQuote);
+            moreButton = itemView.findViewById(R.id.buttonMoreQuote);
         }
 
         void bind(Quote quote, QuoteActionListener listener, boolean spoilerRevealed,
                   boolean showUsername, boolean canManage, boolean liked,
                   boolean likeLoading, long likeCount, boolean likeActionsEnabled,
-                  Runnable revealSpoiler) {
+                  boolean reportActionsEnabled, Runnable revealSpoiler) {
             typeText.setText(safe(quote.getType()).toUpperCase());
             usernameText.setText("@" + safe(quote.getUsername()));
             userContainer.setVisibility(showUsername ? View.VISIBLE : View.GONE);
@@ -270,16 +294,95 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                 tagsText.setVisibility(View.VISIBLE);
             }
 
-            editButton.setOnClickListener(view -> listener.onEdit(quote));
-            deleteButton.setOnClickListener(view -> listener.onDelete(quote));
-            editButton.setVisibility(canManage ? View.VISIBLE : View.GONE);
-            deleteButton.setVisibility(canManage ? View.VISIBLE : View.GONE);
             shareButton.setOnClickListener(view -> listener.onShare(quote));
             renderFavoriteButton(liked, likeLoading, likeCount, likeActionsEnabled);
             favoriteButton.setOnClickListener(likeActionsEnabled
-                    ? view -> listener.onFavorite(quote)
+                    ? view -> animateLikeClick(view, () -> listener.onFavorite(quote))
                     : null);
+            moreButton.setOnClickListener(view ->
+                    animateOverflowClick(view, () -> showOverflowMenu(
+                            quote, listener, canManage, reportActionsEnabled, showUsername)));
             itemView.setOnClickListener(view -> listener.onOpen(quote));
+        }
+
+        private void showOverflowMenu(Quote quote, QuoteActionListener listener,
+                                      boolean canManage, boolean reportActionsEnabled,
+                                      boolean showUsername) {
+            PopupMenu popupMenu = new PopupMenu(itemView.getContext(), moreButton);
+            Menu menu = popupMenu.getMenu();
+            menu.add(Menu.NONE, MENU_COPY, Menu.NONE, R.string.copy_quote);
+            if (reportActionsEnabled) {
+                menu.add(Menu.NONE, MENU_REPORT, Menu.NONE, R.string.report_quote_menu);
+            }
+            menu.add(Menu.NONE, MENU_SAVE, Menu.NONE, R.string.save_coming_soon)
+                    .setEnabled(false);
+            if (showUsername) {
+                menu.add(Menu.NONE, MENU_BLOCK_USER, Menu.NONE, R.string.block_user_coming_soon)
+                        .setEnabled(false);
+            }
+            if (canManage) {
+                menu.add(Menu.NONE, MENU_EDIT, Menu.NONE, R.string.edit);
+                menu.add(Menu.NONE, MENU_DELETE, Menu.NONE, R.string.delete);
+            }
+            popupMenu.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == MENU_COPY) {
+                    copyQuote(quote);
+                    return true;
+                } else if (item.getItemId() == MENU_REPORT) {
+                    listener.onReport(quote);
+                    return true;
+                } else if (item.getItemId() == MENU_EDIT) {
+                    listener.onEdit(quote);
+                    return true;
+                } else if (item.getItemId() == MENU_DELETE) {
+                    listener.onDelete(quote);
+                    return true;
+                }
+                return true;
+            });
+            popupMenu.show();
+        }
+
+        private void copyQuote(Quote quote) {
+            ClipboardManager clipboardManager = (ClipboardManager) itemView.getContext()
+                    .getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboardManager == null) {
+                return;
+            }
+            String copyText = "“" + safe(quote.getText()) + "”\n"
+                    + safe(quote.getTitle()) + " — " + safe(quote.getAuthor());
+            clipboardManager.setPrimaryClip(ClipData.newPlainText(
+                    itemView.getContext().getString(R.string.copy_quote), copyText));
+        }
+
+        private void animateLikeClick(View view, Runnable action) {
+            view.animate()
+                    .scaleX(0.92f)
+                    .scaleY(0.92f)
+                    .setDuration(70L)
+                    .withEndAction(() -> view.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(110L)
+                            .withEndAction(action)
+                            .start())
+                    .start();
+        }
+
+        private void animateOverflowClick(View view, Runnable action) {
+            view.animate()
+                    .rotationBy(90f)
+                    .alpha(0.72f)
+                    .setDuration(90L)
+                    .withEndAction(() -> {
+                        action.run();
+                        view.animate()
+                                .rotationBy(-90f)
+                                .alpha(1f)
+                                .setDuration(120L)
+                                .start();
+                    })
+                    .start();
         }
 
         private void renderFavoriteButton(boolean liked, boolean likeLoading,

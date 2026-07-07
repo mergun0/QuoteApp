@@ -226,6 +226,19 @@
                 app:cornerRadius="15dp"
                 app:icon="@drawable/ic_share" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonDetailReport"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
+                android:text="@string/report"
+                android:textColor="@color/quote_status_error"
+                app:cornerRadius="15dp"
+                app:icon="@drawable/ic_report"
+                app:iconTint="@color/quote_status_error"
+                app:strokeColor="@color/quote_status_error" />
+
             <LinearLayout
                 android:id="@+id/layoutDetailOwnerActions"
                 android:layout_width="match_parent"

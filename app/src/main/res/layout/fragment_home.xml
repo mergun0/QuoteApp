@@ -164,7 +164,10 @@
         android:layout_marginEnd="28dp"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="24dp"
+        android:paddingStart="28dp"
+        android:paddingTop="32dp"
+        android:paddingEnd="28dp"
+        android:paddingBottom="32dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@id/swipeRefreshQuotes"
         app:layout_constraintEnd_toEndOf="parent"
@@ -173,9 +176,11 @@
         tools:visibility="visible">
 
         <ImageView
-            android:layout_width="72dp"
-            android:layout_height="72dp"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:background="@drawable/bg_profile_avatar"
             android:contentDescription="@string/no_quotes"
+            android:padding="22dp"
             android:src="@drawable/ic_empty_quotes"
             app:tint="@color/quote_primary_light" />
 
@@ -187,15 +192,16 @@
             android:gravity="center"
             android:text="@string/no_quotes"
             android:textColor="@color/quote_text_primary"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/textEmptyQuotesDescription"
             android:layout_width="280dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:gravity="center"
+            android:lineSpacingExtra="3dp"
             android:text="@string/no_quotes_detail"
             android:textColor="@color/quote_text_secondary"
             android:textSize="14sp" />

@@ -21,8 +21,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
+import com.merg.quoteapp.utils.ReportBottomSheetHelper;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
 import com.merg.quoteapp.viewmodel.QuoteDetailViewModel;
+import com.merg.quoteapp.viewmodel.ReportViewModel;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -35,6 +37,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
 
     private QuoteDetailViewModel viewModel;
     private LikeViewModel likeViewModel;
+    private ReportViewModel reportViewModel;
     private Quote currentQuote;
     private ScrollView contentScroll;
     private ProgressBar progressBar;
@@ -59,6 +62,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         String quoteId = getIntent().getStringExtra(EXTRA_QUOTE_ID);
         viewModel = new ViewModelProvider(this).get(QuoteDetailViewModel.class);
         likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
+        reportViewModel = new ViewModelProvider(this).get(ReportViewModel.class);
         viewModel.getQuote().observe(this, this::renderQuote);
         viewModel.getState().observe(this, this::renderLoadState);
         viewModel.getDeleteState().observe(this, this::renderDeleteState);
@@ -66,6 +70,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         likeViewModel.getItemLoadingStates().observe(this, this::renderLikeLoadingState);
         likeViewModel.getLikeCount().observe(this, this::renderLikeCount);
         likeViewModel.getLoadingState().observe(this, this::renderLikeState);
+        observeReportState();
         viewModel.loadQuote(quoteId);
     }
 
@@ -86,6 +91,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         });
         favoriteButton.setOnClickListener(view -> toggleLike());
         findViewById(R.id.buttonDetailShare).setOnClickListener(view -> shareQuote());
+        findViewById(R.id.buttonDetailReport).setOnClickListener(view -> showReportSheet());
         findViewById(R.id.buttonDetailEdit).setOnClickListener(view -> editQuote());
         deleteButton.setOnClickListener(view -> confirmDelete());
     }
@@ -195,6 +201,38 @@ public class QuoteDetailActivity extends AppCompatActivity {
         }
     }
 
+    private void observeReportState() {
+        reportViewModel.getLoading().observe(this, loading -> {
+            if (Boolean.TRUE.equals(loading)) {
+                showStatus(getString(R.string.operation_in_progress), false);
+            }
+        });
+        reportViewModel.getSuccess().observe(this, success -> {
+            if (Boolean.TRUE.equals(success)) {
+                showStatus(getString(R.string.report_sent), false);
+                reportViewModel.clearResultStates();
+            }
+        });
+        reportViewModel.getAlreadyReported().observe(this, already -> {
+            if (Boolean.TRUE.equals(already)) {
+                showStatus(getString(R.string.report_already_sent), true);
+                reportViewModel.clearResultStates();
+            }
+        });
+        reportViewModel.getDailyLimitReached().observe(this, reached -> {
+            if (Boolean.TRUE.equals(reached)) {
+                showStatus(getString(R.string.report_daily_limit_reached), true);
+                reportViewModel.clearResultStates();
+            }
+        });
+        reportViewModel.getError().observe(this, message -> {
+            if (message != null && !message.trim().isEmpty()) {
+                showStatus(message, true);
+                reportViewModel.clearResultStates();
+            }
+        });
+    }
+
     private void renderLikeCount(Long count) {
         currentLikeCount = count == null ? 0L : count;
         boolean liked = false;
@@ -269,6 +307,15 @@ public class QuoteDetailActivity extends AppCompatActivity {
             return;
         }
         likeViewModel.toggleLike(currentQuote.getQuoteId());
+    }
+
+    private void showReportSheet() {
+        if (currentQuote == null) {
+            return;
+        }
+        ReportBottomSheetHelper.show(this,
+                (reason, description) ->
+                        reportViewModel.submitReport(currentQuote, reason, description));
     }
 
     private String formatCreatedAt(Timestamp timestamp) {

@@ -41,8 +41,8 @@
     <string name="quote_saved">Alıntı başarıyla paylaşıldı.</string>
     <string name="quote_updated">Alıntı başarıyla güncellendi.</string>
     <string name="quote_deleted">Alıntı silindi.</string>
-    <string name="no_quotes">Henüz bir alıntı paylaşmadın.</string>
-    <string name="no_quotes_detail">İlk alıntını ekleyerek koleksiyonunu oluşturmaya başla.</string>
+    <string name="no_quotes">Koleksiyonun henüz boş.</string>
+    <string name="no_quotes_detail">Seni etkileyen ilk alıntıyı ekle; burası zamanla küçük bir kişisel arşive dönüşsün.</string>
     <string name="loading_quotes">Alıntılar yükleniyor…</string>
     <string name="spoiler_warning">SPOILER</string>
     <string name="spoiler_hidden_message">Spoiler içeriyor</string>
@@ -57,7 +57,7 @@
     <string name="nav_discover">Keşfet</string>
     <string name="nav_favorites">Favoriler</string>
     <string name="nav_profile">Profil</string>
-    <string name="discover_title">Keşfet</string>
+    <string name="discover_title">Topluluk Alıntıları</string>
     <string name="coming_soon">Yakında…</string>
     <string name="favorites_title">Favoriler</string>
     <string name="favorites_empty">Henüz favori alıntın yok.</string>
@@ -84,10 +84,24 @@
     <string name="favorite">Beğen</string>
     <string name="like_button_with_count">Beğen · %1$d</string>
     <string name="share">Paylaş</string>
-    <string name="discover_subtitle">Diğer kullanıcıların paylaştığı alıntıları keşfet.</string>
+    <string name="more_actions">Diğer işlemler</string>
+    <string name="copy_quote">Copy Quote</string>
+    <string name="report_quote_menu">Report Quote</string>
+    <string name="save_coming_soon">Save (Soon)</string>
+    <string name="block_user_coming_soon">Block User (Soon)</string>
+    <string name="report">Report</string>
+    <string name="report_quote_title">Report Quote</string>
+    <string name="report_quote_subtitle">Tell us why this quote should be reviewed.</string>
+    <string name="report_description_hint">Optional description</string>
+    <string name="submit_report">Submit Report</string>
+    <string name="report_sent">Report sent. Thank you for helping keep QuoteApp safe.</string>
+    <string name="report_already_sent">You have already reported this quote.</string>
+    <string name="report_daily_limit_reached">You have reached today\'s report limit.</string>
+    <string name="report_reason_other">Other</string>
+    <string name="discover_subtitle">Yeni sesler, yeni hikâyeler ve başkalarının aklında kalan cümleleri keşfet.</string>
     <string name="search_discover">Keşfet akışında ara…</string>
-    <string name="discover_empty">Henüz keşfedilecek alıntı yok.</string>
-    <string name="discover_empty_detail">İlk paylaşımı sen yapabilirsin.</string>
+    <string name="discover_empty">Topluluk akışı şimdilik sessiz.</string>
+    <string name="discover_empty_detail">İlk paylaşımı sen yapabilir ya da biraz sonra tekrar keşfe çıkabilirsin.</string>
     <string name="discover_community">TOPLULUK AKIŞI</string>
     <string name="quote_detail_title">Alıntı Detayı</string>
     <string name="show_spoiler_detail">Spoileri Göster</string>
@@ -107,5 +121,14 @@
         <item>Film</item>
         <item>Dizi</item>
         <item>Kitap</item>
+    </string-array>
+
+    <string-array name="report_reasons">
+        <item>Spam</item>
+        <item>Hate Speech</item>
+        <item>Offensive Content</item>
+        <item>Wrong Category</item>
+        <item>Copyright</item>
+        <item>Other</item>
     </string-array>
 </resources>
