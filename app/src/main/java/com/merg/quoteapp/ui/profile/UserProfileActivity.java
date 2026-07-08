@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,6 +18,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.adapter.AchievementPreviewAdapter;
 import com.merg.quoteapp.adapter.QuoteAdapter;
@@ -51,6 +53,7 @@ public class UserProfileActivity extends AppCompatActivity {
     private AchievementViewModel achievementViewModel;
     private QuoteAdapter adapter;
     private AchievementPreviewAdapter achievementAdapter;
+    private NestedScrollView scrollView;
     private LinearLayout contentLayout;
     private LinearLayout ownActions;
     private View followButton;
@@ -69,6 +72,9 @@ public class UserProfileActivity extends AppCompatActivity {
     private String profileUserId;
     private boolean ownProfile;
     private boolean firstResume = true;
+    private boolean loadMoreRequested;
+    private Map<String, Boolean> renderedLikedStates = new HashMap<>();
+    private Map<String, Boolean> renderedLikeLoadingStates = new HashMap<>();
     private Map<String, Long> renderedLikeCounts = new HashMap<>();
     private List<Achievement> currentAchievements = new ArrayList<>();
     private List<UserAchievement> currentUserAchievements = new ArrayList<>();
@@ -86,6 +92,7 @@ public class UserProfileActivity extends AppCompatActivity {
         bindViews();
         setupToolbar();
         setupRecyclerView(currentUserId);
+        setupScrollPagination();
         setupAchievementPreview();
         setupActions();
 
@@ -98,7 +105,10 @@ public class UserProfileActivity extends AppCompatActivity {
         viewModel.getOperationState().observe(this, this::renderOperationState);
         viewModel.getLoadMoreState().observe(this, this::renderLoadMoreState);
         viewModel.getHasMore().observe(this, this::renderHasMore);
+        likeViewModel.getLikedStates().observe(this, this::renderLikedStates);
+        likeViewModel.getItemLoadingStates().observe(this, this::renderLikeLoadingStates);
         likeViewModel.getLikeCounts().observe(this, this::renderLikeCounts);
+        likeViewModel.getLoadingState().observe(this, this::renderLikeState);
         observeAchievementState();
         viewModel.loadProfile(profileUserId);
         loadAchievementState();
@@ -110,11 +120,13 @@ public class UserProfileActivity extends AppCompatActivity {
         if (firstResume) {
             firstResume = false;
         } else if (viewModel != null) {
+            loadMoreRequested = false;
             viewModel.refreshProfile();
         }
     }
 
     private void bindViews() {
+        scrollView = findViewById(R.id.scrollUserProfile);
         contentLayout = findViewById(R.id.layoutUserProfileContent);
         ownActions = findViewById(R.id.layoutOwnProfileActions);
         followButton = findViewById(R.id.buttonFollowComingSoon);
@@ -156,7 +168,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
             @Override
             public void onFavorite(Quote quote) {
-                // Favoriler sonraki sürümde etkinleştirilecek.
+                toggleLike(quote);
             }
 
             @Override
@@ -169,20 +181,33 @@ public class UserProfileActivity extends AppCompatActivity {
 
             @Override
             public void onUserProfile(String userId) {
-                // Bu ekranda kullanıcı satırı gösterilmez.
+                openUserProfile(userId);
             }
         }, false, true, currentUserId);
+        adapter.setLikeActionsEnabled(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(RecyclerView view, int dx, int dy) {
-                super.onScrolled(view, dx, dy);
-                LinearLayoutManager manager = (LinearLayoutManager) view.getLayoutManager();
-                if (dy > 0 && manager != null
-                        && manager.findLastVisibleItemPosition() >= adapter.getItemCount() - 4) {
-                    viewModel.loadMoreQuotes();
+    }
+
+    private void setupScrollPagination() {
+        if (scrollView == null) {
+            return;
+        }
+        scrollView.setOnScrollChangeListener((NestedScrollView view, int scrollX, int scrollY,
+                                              int oldScrollX, int oldScrollY) -> {
+            if (viewModel == null || scrollY <= oldScrollY) {
+                return;
+            }
+            View child = view.getChildAt(0);
+            if (child == null) {
+                return;
+            }
+            int remainingScroll = child.getMeasuredHeight() - view.getMeasuredHeight() - scrollY;
+            if (remainingScroll <= 240) {
+                if (Boolean.TRUE.equals(viewModel.getHasMore().getValue())) {
+                    loadMoreRequested = true;
                 }
+                viewModel.loadMoreQuotes();
             }
         });
     }
@@ -216,10 +241,16 @@ public class UserProfileActivity extends AppCompatActivity {
                 R.string.profile_likes, profile.getTotalLikes());
 
         adapter.submitList(profile.getQuotes());
+        likeViewModel.loadLikedStates(profile.getQuotes());
         likeViewModel.loadLikeCounts(profile.getQuotes());
         boolean empty = profile.getQuotes() == null || profile.getQuotes().isEmpty();
         recyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
         emptyText.setVisibility(empty ? View.VISIBLE : View.GONE);
+        if (empty) {
+            noMoreText.setVisibility(View.GONE);
+        } else {
+            renderHasMore(viewModel == null ? true : viewModel.getHasMore().getValue());
+        }
     }
 
     private void setStat(View statView, int labelRes, int value) {
@@ -245,11 +276,13 @@ public class UserProfileActivity extends AppCompatActivity {
         boolean loading = state.getStatus() == QuoteState.Status.LOADING;
         progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
         if (loading) {
+            scrollView.setVisibility(View.GONE);
             contentLayout.setVisibility(View.GONE);
             recyclerView.setVisibility(View.GONE);
             emptyText.setVisibility(View.GONE);
             errorText.setVisibility(View.GONE);
         } else if (state.getStatus() == QuoteState.Status.ERROR) {
+            scrollView.setVisibility(View.GONE);
             contentLayout.setVisibility(View.GONE);
             recyclerView.setVisibility(View.GONE);
             emptyText.setVisibility(View.GONE);
@@ -257,6 +290,7 @@ public class UserProfileActivity extends AppCompatActivity {
             errorText.setVisibility(View.VISIBLE);
         } else {
             errorText.setVisibility(View.GONE);
+            scrollView.setVisibility(View.VISIBLE);
             contentLayout.setVisibility(View.VISIBLE);
         }
     }
@@ -283,7 +317,7 @@ public class UserProfileActivity extends AppCompatActivity {
         UserProfileData current = viewModel == null ? null : viewModel.getProfile().getValue();
         boolean hasQuotes = current != null && current.getQuotes() != null
                 && !current.getQuotes().isEmpty();
-        noMoreText.setVisibility(Boolean.FALSE.equals(hasMore) && hasQuotes
+        noMoreText.setVisibility(loadMoreRequested && Boolean.FALSE.equals(hasMore) && hasQuotes
                 ? View.VISIBLE : View.GONE);
     }
 
@@ -297,6 +331,36 @@ public class UserProfileActivity extends AppCompatActivity {
             }
         }
         renderedLikeCounts = new HashMap<>(likeCounts);
+    }
+
+    private void renderLikedStates(Map<String, Boolean> likedStates) {
+        if (likedStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : likedStates.entrySet()) {
+            if (!entry.getValue().equals(renderedLikedStates.get(entry.getKey()))) {
+                adapter.updateLikeState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedLikedStates = new HashMap<>(likedStates);
+    }
+
+    private void renderLikeLoadingStates(Map<String, Boolean> loadingStates) {
+        if (loadingStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : loadingStates.entrySet()) {
+            if (!entry.getValue().equals(renderedLikeLoadingStates.get(entry.getKey()))) {
+                adapter.updateLikeLoadingState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedLikeLoadingStates = new HashMap<>(loadingStates);
+    }
+
+    private void renderLikeState(QuoteState state) {
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            showStatus(state.getMessage(), true);
+        }
     }
 
     private void setupAchievementPreview() {
@@ -395,6 +459,33 @@ public class UserProfileActivity extends AppCompatActivity {
         }
         Intent intent = new Intent(this, AchievementsActivity.class);
         intent.putExtra(AchievementsActivity.EXTRA_USER_ID, profileUserId);
+        intent.putExtra(AchievementsActivity.EXTRA_SHOW_ONLY_UNLOCKED, true);
+        startActivity(intent);
+    }
+
+    private void toggleLike(Quote quote) {
+        if (quote == null || isBlank(quote.getQuoteId())) {
+            return;
+        }
+        likeViewModel.toggleLike(quote.getQuoteId());
+    }
+
+    private void openUserProfile(String userId) {
+        if (isBlank(userId)) {
+            return;
+        }
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null
+                ? null : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        if (currentUserId != null && currentUserId.equals(userId)) {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.putExtra(MainActivity.EXTRA_OPEN_PROFILE_TAB, true);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        Intent intent = new Intent(this, UserProfileActivity.class);
+        intent.putExtra(UserProfileActivity.EXTRA_USER_ID, userId);
         startActivity(intent);
     }
 

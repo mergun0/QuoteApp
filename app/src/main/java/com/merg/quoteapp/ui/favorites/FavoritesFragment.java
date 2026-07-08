@@ -18,10 +18,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.FirebaseAuth;
+import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.adapter.QuoteAdapter;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
+import com.merg.quoteapp.ui.profile.UserProfileActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
 import com.merg.quoteapp.viewmodel.FavoriteViewModel;
@@ -122,6 +124,11 @@ public class FavoritesFragment extends Fragment {
                 Intent intent = new Intent(requireContext(), QuoteDetailActivity.class);
                 intent.putExtra(QuoteDetailActivity.EXTRA_QUOTE_ID, quote.getQuoteId());
                 startActivity(intent);
+            }
+
+            @Override
+            public void onUserProfile(String userId) {
+                openUserProfile(userId);
             }
         }, true, true, currentUserId);
         adapter.setLikeActionsEnabled(true);
@@ -268,6 +275,22 @@ public class FavoritesFragment extends Fragment {
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, shareText);
         startActivity(Intent.createChooser(intent, getString(R.string.share)));
+    }
+
+    private void openUserProfile(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return;
+        }
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null
+                ? null : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        if (currentUserId != null && currentUserId.equals(userId)
+                && requireActivity() instanceof MainActivity) {
+            ((MainActivity) requireActivity()).openProfileTab();
+            return;
+        }
+        Intent intent = new Intent(requireContext(), UserProfileActivity.class);
+        intent.putExtra(UserProfileActivity.EXTRA_USER_ID, userId);
+        startActivity(intent);
     }
 
     private void showStatus(String message, boolean error) {

@@ -26,6 +26,7 @@ import java.util.List;
 public class AchievementsActivity extends AppCompatActivity {
 
     public static final String EXTRA_USER_ID = "userId";
+    public static final String EXTRA_SHOW_ONLY_UNLOCKED = "showOnlyUnlocked";
 
     private AchievementViewModel achievementViewModel;
     private UserStatsViewModel userStatsViewModel;
@@ -37,7 +38,9 @@ public class AchievementsActivity extends AppCompatActivity {
     private TextView xpText;
     private TextView unlockedCountText;
     private RecyclerView recyclerView;
+    private ChipGroup chipGroup;
     private String userId;
+    private boolean showOnlyUnlocked;
     private List<Achievement> achievements = new ArrayList<>();
     private List<UserAchievement> userAchievements = new ArrayList<>();
     private UserStats userStats;
@@ -47,6 +50,7 @@ public class AchievementsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_achievements);
         userId = getIntent().getStringExtra(EXTRA_USER_ID);
+        showOnlyUnlocked = getIntent().getBooleanExtra(EXTRA_SHOW_ONLY_UNLOCKED, false);
 
         bindViews();
         setupToolbar();
@@ -64,6 +68,7 @@ public class AchievementsActivity extends AppCompatActivity {
         xpText = findViewById(R.id.textAchievementsXp);
         unlockedCountText = findViewById(R.id.textAchievementsUnlockedCount);
         recyclerView = findViewById(R.id.recyclerAchievements);
+        chipGroup = findViewById(R.id.chipGroupAchievementFilters);
     }
 
     private void setupToolbar() {
@@ -78,7 +83,6 @@ public class AchievementsActivity extends AppCompatActivity {
     }
 
     private void setupFilters() {
-        ChipGroup chipGroup = findViewById(R.id.chipGroupAchievementFilters);
         chipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (checkedIds.isEmpty()) {
                 adapter.setFilter(AchievementAdapter.FILTER_ALL);
@@ -103,6 +107,10 @@ public class AchievementsActivity extends AppCompatActivity {
             }
             updateEmptyState();
         });
+        if (showOnlyUnlocked) {
+            chipGroup.check(R.id.chipAchievementUnlocked);
+            adapter.setFilter(AchievementAdapter.FILTER_UNLOCKED);
+        }
     }
 
     private void setupViewModels() {
@@ -173,6 +181,13 @@ public class AchievementsActivity extends AppCompatActivity {
     private void updateEmptyState() {
         boolean empty = adapter.getVisibleCount() == 0;
         recyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
+        if (empty && showOnlyUnlocked
+                && chipGroup != null
+                && chipGroup.getCheckedChipId() == R.id.chipAchievementUnlocked) {
+            emptyText.setText(R.string.user_achievements_empty);
+        } else {
+            emptyText.setText(R.string.achievement_list_empty);
+        }
         emptyText.setVisibility(empty ? View.VISIBLE : View.GONE);
     }
 

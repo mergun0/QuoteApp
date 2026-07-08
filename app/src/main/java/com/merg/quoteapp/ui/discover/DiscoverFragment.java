@@ -22,6 +22,7 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
+import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.adapter.QuoteAdapter;
 import com.merg.quoteapp.model.Quote;
@@ -435,6 +436,13 @@ public class DiscoverFragment extends Fragment {
 
     private void openUserProfile(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
+            return;
+        }
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null
+                ? null : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        if (currentUserId != null && currentUserId.equals(userId)
+                && requireActivity() instanceof MainActivity) {
+            ((MainActivity) requireActivity()).openProfileTab();
             return;
         }
         Intent intent = new Intent(requireContext(), UserProfileActivity.class);

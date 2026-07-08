@@ -18,9 +18,11 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
+import com.merg.quoteapp.ui.profile.UserProfileActivity;
 import com.merg.quoteapp.utils.ReportBottomSheetHelper;
 import com.merg.quoteapp.viewmodel.FavoriteViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
@@ -51,6 +53,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
     private MaterialButton deleteButton;
     private MaterialButton favoriteButton;
     private MaterialButton saveButton;
+    private TextView usernameText;
     private long currentLikeCount;
     private boolean currentSaved;
 
@@ -93,6 +96,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         deleteButton = findViewById(R.id.buttonDetailDelete);
         favoriteButton = findViewById(R.id.buttonDetailFavorite);
         saveButton = findViewById(R.id.buttonDetailSave);
+        usernameText = findViewById(R.id.textDetailUsername);
 
         findViewById(R.id.buttonShowDetailSpoiler).setOnClickListener(view -> {
             spoilerContainer.setVisibility(View.GONE);
@@ -110,8 +114,10 @@ public class QuoteDetailActivity extends AppCompatActivity {
         currentQuote = quote;
         ((TextView) findViewById(R.id.textDetailType))
                 .setText(safe(quote.getType()).toUpperCase(new Locale("tr", "TR")));
-        ((TextView) findViewById(R.id.textDetailUsername))
-                .setText("@" + safe(quote.getUsername()));
+        usernameText.setText(displayUsername(quote.getUsername()));
+        boolean hasUserId = quote.getUserId() != null && !quote.getUserId().trim().isEmpty();
+        usernameText.setEnabled(hasUserId);
+        usernameText.setOnClickListener(hasUserId ? view -> openUserProfile(quote.getUserId()) : null);
         ((TextView) findViewById(R.id.textDetailTitle)).setText(safe(quote.getTitle()));
         ((TextView) findViewById(R.id.textDetailAuthor)).setText(safe(quote.getAuthor()));
         ((TextView) findViewById(R.id.textDetailQuote))
@@ -395,5 +401,32 @@ public class QuoteDetailActivity extends AppCompatActivity {
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private String displayUsername(String username) {
+        String safeUsername = safe(username).trim();
+        if (safeUsername.isEmpty()) {
+            return "@kullanıcı";
+        }
+        return safeUsername.startsWith("@") ? safeUsername : "@" + safeUsername;
+    }
+
+    private void openUserProfile(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return;
+        }
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null
+                ? null : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        if (currentUserId != null && currentUserId.equals(userId)) {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.putExtra(MainActivity.EXTRA_OPEN_PROFILE_TAB, true);
+            startActivity(intent);
+            finish();
+            return;
+        }
+        Intent intent = new Intent(this, UserProfileActivity.class);
+        intent.putExtra(UserProfileActivity.EXTRA_USER_ID, userId);
+        startActivity(intent);
     }
 }

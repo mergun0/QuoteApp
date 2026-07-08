@@ -85,6 +85,7 @@
     <string name="achievement_xp_reward_format">+%1$d XP</string>
     <string name="achievement_progress_format">İlerleme: %1$s</string>
     <string name="achievement_list_empty">Bu filtreye uygun başarım bulunamadı.</string>
+    <string name="user_achievements_empty">Bu kullanıcı henüz başarı kazanmadı.</string>
     <string name="achievement_user_missing">Başarım bilgileri için kullanıcı bulunamadı.</string>
     <string name="level_format">Seviye %1$d</string>
     <string name="xp_total_format">%1$d XP</string>

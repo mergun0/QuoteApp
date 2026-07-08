@@ -13,12 +13,16 @@ import com.merg.quoteapp.ui.profile.ProfileFragment;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static final String EXTRA_OPEN_PROFILE_TAB = "openProfileTab";
+
+    private BottomNavigationView bottomNavigation;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
         bottomNavigation.setOnItemSelectedListener(item -> {
             Fragment fragment;
             int itemId = item.getItemId();
@@ -36,7 +40,26 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (savedInstanceState == null) {
-            bottomNavigation.setSelectedItemId(R.id.navigation_home);
+            if (getIntent().getBooleanExtra(EXTRA_OPEN_PROFILE_TAB, false)) {
+                openProfileTab();
+            } else {
+                bottomNavigation.setSelectedItemId(R.id.navigation_home);
+            }
+        }
+    }
+
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent != null && intent.getBooleanExtra(EXTRA_OPEN_PROFILE_TAB, false)) {
+            openProfileTab();
+        }
+    }
+
+    public void openProfileTab() {
+        if (bottomNavigation != null) {
+            bottomNavigation.setSelectedItemId(R.id.navigation_profile);
         }
     }
 
