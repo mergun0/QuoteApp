@@ -197,7 +197,7 @@ public class UserProfileActivity extends AppCompatActivity {
         followButton.setOnClickListener(view ->
                 showStatus(getString(R.string.follow_coming_soon), false));
         findViewById(R.id.buttonUserProfileAllAchievements)
-                .setOnClickListener(view -> showAllAchievementsPlaceholder());
+                .setOnClickListener(view -> openAchievements());
     }
 
     private void renderProfile(UserProfileData profile) {
@@ -388,12 +388,14 @@ public class UserProfileActivity extends AppCompatActivity {
         return stats;
     }
 
-    private void showAllAchievementsPlaceholder() {
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.all_achievements)
-                .setMessage(R.string.achievement_dialog_placeholder)
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+    private void openAchievements() {
+        if (isBlank(profileUserId)) {
+            showStatus(getString(R.string.achievement_user_missing), true);
+            return;
+        }
+        Intent intent = new Intent(this, AchievementsActivity.class);
+        intent.putExtra(AchievementsActivity.EXTRA_USER_ID, profileUserId);
+        startActivity(intent);
     }
 
     private void editQuote(Quote quote) {

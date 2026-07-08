@@ -76,6 +76,16 @@
     <string name="achievement_unlocked">Kazanıldı</string>
     <string name="achievement_empty">Henüz başarı kazanılmadı.</string>
     <string name="achievement_dialog_placeholder">Başarım listesi sonraki sprintte detaylı ekran olarak açılacak.</string>
+    <string name="achievement_filter_unlocked">Açılanlar</string>
+    <string name="achievement_filter_locked">Kilitli</string>
+    <string name="achievement_filter_social">Sosyal</string>
+    <string name="achievement_filter_quote">Alıntı</string>
+    <string name="achievement_filter_moderation">Moderasyon</string>
+    <string name="achievement_filter_type">Tür</string>
+    <string name="achievement_xp_reward_format">+%1$d XP</string>
+    <string name="achievement_progress_format">İlerleme: %1$s</string>
+    <string name="achievement_list_empty">Bu filtreye uygun başarım bulunamadı.</string>
+    <string name="achievement_user_missing">Başarım bilgileri için kullanıcı bulunamadı.</string>
     <string name="level_format">Seviye %1$d</string>
     <string name="xp_total_format">%1$d XP</string>
     <string name="xp_progress_format">%1$d / %2$d XP</string>

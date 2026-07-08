@@ -13,7 +13,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.merg.quoteapp.R;
@@ -88,7 +87,7 @@ public class ProfileFragment extends Fragment {
 
         view.findViewById(R.id.buttonLogout).setOnClickListener(button -> logout());
         view.findViewById(R.id.buttonProfileAllAchievements)
-                .setOnClickListener(button -> showAllAchievementsPlaceholder());
+                .setOnClickListener(button -> openAchievements());
     }
 
     private void setupStatLabels(View view) {
@@ -256,12 +255,14 @@ public class ProfileFragment extends Fragment {
         return stats;
     }
 
-    private void showAllAchievementsPlaceholder() {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.all_achievements)
-                .setMessage(R.string.achievement_dialog_placeholder)
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+    private void openAchievements() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            return;
+        }
+        Intent intent = new Intent(requireContext(), AchievementsActivity.class);
+        intent.putExtra(AchievementsActivity.EXTRA_USER_ID, user.getUid());
+        startActivity(intent);
     }
 
     private void logout() {

@@ -11,6 +11,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.QuoteApp">
         <activity
+            android:name=".ui.profile.AchievementsActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.profile.UserProfileActivity"
             android:exported="false" />
         <activity
