@@ -28,11 +28,13 @@ import com.merg.quoteapp.model.QuoteState;
 import com.merg.quoteapp.model.UserAchievement;
 import com.merg.quoteapp.model.UserProfileData;
 import com.merg.quoteapp.model.UserStats;
+import com.merg.quoteapp.model.Level;
 import com.merg.quoteapp.ui.auth.LoginActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
 import com.merg.quoteapp.viewmodel.AchievementViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
+import com.merg.quoteapp.viewmodel.LevelViewModel;
 import com.merg.quoteapp.viewmodel.UserStatsViewModel;
 import com.merg.quoteapp.viewmodel.UserProfileViewModel;
 
@@ -51,6 +53,7 @@ public class UserProfileActivity extends AppCompatActivity {
     private LikeViewModel likeViewModel;
     private UserStatsViewModel userStatsViewModel;
     private AchievementViewModel achievementViewModel;
+    private LevelViewModel levelViewModel;
     private QuoteAdapter adapter;
     private AchievementPreviewAdapter achievementAdapter;
     private NestedScrollView scrollView;
@@ -66,8 +69,10 @@ public class UserProfileActivity extends AppCompatActivity {
     private TextView noMoreText;
     private TextView levelText;
     private TextView xpText;
+    private TextView xpProgressText;
     private TextView achievementCountText;
     private TextView achievementEmptyText;
+    private ProgressBar xpProgressBar;
     private RecyclerView achievementRecyclerView;
     private String profileUserId;
     private boolean ownProfile;
@@ -100,6 +105,7 @@ public class UserProfileActivity extends AppCompatActivity {
         likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
         userStatsViewModel = new ViewModelProvider(this).get(UserStatsViewModel.class);
         achievementViewModel = new ViewModelProvider(this).get(AchievementViewModel.class);
+        levelViewModel = new ViewModelProvider(this).get(LevelViewModel.class);
         viewModel.getProfile().observe(this, this::renderProfile);
         viewModel.getState().observe(this, this::renderState);
         viewModel.getOperationState().observe(this, this::renderOperationState);
@@ -139,8 +145,10 @@ public class UserProfileActivity extends AppCompatActivity {
         noMoreText = findViewById(R.id.textUserQuotesNoMore);
         levelText = findViewById(R.id.textUserProfileLevel);
         xpText = findViewById(R.id.textUserProfileXp);
+        xpProgressText = findViewById(R.id.textUserProfileXpProgress);
         achievementCountText = findViewById(R.id.textUserProfileAchievementCount);
         achievementEmptyText = findViewById(R.id.textUserProfileAchievementEmpty);
+        xpProgressBar = findViewById(R.id.progressUserProfileXp);
         achievementRecyclerView = findViewById(R.id.recyclerUserProfileAchievements);
     }
 
@@ -375,13 +383,28 @@ public class UserProfileActivity extends AppCompatActivity {
         if (userStatsViewModel == null || achievementViewModel == null) {
             return;
         }
-        userStatsViewModel.getUserStats().observe(this, stats ->
-                renderUserStats(stats == null ? defaultStats() : stats));
+        userStatsViewModel.getUserStats().observe(this, stats -> {
+            UserStats safeStats = stats == null ? defaultStats() : stats;
+            renderUserStats(safeStats);
+            if (levelViewModel != null) {
+                levelViewModel.loadLevelProgress(Math.max(0, safeStats.getTotalXp()));
+            }
+        });
         userStatsViewModel.getError().observe(this, message -> {
             if (message != null) {
                 renderUserStats(defaultStats());
             }
         });
+        if (levelViewModel != null) {
+            levelViewModel.getCurrentLevel().observe(this, level -> {
+                UserStats current = userStatsViewModel.getUserStats().getValue();
+                renderUserStats(current == null ? defaultStats() : current);
+            });
+            levelViewModel.getNextLevel().observe(this, level -> {
+                UserStats current = userStatsViewModel.getUserStats().getValue();
+                renderUserStats(current == null ? defaultStats() : current);
+            });
+        }
         achievementViewModel.getActiveAchievements().observe(this, achievements -> {
             currentAchievements = achievements == null ? new ArrayList<>() : achievements;
             renderAchievementPreview();
@@ -430,6 +453,38 @@ public class UserProfileActivity extends AppCompatActivity {
         xpText.setText(getString(R.string.xp_total_format, totalXp));
         achievementCountText.setText(getString(
                 R.string.unlocked_achievement_count_format, unlockedCount));
+        renderXpProgress(totalXp);
+    }
+
+    private void renderXpProgress(long totalXp) {
+        if (xpProgressBar == null || xpProgressText == null) {
+            return;
+        }
+        if (levelViewModel == null || levelViewModel.getCurrentLevel().getValue() == null) {
+            renderFallbackXpProgress(totalXp);
+            return;
+        }
+        Level currentLevel = levelViewModel.getCurrentLevel().getValue();
+        Level nextLevel = levelViewModel.getNextLevel().getValue();
+        if (nextLevel == null) {
+            xpProgressBar.setProgress(100);
+            xpProgressText.setText(R.string.xp_progress_max);
+            return;
+        }
+        long currentRequiredXp = Math.max(0, currentLevel.getRequiredTotalXp());
+        long nextRequiredXp = Math.max(currentRequiredXp + 1, nextLevel.getRequiredTotalXp());
+        long range = nextRequiredXp - currentRequiredXp;
+        long progress = Math.max(0, totalXp - currentRequiredXp);
+        xpProgressBar.setProgress((int) Math.min(100, (progress * 100) / range));
+        xpProgressText.setText(getString(R.string.xp_progress_format, progress, range));
+    }
+
+    private void renderFallbackXpProgress(long totalXp) {
+        long fallbackTarget = 100;
+        long safeXp = Math.max(0, totalXp);
+        xpProgressBar.setProgress((int) Math.min(100, (safeXp * 100) / fallbackTarget));
+        xpProgressText.setText(getString(R.string.xp_progress_format,
+                Math.min(safeXp, fallbackTarget), fallbackTarget));
     }
 
     private void renderAchievementPreview() {

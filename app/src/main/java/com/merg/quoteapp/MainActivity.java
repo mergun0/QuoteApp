@@ -6,16 +6,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 import com.merg.quoteapp.ui.discover.DiscoverFragment;
 import com.merg.quoteapp.ui.favorites.FavoritesFragment;
 import com.merg.quoteapp.ui.home.HomeFragment;
 import com.merg.quoteapp.ui.profile.ProfileFragment;
+import com.merg.quoteapp.model.AchievementFeedbackEvent;
+import com.merg.quoteapp.utils.AchievementFeedbackCenter;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String EXTRA_OPEN_PROFILE_TAB = "openProfileTab";
 
     private BottomNavigationView bottomNavigation;
+    private boolean feedbackShowing;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
                 bottomNavigation.setSelectedItemId(R.id.navigation_home);
             }
         }
+        observeAchievementFeedback();
     }
 
     @Override
@@ -63,6 +69,80 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void observeAchievementFeedback() {
+        AchievementFeedbackCenter.getInstance()
+                .getEventSignal()
+                .observe(this, signal -> showNextFeedbackEvent());
+    }
+
+    private void showNextFeedbackEvent() {
+        if (feedbackShowing) {
+            return;
+        }
+        AchievementFeedbackEvent event = AchievementFeedbackCenter.getInstance().poll();
+        if (event == null) {
+            return;
+        }
+        feedbackShowing = true;
+        if (event.getType() == AchievementFeedbackEvent.Type.XP_GAINED) {
+            showXpFeedback(event);
+        } else if (event.getType() == AchievementFeedbackEvent.Type.ACHIEVEMENT_UNLOCKED) {
+            showAchievementUnlockedFeedback(event);
+        } else if (event.getType() == AchievementFeedbackEvent.Type.LEVEL_UP) {
+            showLevelUpFeedback(event);
+        }
+    }
+
+    private void finishFeedbackEvent() {
+        feedbackShowing = false;
+        if (AchievementFeedbackCenter.getInstance().hasPendingEvents()) {
+            showNextFeedbackEvent();
+        }
+    }
+
+    private void showXpFeedback(AchievementFeedbackEvent event) {
+        Snackbar.make(findViewById(R.id.main),
+                        getString(R.string.xp_gained_format, event.getXpAmount()),
+                        Snackbar.LENGTH_SHORT)
+                .addCallback(new Snackbar.Callback() {
+                    @Override
+                    public void onDismissed(Snackbar transientBottomBar, int event) {
+                        finishFeedbackEvent();
+                    }
+                })
+                .show();
+    }
+
+    private void showAchievementUnlockedFeedback(AchievementFeedbackEvent event) {
+        String message = getString(R.string.achievement_feedback_message,
+                safe(event.getTitle()),
+                safe(event.getDescription()),
+                event.getXpAmount());
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.achievement_unlocked_feedback_title)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, null)
+                .setOnDismissListener(dialog -> finishFeedbackEvent())
+                .show();
+    }
+
+    private void showLevelUpFeedback(AchievementFeedbackEvent event) {
+        String detail = safe(event.getLevelTitle());
+        String badge = safe(event.getBadgeName());
+        if (!badge.isEmpty()) {
+            detail = detail.isEmpty() ? badge : detail + " • " + badge;
+        }
+        String message = detail.isEmpty()
+                ? getString(R.string.level_up_feedback_message_simple, event.getLevel())
+                : getString(R.string.level_up_feedback_message, event.getLevel(), detail);
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.level_up_feedback_title)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, null)
+                .setOnDismissListener(dialog -> finishFeedbackEvent())
+                .show();
+    }
+
     private void showFragment(Fragment fragment) {
         getSupportFragmentManager()
                 .beginTransaction()
@@ -73,5 +153,9 @@ public class MainActivity extends AppCompatActivity {
                         R.anim.fragment_fade_out)
                 .replace(R.id.fragmentContainer, fragment)
                 .commit();
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }

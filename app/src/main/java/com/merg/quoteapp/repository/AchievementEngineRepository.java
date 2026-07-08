@@ -7,11 +7,17 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 import com.merg.quoteapp.model.Achievement;
+import com.merg.quoteapp.model.AchievementFeedbackEvent;
+import com.merg.quoteapp.model.Level;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.UserAchievement;
 import com.merg.quoteapp.model.UserStats;
 import com.merg.quoteapp.model.XpRewards;
+import com.merg.quoteapp.utils.AchievementFeedbackCenter;
 
+import com.google.firebase.auth.FirebaseAuth;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +41,13 @@ public class AchievementEngineRepository {
     private static volatile AchievementEngineRepository instance;
 
     private final FirebaseFirestore firestore;
+    private final FirebaseAuth auth;
+    private final AchievementFeedbackCenter feedbackCenter;
 
     private AchievementEngineRepository() {
         firestore = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+        feedbackCenter = AchievementFeedbackCenter.getInstance();
     }
 
     /**
@@ -134,9 +144,20 @@ public class AchievementEngineRepository {
 
     private void updateStatsForEvent(String userId, long xpAmount, StatsMutator mutator) {
         loadStats(userId, stats -> {
+            int previousLevel = safeLevel(stats.getLevel());
+            long safeXpAmount = Math.max(0, xpAmount);
             mutator.mutate(stats);
-            stats.setTotalXp(Math.max(0, stats.getTotalXp()) + Math.max(0, xpAmount));
-            updateLevelAndSave(stats, () -> evaluateAchievements(stats));
+            stats.setTotalXp(Math.max(0, stats.getTotalXp()) + safeXpAmount);
+            updateLevelAndSave(stats, level -> {
+                if (shouldNotify(userId) && safeXpAmount > 0) {
+                    feedbackCenter.publish(AchievementFeedbackEvent.xpGained(safeXpAmount));
+                }
+                if (shouldNotify(userId) && level != null
+                        && safeLevel(level.getLevel()) > previousLevel) {
+                    feedbackCenter.publish(AchievementFeedbackEvent.levelUp(level));
+                }
+                evaluateAchievements(stats);
+            });
         });
     }
 
@@ -155,25 +176,33 @@ public class AchievementEngineRepository {
         }
 
         final int[] remaining = {achievements.size()};
-        final boolean[] anyUnlocked = {false};
+        List<Achievement> unlockedAchievements = new ArrayList<>();
         for (Achievement achievement : achievements) {
             if (!isRequirementMet(achievement, stats)) {
-                completeUnlockCheck(stats.getUserId(), remaining, anyUnlocked);
+                completeUnlockCheck(stats.getUserId(), remaining, unlockedAchievements,
+                        safeLevel(stats.getLevel()));
                 continue;
             }
             unlockAchievementIfNeeded(stats, achievement, unlocked -> {
                 if (unlocked) {
-                    anyUnlocked[0] = true;
+                    unlockedAchievements.add(achievement);
+                    if (shouldNotify(stats.getUserId())) {
+                        feedbackCenter.publish(
+                                AchievementFeedbackEvent.achievementUnlocked(achievement));
+                    }
                 }
-                completeUnlockCheck(stats.getUserId(), remaining, anyUnlocked);
+                completeUnlockCheck(stats.getUserId(), remaining, unlockedAchievements,
+                        safeLevel(stats.getLevel()));
             });
         }
     }
 
-    private void completeUnlockCheck(String userId, int[] remaining, boolean[] anyUnlocked) {
+    private void completeUnlockCheck(String userId, int[] remaining,
+                                     List<Achievement> unlockedAchievements,
+                                     int levelBeforeAchievementXp) {
         remaining[0]--;
         if (remaining[0] == 0) {
-            recalculateAndPersistLevel(userId);
+            recalculateAndPersistLevel(userId, levelBeforeAchievementXp);
         }
     }
 
@@ -228,21 +257,30 @@ public class AchievementEngineRepository {
     }
 
     private void recalculateAndPersistLevel(String userId) {
-        loadStats(userId, stats -> updateLevelAndSave(stats, () -> {
-            // No UI notification yet.
+        loadStats(userId, stats -> updateLevelAndSave(stats, level -> {
+            // Feedback is emitted by event-specific flows.
         }));
     }
 
-    private void updateLevelAndSave(UserStats stats, Runnable afterSave) {
+    private void recalculateAndPersistLevel(String userId, int previousLevel) {
+        loadStats(userId, stats -> updateLevelAndSave(stats, level -> {
+            if (shouldNotify(userId) && level != null
+                    && safeLevel(level.getLevel()) > safeLevel(previousLevel)) {
+                feedbackCenter.publish(AchievementFeedbackEvent.levelUp(level));
+            }
+        }));
+    }
+
+    private void updateLevelAndSave(UserStats stats, LevelSaveCallback afterSave) {
         calculateLevel(stats.getTotalXp(), level -> {
-            stats.setLevel(level);
+            stats.setLevel(level == null ? 1 : safeLevel(level.getLevel()));
             Map<String, Object> data = statsMap(stats);
             firestore.collection(USERS_STATS_COLLECTION)
                     .document(stats.getUserId())
                     .set(data, SetOptions.merge())
                     .addOnCompleteListener(task -> {
                         if (afterSave != null) {
-                            afterSave.run();
+                            afterSave.onSaved(level);
                         }
                     });
         });
@@ -256,13 +294,13 @@ public class AchievementEngineRepository {
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     if (snapshot.isEmpty()) {
-                        callback.onResult(1);
+                        callback.onResult(defaultLevel());
                     } else {
-                        Long level = snapshot.getDocuments().get(0).getLong("level");
-                        callback.onResult(level == null || level < 1 ? 1 : level.intValue());
+                        Level level = snapshot.getDocuments().get(0).toObject(Level.class);
+                        callback.onResult(level == null ? defaultLevel() : level);
                     }
                 })
-                .addOnFailureListener(error -> callback.onResult(1));
+                .addOnFailureListener(error -> callback.onResult(defaultLevel()));
     }
 
     private void loadStats(String userId, StatsCallback callback) {
@@ -405,6 +443,23 @@ public class AchievementEngineRepository {
         return value == null || value.trim().isEmpty();
     }
 
+    private boolean shouldNotify(String userId) {
+        return auth.getCurrentUser() != null
+                && !isBlank(userId)
+                && userId.equals(auth.getCurrentUser().getUid());
+    }
+
+    private int safeLevel(int level) {
+        return level <= 0 ? 1 : level;
+    }
+
+    private Level defaultLevel() {
+        Level level = new Level();
+        level.setLevel(1);
+        level.setRequiredTotalXp(0);
+        return level;
+    }
+
     private interface XpRewardsCallback {
         void onRewards(XpRewards rewards);
     }
@@ -422,6 +477,10 @@ public class AchievementEngineRepository {
     }
 
     private interface LevelResultCallback {
-        void onResult(int level);
+        void onResult(Level level);
+    }
+
+    private interface LevelSaveCallback {
+        void onSaved(Level level);
     }
 }

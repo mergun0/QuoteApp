@@ -215,13 +215,19 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
-        long currentRequiredXp = levelViewModel.getCurrentLevel().getValue() == null
-                ? 0 : levelViewModel.getCurrentLevel().getValue().getRequiredTotalXp();
-        if (levelViewModel.getNextLevel().getValue() == null) {
+        if (levelViewModel.getCurrentLevel().getValue() == null) {
             renderFallbackXpProgress(totalXp);
             return;
         }
-        long nextRequiredXp = levelViewModel.getNextLevel().getValue().getRequiredTotalXp();
+        long currentRequiredXp = Math.max(0,
+                levelViewModel.getCurrentLevel().getValue().getRequiredTotalXp());
+        if (levelViewModel.getNextLevel().getValue() == null) {
+            xpProgressBar.setProgress(100);
+            xpProgressText.setText(R.string.xp_progress_max);
+            return;
+        }
+        long nextRequiredXp = Math.max(currentRequiredXp + 1,
+                levelViewModel.getNextLevel().getValue().getRequiredTotalXp());
         long range = Math.max(1, nextRequiredXp - currentRequiredXp);
         long progress = Math.max(0, totalXp - currentRequiredXp);
         xpProgressBar.setProgress((int) Math.min(100, (progress * 100) / range));

@@ -203,6 +203,26 @@
                             tools:text="0 başarım" />
                     </LinearLayout>
 
+                    <ProgressBar
+                        android:id="@+id/progressUserProfileXp"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="8dp"
+                        android:layout_marginTop="16dp"
+                        android:max="100"
+                        android:progress="0"
+                        android:progressBackgroundTint="@color/bottom_nav_ripple"
+                        android:progressTint="@color/quote_primary" />
+
+                    <TextView
+                        android:id="@+id/textUserProfileXpProgress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/quote_text_secondary"
+                        android:textSize="12sp"
+                        tools:text="0 / 100 XP" />
+
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
