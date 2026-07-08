@@ -314,7 +314,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                   boolean saved, boolean saveLoading, boolean saveActionsEnabled,
                   boolean reportActionsEnabled, Runnable revealSpoiler) {
             typeText.setText(safe(quote.getType()).toUpperCase());
-            usernameText.setText("@" + safe(quote.getUsername()));
+            usernameText.setText(displayUsername(quote.getUsername()));
             userContainer.setVisibility(showUsername ? View.VISIBLE : View.GONE);
             userContainer.setOnClickListener(showUsername
                     ? view -> listener.onUserProfile(quote.getUserId())
@@ -475,6 +475,14 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
         private static String safe(String value) {
             return value == null ? "" : value;
+        }
+
+        private static String displayUsername(String username) {
+            String safeUsername = safe(username).trim();
+            if (safeUsername.isEmpty()) {
+                return "@kullanıcı";
+            }
+            return safeUsername.startsWith("@") ? safeUsername : "@" + safeUsername;
         }
     }
 }

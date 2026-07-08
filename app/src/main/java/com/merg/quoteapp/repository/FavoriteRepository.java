@@ -37,10 +37,12 @@ public class FavoriteRepository {
 
     private static final String FAVORITES_COLLECTION = "favorites";
     private static final String QUOTES_COLLECTION = "quotes";
+    private static final String USERS_COLLECTION = "users";
     private static volatile FavoriteRepository instance;
 
     private final FirebaseAuth auth;
     private final FirebaseFirestore firestore;
+    private final Map<String, String> usernameCache = new HashMap<>();
 
     private FavoriteRepository() {
         auth = FirebaseAuth.getInstance();
@@ -195,9 +197,13 @@ public class FavoriteRepository {
                             if (isBlank(quote.getQuoteId())) {
                                 quote.setQuoteId(document.getId());
                             }
-                            orderedQuotes.set(quoteIndex, quote);
+                            completeQuoteUsername(quote, completedQuote -> {
+                                orderedQuotes.set(quoteIndex, completedQuote);
+                                completeFavoriteQuoteLoad(orderedQuotes, remaining, callback);
+                            });
+                        } else {
+                            completeFavoriteQuoteLoad(orderedQuotes, remaining, callback);
                         }
-                        completeFavoriteQuoteLoad(orderedQuotes, remaining, callback);
                     })
                     .addOnFailureListener(error -> {
                         if (failed[0]) {
@@ -218,6 +224,42 @@ public class FavoriteRepository {
         if (remaining[0] == 0) {
             callback.onSuccess(compactQuotes(orderedQuotes));
         }
+    }
+
+    private void completeQuoteUsername(Quote quote, QuoteUsernameCallback callback) {
+        if (quote == null) {
+            callback.onComplete(null);
+            return;
+        }
+        if (!isBlank(quote.getUsername())) {
+            callback.onComplete(quote);
+            return;
+        }
+        if (isBlank(quote.getUserId())) {
+            quote.setUsername("kullanıcı");
+            callback.onComplete(quote);
+            return;
+        }
+        String cachedUsername = usernameCache.get(quote.getUserId());
+        if (!isBlank(cachedUsername)) {
+            quote.setUsername(cachedUsername);
+            callback.onComplete(quote);
+            return;
+        }
+
+        firestore.collection(USERS_COLLECTION)
+                .document(quote.getUserId())
+                .get()
+                .addOnCompleteListener(task -> {
+                    String username = task.isSuccessful() && task.getResult() != null
+                            ? task.getResult().getString("username") : null;
+                    if (isBlank(username)) {
+                        username = "kullanıcı";
+                    }
+                    usernameCache.put(quote.getUserId(), username);
+                    quote.setUsername(username);
+                    callback.onComplete(quote);
+                });
     }
 
     private List<Quote> compactQuotes(List<Quote> quotes) {
@@ -254,5 +296,9 @@ public class FavoriteRepository {
             }
         }
         return "Kaydetme işlemi tamamlanamadı. Lütfen tekrar deneyin.";
+    }
+
+    private interface QuoteUsernameCallback {
+        void onComplete(Quote quote);
     }
 }
