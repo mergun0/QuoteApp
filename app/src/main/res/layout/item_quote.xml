@@ -204,8 +204,10 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/favorite"
+                android:textColor="@color/home_v2_text_secondary"
                 app:icon="@drawable/ic_favorite"
-                app:iconGravity="textStart" />
+                app:iconGravity="textStart"
+                app:iconTint="@color/home_v2_text_secondary" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonShareQuote"
@@ -214,8 +216,10 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/share"
+                android:textColor="@color/home_v2_primary"
                 app:icon="@drawable/ic_share"
-                app:iconGravity="textStart" />
+                app:iconGravity="textStart"
+                app:iconTint="@color/home_v2_primary" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonMoreQuote"
@@ -227,7 +231,7 @@
                 android:text=""
                 app:icon="@drawable/ic_more_vert"
                 app:iconGravity="textStart"
-                app:iconTint="@color/quote_text_secondary" />
+                app:iconTint="@color/home_v2_text_secondary" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

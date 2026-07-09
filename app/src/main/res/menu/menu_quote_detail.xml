@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/actionQuoteDetailMore"
+        android:contentDescription="@string/more_actions"
+        android:icon="@drawable/ic_more_vert"
+        android:title="@string/more_actions"
+        app:iconTint="@color/home_v2_text_primary"
+        app:showAsAction="always" />
+</menu>

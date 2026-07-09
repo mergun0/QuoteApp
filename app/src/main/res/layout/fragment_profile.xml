@@ -205,7 +205,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="❤️"
+                        android:text="♥"
+                        android:textColor="@color/home_v2_error"
                         android:textSize="24sp" />
 
                     <TextView
@@ -251,7 +252,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📝"
+                        android:text="✎"
+                        android:textColor="@color/home_v2_primary"
                         android:textSize="24sp" />
 
                     <TextView
@@ -299,7 +301,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🏆"
+                        android:text="★"
+                        android:textColor="@color/home_v2_accent"
                         android:textSize="24sp" />
 
                     <TextView
@@ -347,7 +350,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🔖"
+                        android:text="◆"
+                        android:textColor="@color/home_v2_secondary"
                         android:textSize="24sp" />
 
                     <TextView

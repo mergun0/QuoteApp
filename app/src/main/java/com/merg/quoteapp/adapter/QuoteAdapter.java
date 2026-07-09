@@ -361,6 +361,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             }
 
             shareButton.setOnClickListener(view -> listener.onShare(quote));
+            renderSecondaryActions(saved, saveLoading);
             renderFavoriteButton(liked, likeLoading, likeCount, likeActionsEnabled);
             favoriteButton.setOnClickListener(likeActionsEnabled
                     ? view -> animateLikeClick(view, () -> listener.onFavorite(quote))
@@ -462,7 +463,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         private void renderFavoriteButton(boolean liked, boolean likeLoading,
                                           long likeCount, boolean likeActionsEnabled) {
             int color = ContextCompat.getColor(itemView.getContext(), liked
-                    ? R.color.quote_status_error : R.color.quote_text_secondary);
+                    ? R.color.home_v2_error : R.color.home_v2_text_secondary);
             ColorStateList tint = ColorStateList.valueOf(color);
             favoriteButton.setEnabled(likeActionsEnabled && !likeLoading);
             favoriteButton.setAlpha(likeLoading ? 0.55f : 1f);
@@ -472,6 +473,18 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                     : itemView.getContext().getString(R.string.favorite));
             favoriteButton.setTextColor(color);
             favoriteButton.setIconTint(tint);
+        }
+
+        private void renderSecondaryActions(boolean saved, boolean saveLoading) {
+            Context context = itemView.getContext();
+            int shareColor = ContextCompat.getColor(context, R.color.home_v2_primary);
+            int overflowColor = ContextCompat.getColor(context,
+                    saved ? R.color.home_v2_accent : R.color.home_v2_text_secondary);
+            shareButton.setTextColor(shareColor);
+            shareButton.setIconTint(ColorStateList.valueOf(shareColor));
+            shareButton.setAlpha(1f);
+            moreButton.setIconTint(ColorStateList.valueOf(overflowColor));
+            moreButton.setAlpha(saveLoading ? 0.65f : 0.9f);
         }
 
         private void setOptionalText(TextView view, String value, String displayValue) {

@@ -2,8 +2,12 @@ package com.merg.quoteapp.ui.quote;
 
 import android.content.res.ColorStateList;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -14,6 +18,7 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.Timestamp;
@@ -56,6 +61,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
     private TextView usernameText;
     private long currentLikeCount;
     private boolean currentSaved;
+    private boolean currentUserCanManage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +71,13 @@ public class QuoteDetailActivity extends AppCompatActivity {
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarQuoteDetail);
         toolbar.setNavigationOnClickListener(view -> finish());
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.actionQuoteDetailMore) {
+                showActionsSheet();
+                return true;
+            }
+            return false;
+        });
 
         String quoteId = getIntent().getStringExtra(EXTRA_QUOTE_ID);
         viewModel = new ViewModelProvider(this).get(QuoteDetailViewModel.class);
@@ -113,7 +126,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
     private void renderQuote(Quote quote) {
         currentQuote = quote;
         ((TextView) findViewById(R.id.textDetailType))
-                .setText(safe(quote.getType()).toUpperCase(new Locale("tr", "TR")));
+                .setText(categoryLabel(quote.getType()));
         usernameText.setText(displayUsername(quote.getUsername()));
         boolean hasUserId = quote.getUserId() != null && !quote.getUserId().trim().isEmpty();
         usernameText.setEnabled(hasUserId);
@@ -151,14 +164,14 @@ public class QuoteDetailActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.textDetailCreatedAt))
                 .setText(formatCreatedAt(quote.getCreatedAt()));
         findViewById(R.id.textDetailSpoilerBadge)
-                .setVisibility(quote.isSpoiler() ? View.VISIBLE : View.GONE);
+                .setVisibility(View.GONE);
         quoteContainer.setVisibility(quote.isSpoiler() ? View.GONE : View.VISIBLE);
         spoilerContainer.setVisibility(quote.isSpoiler() ? View.VISIBLE : View.GONE);
 
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null
                 ? null : FirebaseAuth.getInstance().getCurrentUser().getUid();
-        boolean isOwner = currentUserId != null && currentUserId.equals(quote.getUserId());
-        ownerActions.setVisibility(isOwner ? View.VISIBLE : View.GONE);
+        currentUserCanManage = currentUserId != null && currentUserId.equals(quote.getUserId());
+        ownerActions.setVisibility(View.GONE);
         likeViewModel.loadLikeState(quote.getQuoteId());
         favoriteViewModel.loadSavedStates(java.util.Collections.singletonList(quote));
     }
@@ -284,7 +297,8 @@ public class QuoteDetailActivity extends AppCompatActivity {
 
     private void renderFavoriteButton(boolean liked, boolean loading) {
         int color = ContextCompat.getColor(this, liked
-                ? R.color.quote_status_error : R.color.quote_text_secondary);
+                ? R.color.home_v2_error : R.color.home_v2_text_secondary);
+        ColorStateList tint = ColorStateList.valueOf(color);
         favoriteButton.setEnabled(!loading);
         favoriteButton.setAlpha(loading ? 0.55f : 1f);
         favoriteButton.setSelected(liked);
@@ -292,18 +306,92 @@ public class QuoteDetailActivity extends AppCompatActivity {
                 ? getString(R.string.like_button_with_count, currentLikeCount)
                 : getString(R.string.favorite));
         favoriteButton.setTextColor(color);
-        favoriteButton.setIconTint(ColorStateList.valueOf(color));
+        favoriteButton.setIconTint(tint);
+        favoriteButton.setStrokeColor(tint);
     }
 
     private void renderSaveButton(boolean loading) {
         int color = ContextCompat.getColor(this, currentSaved
-                ? R.color.quote_primary : R.color.quote_text_secondary);
+                ? R.color.home_v2_accent : R.color.home_v2_text_secondary);
+        ColorStateList tint = ColorStateList.valueOf(color);
         saveButton.setEnabled(!loading);
         saveButton.setAlpha(loading ? 0.55f : 1f);
         saveButton.setSelected(currentSaved);
         saveButton.setText(currentSaved ? R.string.unsave_quote : R.string.save_quote);
         saveButton.setTextColor(color);
-        saveButton.setIconTint(ColorStateList.valueOf(color));
+        saveButton.setIconTint(tint);
+        saveButton.setStrokeColor(tint);
+    }
+
+    private void showActionsSheet() {
+        if (currentQuote == null) {
+            return;
+        }
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(dp(24), dp(24), dp(24), dp(24));
+        container.setBackgroundResource(R.drawable.bg_quote_detail_bottom_sheet);
+
+        TextView title = new TextView(this);
+        title.setText(R.string.quote_detail_actions_title);
+        title.setTextColor(ContextCompat.getColor(this, R.color.home_v2_text_primary));
+        title.setTextSize(18);
+        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+        container.addView(title, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        addSheetAction(container,
+                currentSaved ? R.string.quote_detail_action_unsave : R.string.quote_detail_action_save,
+                false,
+                view -> {
+                    dialog.dismiss();
+                    toggleSave();
+                });
+        addSheetAction(container, R.string.quote_detail_action_share, false, view -> {
+            dialog.dismiss();
+            shareQuote();
+        });
+        addSheetAction(container, R.string.quote_detail_action_report, true, view -> {
+            dialog.dismiss();
+            showReportSheet();
+        });
+        if (currentUserCanManage) {
+            addSheetAction(container, R.string.quote_detail_action_edit, false, view -> {
+                dialog.dismiss();
+                editQuote();
+            });
+            addSheetAction(container, R.string.quote_detail_action_delete, true, view -> {
+                dialog.dismiss();
+                confirmDelete();
+            });
+        }
+        dialog.setContentView(container);
+        dialog.setOnShowListener(dialogInterface -> {
+            FrameLayout bottomSheet = dialog.findViewById(
+                    com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                bottomSheet.setBackground(new ColorDrawable(Color.TRANSPARENT));
+            }
+        });
+        dialog.show();
+    }
+
+    private void addSheetAction(LinearLayout container, int textRes, boolean danger,
+                                View.OnClickListener listener) {
+        TextView row = new TextView(this);
+        row.setText(textRes);
+        row.setTextColor(ContextCompat.getColor(this,
+                danger ? R.color.home_v2_error : R.color.home_v2_text_primary));
+        row.setTextSize(16);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setMinHeight(dp(48));
+        row.setPadding(dp(8), dp(12), dp(8), dp(12));
+        row.setOnClickListener(listener);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dp(8);
+        container.addView(row, params);
     }
 
     private void editQuote() {
@@ -382,6 +470,26 @@ public class QuoteDetailActivity extends AppCompatActivity {
         SimpleDateFormat formatter =
                 new SimpleDateFormat("d MMMM yyyy • HH:mm", new Locale("tr", "TR"));
         return getString(R.string.created_at) + ": " + formatter.format(timestamp.toDate());
+    }
+
+    private String categoryLabel(String type) {
+        String safeType = safe(type).trim();
+        if ("Film".equalsIgnoreCase(safeType)) {
+            return "🎬 Film";
+        } else if ("Dizi".equalsIgnoreCase(safeType)) {
+            return "📺 Dizi";
+        } else if ("Kitap".equalsIgnoreCase(safeType)) {
+            return "📚 Kitap";
+        } else if ("Oyun".equalsIgnoreCase(safeType)) {
+            return "🎮 Oyun";
+        } else if ("Şarkı".equalsIgnoreCase(safeType) || "Sarki".equalsIgnoreCase(safeType)) {
+            return "🎵 Şarkı";
+        }
+        return safeType.isEmpty() ? "✨ Alıntı" : safeType;
+    }
+
+    private int dp(int value) {
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 
     private void setOptionalText(TextView view, String value, String displayValue) {

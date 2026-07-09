@@ -219,10 +219,10 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="@string/share"
-                android:textColor="@color/home_v2_text_secondary"
+                android:textColor="@color/home_v2_primary"
                 app:icon="@drawable/ic_share"
                 app:iconGravity="textStart"
-                app:iconTint="@color/home_v2_text_secondary" />
+                app:iconTint="@color/home_v2_primary" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonMoreQuote"
