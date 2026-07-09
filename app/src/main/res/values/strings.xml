@@ -190,6 +190,7 @@
     <string name="follow_coming_soon">Takip özelliği yakında</string>
     <string name="profile_edit_coming_soon">Profil düzenleme yakında.</string>
     <string name="user_quotes">Paylaşımlar</string>
+    <string name="user_profile_quotes_title">Paylaşılan Alıntılar</string>
     <string name="user_has_no_quotes">Bu kullanıcının henüz alıntısı yok.</string>
     <string name="no_more_quotes">Daha fazla alıntı yok</string>
 

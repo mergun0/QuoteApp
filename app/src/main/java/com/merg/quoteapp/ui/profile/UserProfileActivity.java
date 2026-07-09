@@ -40,10 +40,12 @@ import com.merg.quoteapp.viewmodel.UserProfileViewModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class UserProfileActivity extends AppCompatActivity {
 
@@ -72,7 +74,20 @@ public class UserProfileActivity extends AppCompatActivity {
     private TextView xpProgressText;
     private TextView achievementCountText;
     private TextView achievementEmptyText;
+    private TextView avatarText;
+    private TextView displayNameText;
+    private TextView nextLevelText;
+    private TextView statLikesValueText;
+    private TextView statQuotesValueText;
+    private TextView statAchievementsValueText;
+    private TextView statSavedValueText;
+    private TextView lastAchievementTitleText;
+    private TextView lastAchievementDescriptionText;
+    private TextView nextAchievementTitleText;
+    private TextView nextAchievementDescriptionText;
+    private TextView nextAchievementProgressText;
     private ProgressBar xpProgressBar;
+    private ProgressBar nextAchievementProgressBar;
     private RecyclerView achievementRecyclerView;
     private String profileUserId;
     private boolean ownProfile;
@@ -83,6 +98,7 @@ public class UserProfileActivity extends AppCompatActivity {
     private Map<String, Long> renderedLikeCounts = new HashMap<>();
     private List<Achievement> currentAchievements = new ArrayList<>();
     private List<UserAchievement> currentUserAchievements = new ArrayList<>();
+    private UserStats currentStats;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +109,14 @@ public class UserProfileActivity extends AppCompatActivity {
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null
                 ? null : FirebaseAuth.getInstance().getCurrentUser().getUid();
         ownProfile = currentUserId != null && currentUserId.equals(profileUserId);
+        if (ownProfile) {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.putExtra(MainActivity.EXTRA_OPEN_PROFILE_TAB, true);
+            startActivity(intent);
+            finish();
+            return;
+        }
 
         bindViews();
         setupToolbar();
@@ -148,8 +172,26 @@ public class UserProfileActivity extends AppCompatActivity {
         xpProgressText = findViewById(R.id.textUserProfileXpProgress);
         achievementCountText = findViewById(R.id.textUserProfileAchievementCount);
         achievementEmptyText = findViewById(R.id.textUserProfileAchievementEmpty);
+        avatarText = findViewById(R.id.textUserProfileAvatar);
+        displayNameText = findViewById(R.id.textUserProfileDisplayName);
+        nextLevelText = findViewById(R.id.textUserProfileNextLevel);
+        statLikesValueText = findViewById(R.id.userStatLikes)
+                .findViewById(R.id.textUserProfileStatValue);
+        statQuotesValueText = findViewById(R.id.userStatTotal)
+                .findViewById(R.id.textUserProfileStatValue);
+        statAchievementsValueText = findViewById(R.id.userStatAchievements)
+                .findViewById(R.id.textUserProfileStatValue);
+        statSavedValueText = findViewById(R.id.userStatSaved)
+                .findViewById(R.id.textUserProfileStatValue);
+        lastAchievementTitleText = findViewById(R.id.textUserProfileLastAchievementTitle);
+        lastAchievementDescriptionText = findViewById(R.id.textUserProfileLastAchievementDescription);
+        nextAchievementTitleText = findViewById(R.id.textUserProfileNextAchievementTitle);
+        nextAchievementDescriptionText = findViewById(R.id.textUserProfileNextAchievementDescription);
+        nextAchievementProgressText = findViewById(R.id.textUserProfileNextAchievementProgress);
         xpProgressBar = findViewById(R.id.progressUserProfileXp);
+        nextAchievementProgressBar = findViewById(R.id.progressUserProfileNextAchievement);
         achievementRecyclerView = findViewById(R.id.recyclerUserProfileAchievements);
+        setupStatCards();
     }
 
     private void setupToolbar() {
@@ -191,7 +233,7 @@ public class UserProfileActivity extends AppCompatActivity {
             public void onUserProfile(String userId) {
                 openUserProfile(userId);
             }
-        }, false, true, currentUserId);
+        }, false, true, currentUserId, R.layout.item_quote_home);
         adapter.setLikeActionsEnabled(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
@@ -234,19 +276,15 @@ public class UserProfileActivity extends AppCompatActivity {
     }
 
     private void renderProfile(UserProfileData profile) {
+        String username = safeDisplayName(profile.getUsername());
+        displayNameText.setText(username);
         ((TextView) findViewById(R.id.textUserProfileUsername))
-                .setText("@" + profile.getUsername());
+                .setText(getString(R.string.profile_handle_format, safeHandle(username)));
+        avatarText.setText(firstLetter(username));
         renderJoinedAt(profile.getJoinedAt());
-        setStat(findViewById(R.id.userStatTotal),
-                R.string.profile_total, profile.getTotalQuotes());
-        setStat(findViewById(R.id.userStatMovies),
-                R.string.profile_movies, profile.getMovieQuotes());
-        setStat(findViewById(R.id.userStatSeries),
-                R.string.profile_series, profile.getSeriesQuotes());
-        setStat(findViewById(R.id.userStatBooks),
-                R.string.profile_books, profile.getBookQuotes());
-        setStat(findViewById(R.id.userStatLikes),
-                R.string.profile_likes, profile.getTotalLikes());
+        statLikesValueText.setText(String.valueOf(profile.getTotalLikes()));
+        statQuotesValueText.setText(String.valueOf(profile.getTotalQuotes()));
+        statSavedValueText.setText("0");
 
         adapter.submitList(profile.getQuotes());
         likeViewModel.loadLikedStates(profile.getQuotes());
@@ -261,10 +299,22 @@ public class UserProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void setStat(View statView, int labelRes, int value) {
-        ((TextView) statView.findViewById(R.id.textStatLabel)).setText(labelRes);
-        ((TextView) statView.findViewById(R.id.textStatValue))
-                .setText(String.valueOf(value));
+    private void setupStatCards() {
+        setupStatCard(findViewById(R.id.userStatLikes), "♥",
+                R.string.profile_stat_total_likes, R.color.home_v2_error);
+        setupStatCard(findViewById(R.id.userStatTotal), "✎",
+                R.string.profile_stat_total_quotes, R.color.home_v2_primary);
+        setupStatCard(findViewById(R.id.userStatAchievements), "★",
+                R.string.profile_stat_unlocked_achievements, R.color.home_v2_accent);
+        setupStatCard(findViewById(R.id.userStatSaved), "◆",
+                R.string.profile_stat_saved_quotes, R.color.home_v2_secondary);
+    }
+
+    private void setupStatCard(View statView, String icon, int labelRes, int colorRes) {
+        ((TextView) statView.findViewById(R.id.textUserProfileStatIcon)).setText(icon);
+        ((TextView) statView.findViewById(R.id.textUserProfileStatIcon))
+                .setTextColor(ContextCompat.getColor(this, colorRes));
+        ((TextView) statView.findViewById(R.id.textUserProfileStatLabel)).setText(labelRes);
     }
 
     private void renderJoinedAt(Timestamp joinedAt) {
@@ -385,7 +435,9 @@ public class UserProfileActivity extends AppCompatActivity {
         }
         userStatsViewModel.getUserStats().observe(this, stats -> {
             UserStats safeStats = stats == null ? defaultStats() : stats;
+            currentStats = safeStats;
             renderUserStats(safeStats);
+            renderAchievementFocusCards();
             if (levelViewModel != null) {
                 levelViewModel.loadLevelProgress(Math.max(0, safeStats.getTotalXp()));
             }
@@ -408,12 +460,14 @@ public class UserProfileActivity extends AppCompatActivity {
         achievementViewModel.getActiveAchievements().observe(this, achievements -> {
             currentAchievements = achievements == null ? new ArrayList<>() : achievements;
             renderAchievementPreview();
+            renderAchievementFocusCards();
         });
         achievementViewModel.getUserAchievements().observe(this, achievements -> {
             currentUserAchievements = achievements == null ? new ArrayList<>() : achievements;
             renderAchievementPreview();
             UserStats current = userStatsViewModel.getUserStats().getValue();
             renderUserStats(current == null ? defaultStats() : current);
+            renderAchievementFocusCards();
         });
         achievementViewModel.getError().observe(this, message -> {
             if (message != null && currentAchievements.isEmpty()) {
@@ -437,8 +491,10 @@ public class UserProfileActivity extends AppCompatActivity {
     }
 
     private void renderDefaultAchievementState() {
-        renderUserStats(defaultStats());
+        currentStats = defaultStats();
+        renderUserStats(currentStats);
         renderAchievementPreview();
+        renderAchievementFocusCards();
     }
 
     private void renderUserStats(UserStats stats) {
@@ -449,10 +505,10 @@ public class UserProfileActivity extends AppCompatActivity {
         long totalXp = Math.max(0, stats.getTotalXp());
         long unlockedCount = Math.max(stats.getUnlockedAchievementCount(),
                 currentUserAchievements == null ? 0 : currentUserAchievements.size());
-        levelText.setText(getString(R.string.level_format, level));
-        xpText.setText(getString(R.string.xp_total_format, totalXp));
+        levelText.setText(getString(R.string.profile_level_with_icon_format, level));
         achievementCountText.setText(getString(
-                R.string.unlocked_achievement_count_format, unlockedCount));
+                R.string.profile_achievement_count_format, unlockedCount));
+        statAchievementsValueText.setText(String.valueOf(unlockedCount));
         renderXpProgress(totalXp);
     }
 
@@ -468,7 +524,9 @@ public class UserProfileActivity extends AppCompatActivity {
         Level nextLevel = levelViewModel.getNextLevel().getValue();
         if (nextLevel == null) {
             xpProgressBar.setProgress(100);
+            xpText.setText(getString(R.string.xp_total_format, totalXp));
             xpProgressText.setText(R.string.xp_progress_max);
+            nextLevelText.setText(R.string.xp_progress_max);
             return;
         }
         long currentRequiredXp = Math.max(0, currentLevel.getRequiredTotalXp());
@@ -476,15 +534,21 @@ public class UserProfileActivity extends AppCompatActivity {
         long range = nextRequiredXp - currentRequiredXp;
         long progress = Math.max(0, totalXp - currentRequiredXp);
         xpProgressBar.setProgress((int) Math.min(100, (progress * 100) / range));
-        xpProgressText.setText(getString(R.string.xp_progress_format, progress, range));
+        xpText.setText(getString(R.string.xp_progress_format, totalXp, nextRequiredXp));
+        xpProgressText.setText(getString(R.string.xp_remaining_format,
+                Math.max(0, nextRequiredXp - totalXp)));
+        nextLevelText.setText(getString(R.string.next_level_format, nextLevel.getLevel()));
     }
 
     private void renderFallbackXpProgress(long totalXp) {
         long fallbackTarget = 100;
         long safeXp = Math.max(0, totalXp);
         xpProgressBar.setProgress((int) Math.min(100, (safeXp * 100) / fallbackTarget));
-        xpProgressText.setText(getString(R.string.xp_progress_format,
+        xpText.setText(getString(R.string.xp_progress_format,
                 Math.min(safeXp, fallbackTarget), fallbackTarget));
+        xpProgressText.setText(getString(R.string.xp_remaining_format,
+                Math.max(0, fallbackTarget - safeXp)));
+        nextLevelText.setText(getString(R.string.next_level_format, 2));
     }
 
     private void renderAchievementPreview() {
@@ -496,6 +560,154 @@ public class UserProfileActivity extends AppCompatActivity {
         boolean empty = currentAchievements == null || currentAchievements.isEmpty();
         achievementRecyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
         achievementEmptyText.setVisibility(empty ? View.VISIBLE : View.GONE);
+    }
+
+    private void renderAchievementFocusCards() {
+        renderLastAchievementCard();
+        renderNextAchievementCard();
+    }
+
+    private void renderLastAchievementCard() {
+        if (lastAchievementTitleText == null || lastAchievementDescriptionText == null) {
+            return;
+        }
+        UserAchievement latest = findLatestUnlockedAchievement();
+        if (latest == null) {
+            lastAchievementTitleText.setText(R.string.profile_no_last_achievement_title);
+            lastAchievementDescriptionText.setText(R.string.user_achievements_empty);
+            return;
+        }
+        Achievement achievement = findAchievement(latest.getAchievementId());
+        lastAchievementTitleText.setText(achievement == null || isBlank(achievement.getTitle())
+                ? getString(R.string.achievement_default_title) : achievement.getTitle());
+        lastAchievementDescriptionText.setText(achievement == null || isBlank(achievement.getDescription())
+                ? getString(R.string.achievement_unlocked) : achievement.getDescription());
+    }
+
+    private void renderNextAchievementCard() {
+        if (nextAchievementTitleText == null || nextAchievementDescriptionText == null
+                || nextAchievementProgressText == null || nextAchievementProgressBar == null) {
+            return;
+        }
+        NextAchievement next = findNextAchievement();
+        if (next == null) {
+            nextAchievementTitleText.setText(R.string.profile_next_achievement_fallback);
+            nextAchievementDescriptionText.setText(R.string.profile_next_achievement_fallback_detail);
+            nextAchievementProgressText.setText(R.string.profile_progress_unknown);
+            nextAchievementProgressBar.setVisibility(View.GONE);
+            return;
+        }
+        nextAchievementTitleText.setText(isBlank(next.achievement.getTitle())
+                ? getString(R.string.achievement_default_title) : next.achievement.getTitle());
+        nextAchievementDescriptionText.setText(isBlank(next.achievement.getDescription())
+                ? getString(R.string.profile_next_achievement_fallback_detail)
+                : next.achievement.getDescription());
+        nextAchievementProgressText.setText(getString(R.string.profile_achievement_progress_format,
+                Math.min(next.currentValue, next.targetValue), next.targetValue));
+        nextAchievementProgressBar.setVisibility(View.VISIBLE);
+        nextAchievementProgressBar.setProgress((int) Math.min(100,
+                (Math.max(0, next.currentValue) * 100) / Math.max(1, next.targetValue)));
+    }
+
+    private UserAchievement findLatestUnlockedAchievement() {
+        if (currentUserAchievements == null || currentUserAchievements.isEmpty()) {
+            return null;
+        }
+        UserAchievement latest = null;
+        for (UserAchievement achievement : currentUserAchievements) {
+            if (achievement == null) {
+                continue;
+            }
+            if (latest == null || timestampMillis(achievement.getUnlockedAt())
+                    > timestampMillis(latest.getUnlockedAt())) {
+                latest = achievement;
+            }
+        }
+        return latest;
+    }
+
+    private NextAchievement findNextAchievement() {
+        if (currentAchievements == null || currentAchievements.isEmpty()) {
+            return null;
+        }
+        Set<String> unlockedIds = new HashSet<>();
+        if (currentUserAchievements != null) {
+            for (UserAchievement userAchievement : currentUserAchievements) {
+                if (userAchievement != null && !isBlank(userAchievement.getAchievementId())) {
+                    unlockedIds.add(userAchievement.getAchievementId());
+                }
+            }
+        }
+        NextAchievement best = null;
+        for (Achievement achievement : currentAchievements) {
+            if (achievement == null || isBlank(achievement.getAchievementId())
+                    || unlockedIds.contains(achievement.getAchievementId())) {
+                continue;
+            }
+            long target = achievement.getTargetValue();
+            Long current = getMetricValue(achievement.getMetric());
+            if (current == null || target <= 0) {
+                continue;
+            }
+            NextAchievement candidate = new NextAchievement(achievement, Math.max(0, current), target);
+            if (best == null || candidate.progressRatio() > best.progressRatio()
+                    || (candidate.progressRatio() == best.progressRatio()
+                    && achievement.getSortOrder() < best.achievement.getSortOrder())) {
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    private Achievement findAchievement(String achievementId) {
+        if (isBlank(achievementId) || currentAchievements == null) {
+            return null;
+        }
+        for (Achievement achievement : currentAchievements) {
+            if (achievement != null && achievementId.equals(achievement.getAchievementId())) {
+                return achievement;
+            }
+        }
+        return null;
+    }
+
+    private Long getMetricValue(String metric) {
+        UserStats stats = currentStats == null ? defaultStats() : currentStats;
+        if (isBlank(metric)) {
+            return null;
+        }
+        String normalized = metric.trim().toLowerCase(Locale.US);
+        switch (normalized) {
+            case "totalxp":
+                return stats.getTotalXp();
+            case "level":
+                return (long) Math.max(1, stats.getLevel());
+            case "totalquotes":
+                return stats.getTotalQuotes();
+            case "totallikesreceived":
+                return stats.getTotalLikesReceived();
+            case "maxsinglequotelikes":
+            case "singlequotelikes":
+                return stats.getMaxSingleQuoteLikes();
+            case "totalmoviequotes":
+                return stats.getTotalMovieQuotes();
+            case "totalseriesquotes":
+                return stats.getTotalSeriesQuotes();
+            case "totalbookquotes":
+                return stats.getTotalBookQuotes();
+            case "validreports":
+                return stats.getValidReports();
+            case "invalidreports":
+                return stats.getInvalidReports();
+            case "unlockedachievementcount":
+                return stats.getUnlockedAchievementCount();
+            default:
+                return null;
+        }
+    }
+
+    private long timestampMillis(Timestamp timestamp) {
+        return timestamp == null ? 0L : timestamp.toDate().getTime();
     }
 
     private UserStats defaultStats() {
@@ -598,7 +810,43 @@ public class UserProfileActivity extends AppCompatActivity {
         return value == null ? "" : value;
     }
 
+    private String safeDisplayName(String username) {
+        return isBlank(username) ? getString(R.string.username) : username.trim();
+    }
+
+    private String safeHandle(String username) {
+        String cleaned = username == null ? "" : username.trim();
+        if (cleaned.startsWith("@")) {
+            cleaned = cleaned.substring(1);
+        }
+        cleaned = cleaned.replaceAll("\\s+", "").toLowerCase(Locale.US);
+        return cleaned.isEmpty() ? "kullanici" : cleaned;
+    }
+
+    private String firstLetter(String value) {
+        if (isBlank(value)) {
+            return "K";
+        }
+        return value.trim().substring(0, 1).toUpperCase(new Locale("tr", "TR"));
+    }
+
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private static class NextAchievement {
+        private final Achievement achievement;
+        private final long currentValue;
+        private final long targetValue;
+
+        private NextAchievement(Achievement achievement, long currentValue, long targetValue) {
+            this.achievement = achievement;
+            this.currentValue = currentValue;
+            this.targetValue = targetValue;
+        }
+
+        private long progressRatio() {
+            return (Math.max(0, currentValue) * 1000) / Math.max(1, targetValue);
+        }
     }
 }
