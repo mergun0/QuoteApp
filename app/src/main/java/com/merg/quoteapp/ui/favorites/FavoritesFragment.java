@@ -2,6 +2,8 @@ package com.merg.quoteapp.ui.favorites;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -16,7 +18,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
@@ -30,9 +34,12 @@ import com.merg.quoteapp.viewmodel.FavoriteViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
 import com.merg.quoteapp.viewmodel.QuoteViewModel;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class FavoritesFragment extends Fragment {
 
@@ -45,6 +52,13 @@ public class FavoritesFragment extends Fragment {
     private ProgressBar progressBar;
     private LinearLayout emptyLayout;
     private TextView statusText;
+    private TextView countText;
+    private TextView emptyTitleText;
+    private TextView emptyDescriptionText;
+    private TextInputEditText searchInput;
+    private List<Quote> allSavedQuotes = new ArrayList<>();
+    private String searchQuery = "";
+    private String selectedFilter = "ALL";
     private Map<String, Boolean> renderedSavedStates = new HashMap<>();
     private Map<String, Boolean> renderedSaveLoadingStates = new HashMap<>();
     private Map<String, Boolean> renderedLikedStates = new HashMap<>();
@@ -60,6 +74,7 @@ public class FavoritesFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         bindViews(view);
         setupRecyclerView();
+        setupSearchAndFilters(view);
         favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
         likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
         quoteViewModel = new ViewModelProvider(this).get(QuoteViewModel.class);
@@ -77,7 +92,7 @@ public class FavoritesFragment extends Fragment {
         likeViewModel.getLoadingState().observe(getViewLifecycleOwner(), this::renderLikeState);
         quoteViewModel.getOperationState().observe(getViewLifecycleOwner(), this::renderQuoteOperationState);
 
-        swipeRefreshLayout.setColorSchemeResources(R.color.quote_primary, R.color.quote_secondary);
+        swipeRefreshLayout.setColorSchemeResources(R.color.home_v2_primary, R.color.home_v2_secondary);
         swipeRefreshLayout.setOnRefreshListener(favoriteViewModel::refreshSavedQuotes);
         favoriteViewModel.loadSavedQuotes();
     }
@@ -88,6 +103,10 @@ public class FavoritesFragment extends Fragment {
         progressBar = view.findViewById(R.id.progressFavorites);
         emptyLayout = view.findViewById(R.id.layoutEmptyFavorites);
         statusText = view.findViewById(R.id.textFavoritesStatus);
+        countText = view.findViewById(R.id.textFavoritesCount);
+        emptyTitleText = view.findViewById(R.id.textEmptyFavoritesTitle);
+        emptyDescriptionText = view.findViewById(R.id.textEmptyFavoritesDescription);
+        searchInput = view.findViewById(R.id.editFavoritesSearch);
     }
 
     private void setupRecyclerView() {
@@ -130,22 +149,112 @@ public class FavoritesFragment extends Fragment {
             public void onUserProfile(String userId) {
                 openUserProfile(userId);
             }
-        }, true, true, currentUserId);
+        }, true, true, currentUserId, R.layout.item_quote_home);
         adapter.setLikeActionsEnabled(true);
         adapter.setSaveActionsEnabled(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
     }
 
+    private void setupSearchAndFilters(View view) {
+        if (searchInput != null) {
+            searchInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                    // No-op.
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    searchQuery = s == null ? "" : s.toString();
+                    applyFilters();
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    // No-op.
+                }
+            });
+        }
+        ChipGroup chipGroup = view.findViewById(R.id.chipGroupFavoritesFilters);
+        chipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            int checkedId = checkedIds.isEmpty() ? R.id.chipFavoritesAll : checkedIds.get(0);
+            if (checkedId == R.id.chipFavoritesMovie) {
+                selectedFilter = "Film";
+            } else if (checkedId == R.id.chipFavoritesSeries) {
+                selectedFilter = "Dizi";
+            } else if (checkedId == R.id.chipFavoritesBook) {
+                selectedFilter = "Kitap";
+            } else if (checkedId == R.id.chipFavoritesSpoiler) {
+                selectedFilter = "SPOILER";
+            } else {
+                selectedFilter = "ALL";
+            }
+            applyFilters();
+        });
+    }
+
     private void renderQuotes(List<Quote> quotes) {
-        adapter.submitList(quotes);
-        boolean empty = quotes == null || quotes.isEmpty();
-        recyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
-        emptyLayout.setVisibility(empty ? View.VISIBLE : View.GONE);
+        allSavedQuotes = quotes == null ? new ArrayList<>() : new ArrayList<>(quotes);
+        countText.setText(getString(R.string.favorites_count_format, allSavedQuotes.size()));
+        applyFilters();
         if (quotes != null) {
             favoriteViewModel.loadSavedStates(quotes);
             likeViewModel.loadLikedStates(quotes);
             likeViewModel.loadLikeCounts(quotes);
+        }
+    }
+
+    private void applyFilters() {
+        List<Quote> filtered = allSavedQuotes.stream()
+                .filter(this::matchesFilter)
+                .filter(this::matchesSearch)
+                .collect(Collectors.toList());
+        adapter.submitList(filtered);
+        boolean empty = filtered.isEmpty();
+        recyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
+        emptyLayout.setVisibility(empty ? View.VISIBLE : View.GONE);
+        renderEmptyText();
+    }
+
+    private boolean matchesFilter(Quote quote) {
+        if (quote == null) {
+            return false;
+        }
+        if ("ALL".equals(selectedFilter)) {
+            return true;
+        }
+        if ("SPOILER".equals(selectedFilter)) {
+            return quote.isSpoiler();
+        }
+        return selectedFilter.equals(quote.getType());
+    }
+
+    private boolean matchesSearch(Quote quote) {
+        if (quote == null || searchQuery == null || searchQuery.trim().isEmpty()) {
+            return true;
+        }
+        String query = searchQuery.trim().toLowerCase(Locale.getDefault());
+        return contains(quote.getText(), query)
+                || contains(quote.getTitle(), query)
+                || contains(quote.getAuthor(), query)
+                || contains(quote.getCharacterName(), query)
+                || contains(quote.getUsername(), query)
+                || (quote.getTags() != null && quote.getTags().stream()
+                .anyMatch(tag -> contains(tag, query)));
+    }
+
+    private boolean contains(String value, String query) {
+        return value != null && value.toLowerCase(Locale.getDefault()).contains(query);
+    }
+
+    private void renderEmptyText() {
+        if (allSavedQuotes.isEmpty()) {
+            emptyTitleText.setText(R.string.favorites_empty);
+            emptyDescriptionText.setText(R.string.favorites_empty_detail);
+        } else {
+            emptyTitleText.setText(R.string.no_filter_results);
+            emptyDescriptionText.setText(R.string.no_filter_results_detail);
         }
     }
 
@@ -296,7 +405,7 @@ public class FavoritesFragment extends Fragment {
     private void showStatus(String message, boolean error) {
         statusText.setText(message);
         statusText.setTextColor(ContextCompat.getColor(requireContext(), error
-                ? R.color.quote_status_error : R.color.quote_status_success));
+                ? R.color.home_v2_error : R.color.home_v2_secondary));
         statusText.setVisibility(View.VISIBLE);
     }
 

@@ -4,133 +4,316 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/quote_background"
+    android:background="@color/home_v2_background"
     tools:context=".ui.favorites.FavoritesFragment">
 
-    <TextView
-        android:id="@+id/textFavoritesTitle"
+    <LinearLayout
+        android:id="@+id/layoutFavoritesHeader"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="20dp"
-        android:text="@string/favorites_title"
-        android:textColor="@color/quote_text_primary"
-        android:textSize="28sp"
-        android:textStyle="bold"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:id="@+id/textFavoritesSubtitle"
+        <TextView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_home_v2_avatar"
+            android:gravity="center"
+            android:text="🔖"
+            android:textSize="18sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textFavoritesTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/favorites_v2_title"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textFavoritesSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:lineSpacingExtra="4dp"
+                android:text="@string/favorites_v2_subtitle"
+                android:textColor="@color/home_v2_text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardFavoritesCount"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginEnd="20dp"
-        android:text="@string/favorites_subtitle"
-        android:textColor="@color/quote_text_secondary"
-        android:textSize="14sp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        app:cardBackgroundColor="@color/home_v2_card"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textFavoritesTitle" />
+        app:layout_constraintTop_toBottomOf="@id/layoutFavoritesHeader"
+        app:strokeColor="@color/home_v2_divider"
+        app:strokeWidth="1dp">
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefreshFavorites"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/textFavoritesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/favorites_count_zero"
+                android:textColor="@color/home_v2_accent"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                tools:text="🔖 24" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_weight="1"
+                android:text="@string/favorites_count_label"
+                android:textColor="@color/home_v2_text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutFavoritesSearch"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        app:boxBackgroundColor="@color/home_v2_surface"
+        app:boxBackgroundMode="filled"
+        app:boxCornerRadiusBottomEnd="20dp"
+        app:boxCornerRadiusBottomStart="20dp"
+        app:boxCornerRadiusTopEnd="20dp"
+        app:boxCornerRadiusTopStart="20dp"
+        app:boxStrokeColor="@color/home_v2_divider"
+        app:endIconMode="clear_text"
+        app:endIconTint="@color/home_v2_text_secondary"
+        app:hintEnabled="false"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardFavoritesCount"
+        app:startIconDrawable="@drawable/ic_search"
+        app:startIconTint="@color/home_v2_text_secondary">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editFavoritesSearch"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:hint="@string/search_favorites"
+            android:inputType="text"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/home_v2_text_primary"
+            android:textColorHint="@color/home_v2_hint" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <HorizontalScrollView
+        android:id="@+id/scrollFavoritesFilters"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:scrollbars="none"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutFavoritesSearch">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupFavoritesFilters"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:chipSpacingHorizontal="8dp"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFavoritesAll"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/filter_all"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="13sp"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFavoritesMovie"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_movie"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="13sp"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFavoritesSeries"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_series"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="13sp"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFavoritesBook"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_book"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="13sp"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFavoritesSpoiler"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_spoiler"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="13sp"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
+    <FrameLayout
+        android:id="@+id/layoutFavoritesFeedContainer"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="4dp"
+        android:clipChildren="true"
+        android:clipToPadding="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textFavoritesSubtitle">
+        app:layout_constraintTop_toBottomOf="@id/scrollFavoritesFilters">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerFavorites"
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefreshFavorites"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingTop="6dp"
-            android:paddingBottom="20dp"
-            tools:listitem="@layout/item_quote" />
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            android:layout_height="match_parent">
 
-    <ProgressBar
-        android:id="@+id/progressFavorites"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@id/swipeRefreshFavorites"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/swipeRefreshFavorites" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerFavorites"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingTop="4dp"
+                android:paddingBottom="20dp"
+                tools:listitem="@layout/item_quote_home" />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <LinearLayout
-        android:id="@+id/layoutEmptyFavorites"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="28dp"
-        android:layout_marginEnd="28dp"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:paddingStart="28dp"
-        android:paddingTop="32dp"
-        android:paddingEnd="28dp"
-        android:paddingBottom="32dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/swipeRefreshFavorites"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/swipeRefreshFavorites"
-        tools:visibility="visible">
-
-        <ImageView
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:background="@drawable/bg_profile_avatar"
-            android:contentDescription="@string/favorites_empty"
-            android:padding="22dp"
-            android:src="@drawable/ic_bookmark"
-            app:tint="@color/quote_primary_light" />
-
-        <TextView
-            android:id="@+id/textEmptyFavoritesTitle"
+        <ProgressBar
+            android:id="@+id/progressFavorites"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/home_v2_primary" />
+
+        <LinearLayout
+            android:id="@+id/layoutEmptyFavorites"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="24dp"
+            android:background="@drawable/bg_home_v2_card"
             android:gravity="center"
-            android:text="@string/favorites_empty"
-            android:textColor="@color/quote_text_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_home_v2_avatar"
+                android:contentDescription="@string/favorites_empty"
+                android:padding="16dp"
+                android:src="@drawable/ic_bookmark"
+                app:tint="@color/home_v2_text_primary" />
+
+            <TextView
+                android:id="@+id/textEmptyFavoritesTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="@string/favorites_empty"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textEmptyFavoritesDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:text="@string/favorites_empty_detail"
+                android:textColor="@color/home_v2_text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/textEmptyFavoritesDescription"
-            android:layout_width="280dp"
+            android:id="@+id/textFavoritesStatus"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="24dp"
+            android:accessibilityLiveRegion="polite"
+            android:background="@drawable/bg_home_v2_card"
             android:gravity="center"
-            android:lineSpacingExtra="3dp"
-            android:text="@string/favorites_empty_detail"
-            android:textColor="@color/quote_text_secondary"
-            android:textSize="14sp" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/textFavoritesStatus"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="28dp"
-        android:layout_marginEnd="28dp"
-        android:accessibilityLiveRegion="polite"
-        android:gravity="center"
-        android:textColor="@color/quote_status_error"
-        android:textSize="14sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/swipeRefreshFavorites"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/swipeRefreshFavorites"
-        tools:text="Kaydedilen alıntılar yüklenemedi."
-        tools:visibility="visible" />
+            android:padding="16dp"
+            android:textColor="@color/home_v2_error"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Kaydedilen alıntılar yüklenemedi."
+            tools:visibility="visible" />
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

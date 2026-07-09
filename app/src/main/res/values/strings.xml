@@ -61,6 +61,12 @@
     <string name="coming_soon">Yakında…</string>
     <string name="favorites_title">Favoriler</string>
     <string name="favorites_subtitle">Kaydettiğin alıntılar burada, sadece sana özel.</string>
+    <string name="favorites_v2_title">Kaydedilen Alıntılar</string>
+    <string name="favorites_v2_subtitle">Daha sonra okumak istediğin alıntılar burada.</string>
+    <string name="favorites_count_zero">🔖 0</string>
+    <string name="favorites_count_format">🔖 %1$d</string>
+    <string name="favorites_count_label">Kaydedilen alıntı</string>
+    <string name="search_favorites">Kaydedilenlerde ara...</string>
     <string name="favorites_empty">Henüz kaydedilen alıntı yok.</string>
     <string name="favorites_empty_detail">Beğendiğin alıntıları daha sonra görmek için kaydedebilirsin.</string>
     <string name="profile_title">Profil</string>
