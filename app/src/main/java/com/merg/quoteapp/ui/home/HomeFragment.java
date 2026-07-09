@@ -24,21 +24,32 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.adapter.QuoteAdapter;
+import com.merg.quoteapp.model.Achievement;
+import com.merg.quoteapp.model.Level;
 import com.merg.quoteapp.model.ProfileStats;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
+import com.merg.quoteapp.model.UserAchievement;
+import com.merg.quoteapp.model.UserStats;
+import com.merg.quoteapp.ui.profile.AchievementsActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
 import com.merg.quoteapp.utils.ReportBottomSheetHelper;
+import com.merg.quoteapp.viewmodel.AchievementViewModel;
 import com.merg.quoteapp.viewmodel.FavoriteViewModel;
+import com.merg.quoteapp.viewmodel.LevelViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
 import com.merg.quoteapp.viewmodel.ProfileViewModel;
 import com.merg.quoteapp.viewmodel.QuoteViewModel;
 import com.merg.quoteapp.viewmodel.ReportViewModel;
+import com.merg.quoteapp.viewmodel.UserStatsViewModel;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -52,11 +63,20 @@ public class HomeFragment extends Fragment {
     private LikeViewModel likeViewModel;
     private FavoriteViewModel favoriteViewModel;
     private ReportViewModel reportViewModel;
+    private UserStatsViewModel userStatsViewModel;
+    private AchievementViewModel achievementViewModel;
+    private LevelViewModel levelViewModel;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
+    private ProgressBar xpProgressBar;
     private LinearLayout emptyLayout;
     private TextView statusText;
     private TextView greetingText;
+    private TextView usernameText;
+    private TextView avatarText;
+    private TextView levelText;
+    private TextView xpProgressText;
+    private TextView achievementCountText;
     private TextView emptyTitleText;
     private TextView emptyDescriptionText;
     private TextInputEditText searchInput;
@@ -67,6 +87,8 @@ public class HomeFragment extends Fragment {
     private Map<String, Long> renderedLikeCounts = new HashMap<>();
     private Map<String, Boolean> renderedSavedStates = new HashMap<>();
     private Map<String, Boolean> renderedSaveLoadingStates = new HashMap<>();
+    private List<UserAchievement> currentUserAchievements = new ArrayList<>();
+    private UserStats currentStats;
     private String searchQuery = "";
     private QuoteFilter selectedFilter = QuoteFilter.ALL;
 
@@ -92,6 +114,9 @@ public class HomeFragment extends Fragment {
         likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
         favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
         reportViewModel = new ViewModelProvider(this).get(ReportViewModel.class);
+        userStatsViewModel = new ViewModelProvider(this).get(UserStatsViewModel.class);
+        achievementViewModel = new ViewModelProvider(this).get(AchievementViewModel.class);
+        levelViewModel = new ViewModelProvider(this).get(LevelViewModel.class);
         viewModel.getQuotes().observe(getViewLifecycleOwner(), this::renderQuotes);
         viewModel.getListState().observe(getViewLifecycleOwner(), this::renderListState);
         viewModel.getOperationState().observe(getViewLifecycleOwner(), this::renderOperationState);
@@ -106,10 +131,13 @@ public class HomeFragment extends Fragment {
         favoriteViewModel.getOperationState().observe(
                 getViewLifecycleOwner(), this::renderFavoriteState);
         observeReportState();
+        observeDashboardState();
         viewModel.loadCurrentUserQuotes();
         setupSearch();
         setupFilters(view);
         setupGreeting();
+        setupDashboardActions(view);
+        loadDashboardState();
 
         swipeRefreshLayout.setColorSchemeResources(
                 R.color.quote_primary,
@@ -123,9 +151,15 @@ public class HomeFragment extends Fragment {
     private void bindViews(View view) {
         recyclerView = view.findViewById(R.id.recyclerQuotes);
         progressBar = view.findViewById(R.id.progressQuotes);
+        xpProgressBar = view.findViewById(R.id.progressHomeXp);
         emptyLayout = view.findViewById(R.id.layoutEmptyQuotes);
         statusText = view.findViewById(R.id.textQuotesStatus);
         greetingText = view.findViewById(R.id.textHomeGreeting);
+        usernameText = view.findViewById(R.id.textHomeUsername);
+        avatarText = view.findViewById(R.id.textHomeAvatar);
+        levelText = view.findViewById(R.id.textHomeLevel);
+        xpProgressText = view.findViewById(R.id.textHomeXpProgress);
+        achievementCountText = view.findViewById(R.id.textHomeAchievementCount);
         emptyTitleText = view.findViewById(R.id.textEmptyQuotesTitle);
         emptyDescriptionText = view.findViewById(R.id.textEmptyQuotesDescription);
         searchInput = view.findViewById(R.id.editHomeSearch);
@@ -168,7 +202,7 @@ public class HomeFragment extends Fragment {
             public void onSave(Quote quote) {
                 toggleSave(quote);
             }
-        });
+        }, false, false, null, R.layout.item_quote_home);
         adapter.setLikeActionsEnabled(true);
         adapter.setSaveActionsEnabled(true);
         adapter.setReportActionsEnabled(true);
@@ -387,7 +421,7 @@ public class HomeFragment extends Fragment {
             fallback = email.substring(0, email.indexOf('@'));
         }
         if (!fallback.isEmpty()) {
-            greetingText.setText(getString(R.string.home_greeting, fallback));
+            renderHomeIdentity(fallback);
         }
 
         ProfileViewModel profileViewModel =
@@ -399,8 +433,132 @@ public class HomeFragment extends Fragment {
     private void renderGreeting(ProfileStats profile) {
         if (profile != null && profile.getUsername() != null
                 && !profile.getUsername().trim().isEmpty()) {
-            greetingText.setText(getString(R.string.home_greeting, profile.getUsername()));
+            renderHomeIdentity(profile.getUsername());
         }
+    }
+
+    private void renderHomeIdentity(String username) {
+        String safeUsername = username == null || username.trim().isEmpty()
+                ? getString(R.string.username) : username.trim();
+        greetingText.setText(greetingForNow());
+        usernameText.setText(safeUsername);
+        avatarText.setText(safeUsername.substring(0, 1).toUpperCase(new Locale("tr", "TR")));
+    }
+
+    private String greetingForNow() {
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        if (hour < 12) {
+            return "Günaydın 👋";
+        }
+        if (hour < 18) {
+            return "İyi günler 👋";
+        }
+        return "İyi akşamlar 👋";
+    }
+
+    private void setupDashboardActions(View view) {
+        avatarText.setOnClickListener(button -> openProfileTab());
+        view.findViewById(R.id.buttonHomeAllAchievements)
+                .setOnClickListener(button -> openAchievements());
+    }
+
+    private void observeDashboardState() {
+        userStatsViewModel.getUserStats().observe(getViewLifecycleOwner(), stats -> {
+            currentStats = stats == null ? defaultStats() : stats;
+            renderDashboardStats();
+            levelViewModel.loadLevelProgress(Math.max(0, currentStats.getTotalXp()));
+        });
+        userStatsViewModel.getError().observe(getViewLifecycleOwner(), message -> {
+            if (message != null) {
+                currentStats = defaultStats();
+                renderDashboardStats();
+            }
+        });
+        achievementViewModel.getUserAchievements().observe(getViewLifecycleOwner(), achievements -> {
+            currentUserAchievements = achievements == null ? new ArrayList<>() : achievements;
+            renderDashboardStats();
+        });
+        achievementViewModel.getActiveAchievements().observe(getViewLifecycleOwner(),
+                achievements -> renderDashboardStats());
+        levelViewModel.getCurrentLevel().observe(getViewLifecycleOwner(), level -> renderDashboardStats());
+        levelViewModel.getNextLevel().observe(getViewLifecycleOwner(), level -> renderDashboardStats());
+    }
+
+    private void loadDashboardState() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            currentStats = defaultStats();
+            renderDashboardStats();
+            return;
+        }
+        userStatsViewModel.createDefaultUserStatsIfMissing(user.getUid());
+        achievementViewModel.loadActiveAchievements();
+        achievementViewModel.loadUserAchievements(user.getUid());
+    }
+
+    private void renderDashboardStats() {
+        UserStats stats = currentStats == null ? defaultStats() : currentStats;
+        int level = stats.getLevel() <= 0 ? 1 : stats.getLevel();
+        long totalXp = Math.max(0, stats.getTotalXp());
+        long unlockedCount = Math.max(stats.getUnlockedAchievementCount(),
+                currentUserAchievements == null ? 0 : currentUserAchievements.size());
+
+        levelText.setText(getString(R.string.level_format, level));
+        achievementCountText.setText(getString(
+                R.string.unlocked_achievement_count_format, unlockedCount));
+        renderXpProgress(totalXp);
+    }
+
+    private void renderXpProgress(long totalXp) {
+        Level currentLevel = levelViewModel.getCurrentLevel().getValue();
+        Level nextLevel = levelViewModel.getNextLevel().getValue();
+        if (currentLevel == null) {
+            renderFallbackXpProgress(totalXp);
+            return;
+        }
+        if (nextLevel == null) {
+            xpProgressBar.setProgress(100);
+            xpProgressText.setText(R.string.xp_progress_max);
+            return;
+        }
+        long currentRequiredXp = Math.max(0, currentLevel.getRequiredTotalXp());
+        long nextRequiredXp = Math.max(currentRequiredXp + 1, nextLevel.getRequiredTotalXp());
+        long range = nextRequiredXp - currentRequiredXp;
+        long progress = Math.max(0, totalXp - currentRequiredXp);
+        xpProgressBar.setProgress((int) Math.min(100, (progress * 100) / range));
+        xpProgressText.setText(getString(R.string.xp_progress_format, totalXp, nextRequiredXp));
+    }
+
+    private void renderFallbackXpProgress(long totalXp) {
+        long fallbackTarget = 100;
+        long safeXp = Math.max(0, totalXp);
+        xpProgressBar.setProgress((int) Math.min(100, (safeXp * 100) / fallbackTarget));
+        xpProgressText.setText(getString(R.string.xp_progress_format,
+                Math.min(safeXp, fallbackTarget), fallbackTarget));
+    }
+
+    private UserStats defaultStats() {
+        UserStats stats = new UserStats();
+        stats.setLevel(1);
+        stats.setTotalXp(0);
+        stats.setUnlockedAchievementCount(0);
+        return stats;
+    }
+
+    private void openProfileTab() {
+        if (requireActivity() instanceof MainActivity) {
+            ((MainActivity) requireActivity()).openProfileTab();
+        }
+    }
+
+    private void openAchievements() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            return;
+        }
+        Intent intent = new Intent(requireContext(), AchievementsActivity.class);
+        intent.putExtra(AchievementsActivity.EXTRA_USER_ID, user.getUid());
+        startActivity(intent);
     }
 
     private void renderListState(QuoteState state) {

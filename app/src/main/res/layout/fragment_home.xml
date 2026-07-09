@@ -4,76 +4,209 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/quote_background"
+    android:background="@color/home_v2_background"
     tools:context=".ui.home.HomeFragment">
 
-    <TextView
-        android:id="@+id/textHomeGreeting"
+    <LinearLayout
+        android:id="@+id/layoutHomeHeader"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="20dp"
-        android:text="@string/home_greeting_fallback"
-        android:textColor="@color/quote_text_primary"
-        android:textSize="26sp"
-        android:textStyle="bold"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="Merhaba, deniz 👋" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:id="@+id/textHomeDescription"
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textHomeGreeting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/home_v2_greeting"
+                android:textColor="@color/home_v2_text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="Günaydın 👋" />
+
+            <TextView
+                android:id="@+id/textHomeUsername"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/username"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                tools:text="Mustafa" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/textHomeAvatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_home_v2_avatar"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="?"
+            android:textColor="@color/home_v2_text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="M" />
+    </LinearLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardHomeXp"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="20dp"
-        android:text="@string/home_description"
-        android:textColor="@color/quote_text_secondary"
-        android:textSize="14sp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        app:cardBackgroundColor="@color/home_v2_card"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textHomeGreeting" />
+        app:layout_constraintTop_toBottomOf="@id/layoutHomeHeader"
+        app:strokeColor="@color/home_v2_divider"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/textHomeLevel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/level_format"
+                        android:textColor="@color/home_v2_text_primary"
+                        android:textSize="17sp"
+                        android:textStyle="bold"
+                        tools:text="Seviye 1" />
+
+                    <TextView
+                        android:id="@+id/textHomeXpProgress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/xp_progress_max"
+                        android:textColor="@color/home_v2_text_secondary"
+                        android:textSize="12sp"
+                        tools:text="0 / 100 XP" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/textHomeAchievementCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_home_v2_type_badge"
+                    android:paddingStart="12dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="4dp"
+                    android:textColor="@color/home_v2_accent"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="0 başarım" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progressHomeXp"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_marginTop="8dp"
+                android:max="100"
+                android:progress="0"
+                android:progressBackgroundTint="@color/home_v2_divider"
+                android:progressTint="@color/home_v2_secondary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonHomeAllAchievements"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_marginTop="4dp"
+                android:layout_gravity="end"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="@string/all_achievements"
+                android:textColor="@color/home_v2_primary" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/layoutHomeSearch"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="20dp"
-        android:hint="@string/search_quotes"
-        app:boxBackgroundMode="outline"
-        app:boxCornerRadiusBottomEnd="16dp"
-        app:boxCornerRadiusBottomStart="16dp"
-        app:boxCornerRadiusTopEnd="16dp"
-        app:boxCornerRadiusTopStart="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        app:boxBackgroundColor="@color/home_v2_surface"
+        app:boxBackgroundMode="filled"
+        app:boxCornerRadiusBottomEnd="20dp"
+        app:boxCornerRadiusBottomStart="20dp"
+        app:boxCornerRadiusTopEnd="20dp"
+        app:boxCornerRadiusTopStart="20dp"
+        app:boxStrokeColor="@color/home_v2_divider"
         app:endIconMode="clear_text"
+        app:endIconTint="@color/home_v2_text_secondary"
+        app:hintEnabled="false"
+        app:hintTextColor="@color/home_v2_hint"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textHomeDescription"
-        app:startIconDrawable="@drawable/ic_search">
+        app:layout_constraintTop_toBottomOf="@id/cardHomeXp"
+        app:startIconDrawable="@drawable/ic_search"
+        app:startIconTint="@color/home_v2_text_secondary">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editHomeSearch"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:focusable="true"
             android:focusableInTouchMode="true"
+            android:hint="@string/search_quotes"
             android:inputType="text"
             android:maxLines="1"
-            android:singleLine="true" />
+            android:singleLine="true"
+            android:textColor="@color/home_v2_text_primary"
+            android:textColorHint="@color/home_v2_hint" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <HorizontalScrollView
         android:id="@+id/scrollQuoteFilters"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="8dp"
         android:clipToPadding="false"
-        android:fillViewport="false"
         android:overScrollMode="never"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
@@ -96,143 +229,169 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="@string/filter_all" />
+                android:textSize="13sp"
+                android:text="@string/filter_all"
+                android:textColor="@color/home_v2_text_primary"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipMovie"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/filter_movie" />
+                android:textSize="13sp"
+                android:text="@string/filter_movie"
+                android:textColor="@color/home_v2_text_primary"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipSeries"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/filter_series" />
+                android:textSize="13sp"
+                android:text="@string/filter_series"
+                android:textColor="@color/home_v2_text_primary"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipBook"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/filter_book" />
+                android:textSize="13sp"
+                android:text="@string/filter_book"
+                android:textColor="@color/home_v2_text_primary"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipSpoiler"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/filter_spoiler" />
+                android:textSize="13sp"
+                android:text="@string/filter_spoiler"
+                android:textColor="@color/home_v2_text_primary"
+                app:chipBackgroundColor="@color/home_v2_surface"
+                app:chipMinHeight="36dp" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefreshQuotes"
+    <FrameLayout
+        android:id="@+id/layoutHomeFeedContainer"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:clipChildren="true"
+        android:clipToPadding="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/scrollQuoteFilters">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerQuotes"
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefreshQuotes"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingTop="6dp"
-            android:paddingBottom="96dp"
-            tools:listitem="@layout/item_quote" />
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            android:layout_height="match_parent">
 
-    <ProgressBar
-        android:id="@+id/progressQuotes"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@id/swipeRefreshQuotes"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/swipeRefreshQuotes" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerQuotes"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingTop="4dp"
+                android:paddingBottom="96dp"
+                tools:listitem="@layout/item_quote_home" />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <LinearLayout
-        android:id="@+id/layoutEmptyQuotes"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="28dp"
-        android:layout_marginEnd="28dp"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:paddingStart="28dp"
-        android:paddingTop="32dp"
-        android:paddingEnd="28dp"
-        android:paddingBottom="32dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/swipeRefreshQuotes"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/swipeRefreshQuotes"
-        tools:visibility="visible">
-
-        <ImageView
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:background="@drawable/bg_profile_avatar"
-            android:contentDescription="@string/no_quotes"
-            android:padding="22dp"
-            android:src="@drawable/ic_empty_quotes"
-            app:tint="@color/quote_primary_light" />
-
-        <TextView
-            android:id="@+id/textEmptyQuotesTitle"
+        <ProgressBar
+            android:id="@+id/progressQuotes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/home_v2_primary" />
+
+        <LinearLayout
+            android:id="@+id/layoutEmptyQuotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="24dp"
+            android:background="@drawable/bg_home_v2_card"
             android:gravity="center"
-            android:text="@string/no_quotes"
-            android:textColor="@color/quote_text_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_home_v2_avatar"
+                android:contentDescription="@string/no_quotes"
+                android:padding="16dp"
+                android:src="@drawable/ic_empty_quotes"
+                app:tint="@color/home_v2_text_primary" />
+
+            <TextView
+                android:id="@+id/textEmptyQuotesTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="@string/no_quotes"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textEmptyQuotesDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:text="@string/no_quotes_detail"
+                android:textColor="@color/home_v2_text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/textEmptyQuotesDescription"
-            android:layout_width="280dp"
+            android:id="@+id/textQuotesStatus"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="24dp"
+            android:accessibilityLiveRegion="polite"
+            android:background="@drawable/bg_home_v2_card"
             android:gravity="center"
-            android:lineSpacingExtra="3dp"
-            android:text="@string/no_quotes_detail"
-            android:textColor="@color/quote_text_secondary"
-            android:textSize="14sp" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/textQuotesStatus"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="28dp"
-        android:layout_marginEnd="28dp"
-        android:accessibilityLiveRegion="polite"
-        android:gravity="center"
-        android:textColor="@color/quote_status_error"
-        android:textSize="14sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/swipeRefreshQuotes"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/swipeRefreshQuotes"
-        tools:text="Alıntılar yüklenemedi."
-        tools:visibility="visible" />
+            android:padding="16dp"
+            android:textColor="@color/home_v2_error"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Alıntılar yüklenemedi."
+            tools:visibility="visible" />
+    </FrameLayout>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/buttonAddQuote"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:backgroundTint="@color/home_v2_primary"
         android:text="@string/add_quote"
+        android:textColor="@color/home_v2_text_primary"
         app:icon="@drawable/ic_add"
+        app:iconTint="@color/home_v2_text_primary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

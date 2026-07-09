@@ -15,4 +15,15 @@
     <color name="quote_status_error">#B3261E</color>
     <color name="quote_status_success">#2E7D32</color>
     <color name="bottom_nav_ripple">#1F6750A4</color>
+    <color name="home_v2_background">#0F1117</color>
+    <color name="home_v2_surface">#171A23</color>
+    <color name="home_v2_card">#1E2330</color>
+    <color name="home_v2_primary">#6C63FF</color>
+    <color name="home_v2_secondary">#00C896</color>
+    <color name="home_v2_accent">#FFB800</color>
+    <color name="home_v2_text_primary">#FFFFFF</color>
+    <color name="home_v2_text_secondary">#B5BAC8</color>
+    <color name="home_v2_hint">#8C92A4</color>
+    <color name="home_v2_divider">#2A3042</color>
+    <color name="home_v2_error">#EF4444</color>
 </resources>

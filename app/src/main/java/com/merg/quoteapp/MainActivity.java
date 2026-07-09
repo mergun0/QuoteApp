@@ -69,6 +69,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void openFavoritesTab() {
+        if (bottomNavigation != null) {
+            bottomNavigation.setSelectedItemId(R.id.navigation_favorites);
+        }
+    }
+
     private void observeAchievementFeedback() {
         AchievementFeedbackCenter.getInstance()
                 .getEventSignal()

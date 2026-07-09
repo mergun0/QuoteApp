@@ -61,6 +61,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
     private final boolean showUsername;
     private final boolean restrictManagementToCurrentUser;
     private final String currentUserId;
+    private final int itemLayoutRes;
     private boolean likeActionsEnabled;
     private boolean saveActionsEnabled;
     private boolean reportActionsEnabled;
@@ -76,10 +77,18 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
     public QuoteAdapter(QuoteActionListener listener, boolean showUsername,
                         boolean restrictManagementToCurrentUser, String currentUserId) {
+        this(listener, showUsername, restrictManagementToCurrentUser,
+                currentUserId, R.layout.item_quote);
+    }
+
+    public QuoteAdapter(QuoteActionListener listener, boolean showUsername,
+                        boolean restrictManagementToCurrentUser, String currentUserId,
+                        int itemLayoutRes) {
         this.listener = listener;
         this.showUsername = showUsername;
         this.restrictManagementToCurrentUser = restrictManagementToCurrentUser;
         this.currentUserId = currentUserId;
+        this.itemLayoutRes = itemLayoutRes;
     }
 
     public void submitList(List<Quote> newQuotes) {
@@ -211,7 +220,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
     @Override
     public QuoteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_quote, parent, false);
+                .inflate(itemLayoutRes, parent, false);
         return new QuoteViewHolder(view);
     }
 

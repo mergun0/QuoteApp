@@ -168,7 +168,7 @@ public class DiscoverFragment extends Fragment {
             public void onSave(Quote quote) {
                 toggleSave(quote);
             }
-        }, true, currentUserId);
+        }, true, true, currentUserId, R.layout.item_quote_home);
         adapter.setLikeActionsEnabled(true);
         adapter.setSaveActionsEnabled(true);
         adapter.setReportActionsEnabled(true);
@@ -487,7 +487,7 @@ public class DiscoverFragment extends Fragment {
     private void showStatus(String message, boolean error) {
         statusText.setText(message);
         statusText.setTextColor(ContextCompat.getColor(requireContext(), error
-                ? R.color.quote_status_error : R.color.quote_status_success));
+                ? R.color.home_v2_error : R.color.home_v2_secondary));
         statusText.setVisibility(View.VISIBLE);
     }
 
