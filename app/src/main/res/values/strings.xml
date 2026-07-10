@@ -112,6 +112,8 @@
     <string name="settings_account_info">Hesap Bilgileri</string>
     <string name="settings_account_info_subtitle">Kullanıcı adı ve e-posta</string>
     <string name="settings_account_dialog_format">Kullanıcı adı: %1$s\nE-posta: %2$s</string>
+    <string name="settings_account_loading">Hesap bilgileri yükleniyor…</string>
+    <string name="settings_account_username_fallback">Kullanıcı</string>
     <string name="settings_account_email_missing">E-posta bilgisi bulunamadı.</string>
     <string name="settings_reset_password">Şifreyi Sıfırla</string>
     <string name="settings_reset_password_subtitle">E-postana sıfırlama bağlantısı gönder</string>

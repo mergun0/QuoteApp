@@ -17,17 +17,20 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.repository.AuthRepository;
+import com.merg.quoteapp.repository.ProfileRepository;
 import com.merg.quoteapp.ui.auth.LoginActivity;
 
 public class SettingsActivity extends AppCompatActivity {
 
     private AuthRepository authRepository;
+    private ProfileRepository profileRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         authRepository = AuthRepository.getInstance();
+        profileRepository = new ProfileRepository();
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarSettings);
         toolbar.setNavigationOnClickListener(view -> finish());
@@ -101,18 +104,42 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void showAccountInfo() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        String email = user == null || isBlank(user.getEmail())
-                ? getString(R.string.settings_account_email_missing)
-                : user.getEmail();
-        String username = user == null || isBlank(user.getDisplayName())
-                ? safeUsernameFromEmail(email)
-                : user.getDisplayName();
+        if (user == null) {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.settings_account_info)
+                    .setMessage(getString(R.string.settings_account_dialog_format,
+                            getString(R.string.settings_account_username_fallback),
+                            getString(R.string.settings_account_email_missing)))
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
+            return;
+        }
 
-        new MaterialAlertDialogBuilder(this)
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.settings_account_info)
-                .setMessage(getString(R.string.settings_account_dialog_format, username, email))
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+                .setMessage(R.string.settings_account_loading)
+                .setPositiveButton(android.R.string.ok, null);
+        androidx.appcompat.app.AlertDialog dialog = builder.show();
+
+        profileRepository.getAccountInfo(new ProfileRepository.AccountInfoCallback() {
+            @Override
+            public void onSuccess(String username, String email) {
+                String safeUsername = isBlank(username)
+                        ? getString(R.string.settings_account_username_fallback) : username;
+                String safeEmail = isBlank(email)
+                        ? getString(R.string.settings_account_email_missing) : email;
+                dialog.setMessage(getString(R.string.settings_account_dialog_format,
+                        safeUsername, safeEmail));
+            }
+
+            @Override
+            public void onError(String message) {
+                dialog.setMessage(getString(R.string.settings_account_dialog_format,
+                        getString(R.string.settings_account_username_fallback),
+                        user.getEmail() == null ? getString(R.string.settings_account_email_missing)
+                                : user.getEmail()));
+            }
+        });
     }
 
     private void sendPasswordReset() {
@@ -184,13 +211,6 @@ public class SettingsActivity extends AppCompatActivity {
                 .setMessage(messageRes)
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
-    }
-
-    private String safeUsernameFromEmail(String email) {
-        if (isBlank(email) || !email.contains("@")) {
-            return getString(R.string.username);
-        }
-        return email.substring(0, email.indexOf('@'));
     }
 
     private boolean isBlank(String value) {

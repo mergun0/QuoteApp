@@ -17,6 +17,12 @@ public class ProfileRepository {
         void onError(String message);
     }
 
+    public interface AccountInfoCallback {
+        void onSuccess(String username, String email);
+
+        void onError(String message);
+    }
+
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     private final LikeRepository likeRepository = LikeRepository.getInstance();
@@ -44,6 +50,32 @@ public class ProfileRepository {
                 })
                 .addOnFailureListener(error ->
                         callback.onError("Profil bilgileri yüklenemedi."));
+    }
+
+    public void getAccountInfo(AccountInfoCallback callback) {
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser == null) {
+            callback.onSuccess("Kullanıcı", "");
+            return;
+        }
+
+        firestore.collection("users")
+                .document(currentUser.getUid())
+                .get()
+                .addOnSuccessListener(userDocument -> {
+                    String username = userDocument.getString("username");
+                    String email = userDocument.getString("email");
+                    if (username == null || username.trim().isEmpty()) {
+                        username = "Kullanıcı";
+                    }
+                    if (email == null || email.trim().isEmpty()) {
+                        email = currentUser.getEmail() == null ? "" : currentUser.getEmail();
+                    }
+                    callback.onSuccess(username, email);
+                })
+                .addOnFailureListener(error -> callback.onSuccess(
+                        "Kullanıcı",
+                        currentUser.getEmail() == null ? "" : currentUser.getEmail()));
     }
 
     private void loadQuoteStats(String uid, String username, String email,
