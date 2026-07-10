@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.Timestamp;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.adapter.AchievementPreviewAdapter;
@@ -76,6 +75,8 @@ public class ProfileFragment extends Fragment {
     private UserStats currentStats;
     private List<Achievement> currentAchievements = new ArrayList<>();
     private List<UserAchievement> currentUserAchievements = new ArrayList<>();
+    private String currentUserId;
+    private boolean profileAchievementDataLoaded;
 
     public ProfileFragment() {
         super(R.layout.fragment_profile);
@@ -146,9 +147,9 @@ public class ProfileFragment extends Fragment {
         setupMenuRow(view.findViewById(R.id.menuProfileAchievements),
                 "🏆", getString(R.string.profile_menu_achievements), menu -> openAchievements());
         setupMenuRow(view.findViewById(R.id.menuProfileSettings),
-                "⚙️", getString(R.string.profile_menu_settings), menu -> showSettingsPlaceholder());
+                "⚙️", getString(R.string.profile_menu_settings), menu -> openSettings());
         setupMenuRow(view.findViewById(R.id.menuProfileAbout),
-                "ℹ️", getString(R.string.profile_menu_about), menu -> showAboutDialog());
+                "ℹ️", getString(R.string.profile_menu_about), menu -> openAbout());
         setupMenuRow(view.findViewById(R.id.buttonLogout),
                 "🚪", getString(R.string.logout), menu -> logout());
     }
@@ -217,6 +218,12 @@ public class ProfileFragment extends Fragment {
                 renderDefaultAchievementState();
             }
         });
+        userStatsViewModel.getReconciliationComplete().observe(getViewLifecycleOwner(), complete -> {
+            if (Boolean.TRUE.equals(complete) && !profileAchievementDataLoaded
+                    && currentUserId != null) {
+                loadProfileAchievementData(currentUserId);
+            }
+        });
         if (levelViewModel != null) {
             levelViewModel.getCurrentLevel().observe(getViewLifecycleOwner(), level -> renderUserStats());
             levelViewModel.getNextLevel().observe(getViewLifecycleOwner(), level -> renderUserStats());
@@ -259,9 +266,16 @@ public class ProfileFragment extends Fragment {
             renderDefaultAchievementState();
             return;
         }
-        userStatsViewModel.createDefaultUserStatsIfMissing(user.getUid());
+        currentUserId = user.getUid();
+        profileAchievementDataLoaded = false;
+        userStatsViewModel.reconcileExistingStatsAndAchievements(currentUserId);
+    }
+
+    private void loadProfileAchievementData(String userId) {
+        profileAchievementDataLoaded = true;
+        userStatsViewModel.loadUserStats(userId);
         achievementViewModel.loadActiveAchievements();
-        achievementViewModel.loadUserAchievements(user.getUid());
+        achievementViewModel.loadUserAchievements(userId);
     }
 
     private void loadSavedQuotes() {
@@ -580,20 +594,12 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void showSettingsPlaceholder() {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.profile_menu_settings)
-                .setMessage(R.string.profile_settings_placeholder)
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+    private void openSettings() {
+        startActivity(new Intent(requireContext(), SettingsActivity.class));
     }
 
-    private void showAboutDialog() {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.profile_about_title)
-                .setMessage(R.string.profile_about_message)
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+    private void openAbout() {
+        startActivity(new Intent(requireContext(), AboutActivity.class));
     }
 
     private void logout() {

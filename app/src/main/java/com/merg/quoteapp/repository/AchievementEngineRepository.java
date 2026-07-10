@@ -117,6 +117,24 @@ public class AchievementEngineRepository {
                 stats -> stats.setValidReports(stats.getValidReports() + 1)));
     }
 
+    /**
+     * Re-evaluates active achievements using the currently persisted user stats.
+     * Existing unlocked achievement documents are respected, so XP is granted only
+     * for newly unlocked achievements.
+     *
+     * @param userId user id whose achievements will be reconciled
+     * @param callback operation callback
+     */
+    public void evaluateAchievementsForUser(String userId, EngineCallback callback) {
+        if (isBlank(userId)) {
+            if (callback != null) {
+                callback.onError("KullanÄ±cÄ± bilgisi bulunamadÄ±.");
+            }
+            return;
+        }
+        loadStats(userId, stats -> evaluateAchievements(stats, callback));
+    }
+
     private void applyQuoteCreated(Quote quote, long xpAmount) {
         updateStatsForEvent(quote.getUserId(), xpAmount, stats -> {
             stats.setTotalQuotes(stats.getTotalQuotes() + 1);
@@ -162,16 +180,26 @@ public class AchievementEngineRepository {
     }
 
     private void evaluateAchievements(UserStats stats) {
+        evaluateAchievements(stats, null);
+    }
+
+    private void evaluateAchievements(UserStats stats, EngineCallback callback) {
         firestore.collection(ACHIEVEMENTS_COLLECTION)
                 .whereEqualTo("isActive", true)
                 .get()
                 .addOnSuccessListener(snapshot -> unlockMetAchievements(
-                        stats, snapshot.toObjects(Achievement.class)));
+                        stats, snapshot.toObjects(Achievement.class), callback))
+                .addOnFailureListener(error -> {
+                    if (callback != null) {
+                        callback.onError("Başarımlar değerlendirilemedi. Lütfen tekrar deneyin.");
+                    }
+                });
     }
 
-    private void unlockMetAchievements(UserStats stats, List<Achievement> achievements) {
+    private void unlockMetAchievements(UserStats stats, List<Achievement> achievements,
+                                       EngineCallback callback) {
         if (achievements == null || achievements.isEmpty()) {
-            recalculateAndPersistLevel(stats.getUserId());
+            recalculateAndPersistLevel(stats.getUserId(), callback);
             return;
         }
 
@@ -180,7 +208,7 @@ public class AchievementEngineRepository {
         for (Achievement achievement : achievements) {
             if (!isRequirementMet(achievement, stats)) {
                 completeUnlockCheck(stats.getUserId(), remaining, unlockedAchievements,
-                        safeLevel(stats.getLevel()));
+                        safeLevel(stats.getLevel()), callback);
                 continue;
             }
             unlockAchievementIfNeeded(stats, achievement, unlocked -> {
@@ -192,17 +220,18 @@ public class AchievementEngineRepository {
                     }
                 }
                 completeUnlockCheck(stats.getUserId(), remaining, unlockedAchievements,
-                        safeLevel(stats.getLevel()));
+                        safeLevel(stats.getLevel()), callback);
             });
         }
     }
 
     private void completeUnlockCheck(String userId, int[] remaining,
                                      List<Achievement> unlockedAchievements,
-                                     int levelBeforeAchievementXp) {
+                                     int levelBeforeAchievementXp,
+                                     EngineCallback callback) {
         remaining[0]--;
         if (remaining[0] == 0) {
-            recalculateAndPersistLevel(userId, levelBeforeAchievementXp);
+            recalculateAndPersistLevel(userId, levelBeforeAchievementXp, callback);
         }
     }
 
@@ -257,16 +286,30 @@ public class AchievementEngineRepository {
     }
 
     private void recalculateAndPersistLevel(String userId) {
+        recalculateAndPersistLevel(userId, null);
+    }
+
+    private void recalculateAndPersistLevel(String userId, EngineCallback callback) {
         loadStats(userId, stats -> updateLevelAndSave(stats, level -> {
-            // Feedback is emitted by event-specific flows.
+            if (callback != null) {
+                callback.onComplete();
+            }
         }));
     }
 
     private void recalculateAndPersistLevel(String userId, int previousLevel) {
+        recalculateAndPersistLevel(userId, previousLevel, null);
+    }
+
+    private void recalculateAndPersistLevel(String userId, int previousLevel,
+                                            EngineCallback callback) {
         loadStats(userId, stats -> updateLevelAndSave(stats, level -> {
             if (shouldNotify(userId) && level != null
                     && safeLevel(level.getLevel()) > safeLevel(previousLevel)) {
                 feedbackCenter.publish(AchievementFeedbackEvent.levelUp(level));
+            }
+            if (callback != null) {
+                callback.onComplete();
             }
         }));
     }

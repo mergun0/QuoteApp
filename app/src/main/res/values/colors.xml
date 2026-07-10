@@ -26,4 +26,9 @@
     <color name="home_v2_hint">#8C92A4</color>
     <color name="home_v2_divider">#2A3042</color>
     <color name="home_v2_error">#EF4444</color>
+    <color name="achievement_bronze">#CD7F32</color>
+    <color name="achievement_silver">#C0C0C0</color>
+    <color name="achievement_gold">#FFD700</color>
+    <color name="achievement_diamond">#55DDE0</color>
+    <color name="achievement_legendary">#A855F7</color>
 </resources>

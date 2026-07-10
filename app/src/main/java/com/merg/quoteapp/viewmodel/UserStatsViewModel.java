@@ -6,14 +6,18 @@ import androidx.lifecycle.ViewModel;
 
 import com.google.firebase.firestore.ListenerRegistration;
 import com.merg.quoteapp.model.UserStats;
+import com.merg.quoteapp.repository.AchievementEngineRepository;
 import com.merg.quoteapp.repository.UserStatsRepository;
 
 public class UserStatsViewModel extends ViewModel {
 
     private final UserStatsRepository repository = UserStatsRepository.getInstance();
+    private final AchievementEngineRepository achievementEngineRepository =
+            AchievementEngineRepository.getInstance();
     private final MutableLiveData<UserStats> userStats = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> reconciliationComplete = new MutableLiveData<>(false);
     private ListenerRegistration statsListener;
 
     public LiveData<UserStats> getUserStats() {
@@ -26,6 +30,10 @@ public class UserStatsViewModel extends ViewModel {
 
     public LiveData<String> getError() {
         return error;
+    }
+
+    public LiveData<Boolean> getReconciliationComplete() {
+        return reconciliationComplete;
     }
 
     public void loadUserStats(String userId) {
@@ -100,6 +108,40 @@ public class UserStatsViewModel extends ViewModel {
             public void onError(String message) {
                 error.setValue(message);
                 loading.setValue(false);
+            }
+        });
+    }
+
+    public void reconcileExistingStatsAndAchievements(String userId) {
+        loading.setValue(true);
+        error.setValue(null);
+        reconciliationComplete.setValue(false);
+        repository.syncUserStatsFromExistingData(userId, new UserStatsRepository.UserStatsCallback() {
+            @Override
+            public void onSuccess(UserStats stats) {
+                userStats.setValue(stats);
+                achievementEngineRepository.evaluateAchievementsForUser(userId,
+                        new AchievementEngineRepository.EngineCallback() {
+                            @Override
+                            public void onComplete() {
+                                loading.setValue(false);
+                                reconciliationComplete.setValue(true);
+                            }
+
+                            @Override
+                            public void onError(String message) {
+                                error.setValue(message);
+                                loading.setValue(false);
+                                reconciliationComplete.setValue(true);
+                            }
+                        });
+            }
+
+            @Override
+            public void onError(String message) {
+                error.setValue(message);
+                loading.setValue(false);
+                reconciliationComplete.setValue(true);
             }
         });
     }

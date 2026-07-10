@@ -12,12 +12,15 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.adapter.AchievementAdapter;
 import com.merg.quoteapp.model.Achievement;
+import com.merg.quoteapp.model.Level;
 import com.merg.quoteapp.model.UserAchievement;
 import com.merg.quoteapp.model.UserStats;
 import com.merg.quoteapp.viewmodel.AchievementViewModel;
+import com.merg.quoteapp.viewmodel.LevelViewModel;
 import com.merg.quoteapp.viewmodel.UserStatsViewModel;
 
 import java.util.ArrayList;
@@ -30,13 +33,19 @@ public class AchievementsActivity extends AppCompatActivity {
 
     private AchievementViewModel achievementViewModel;
     private UserStatsViewModel userStatsViewModel;
+    private LevelViewModel levelViewModel;
     private AchievementAdapter adapter;
     private ProgressBar progressBar;
     private TextView errorText;
     private TextView emptyText;
+    private TextView emptySubtitleText;
+    private View emptyLayout;
     private TextView levelText;
+    private TextView levelSubtitleText;
     private TextView xpText;
+    private TextView xpRemainingText;
     private TextView unlockedCountText;
+    private LinearProgressIndicator xpProgressBar;
     private RecyclerView recyclerView;
     private ChipGroup chipGroup;
     private String userId;
@@ -44,6 +53,9 @@ public class AchievementsActivity extends AppCompatActivity {
     private List<Achievement> achievements = new ArrayList<>();
     private List<UserAchievement> userAchievements = new ArrayList<>();
     private UserStats userStats;
+    private Level currentLevel;
+    private Level nextLevel;
+    private boolean achievementDataLoaded;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,10 +75,15 @@ public class AchievementsActivity extends AppCompatActivity {
     private void bindViews() {
         progressBar = findViewById(R.id.progressAchievements);
         errorText = findViewById(R.id.textAchievementsError);
+        emptyLayout = findViewById(R.id.layoutAchievementsEmpty);
         emptyText = findViewById(R.id.textAchievementsEmpty);
+        emptySubtitleText = findViewById(R.id.textAchievementsEmptySubtitle);
         levelText = findViewById(R.id.textAchievementsLevel);
+        levelSubtitleText = findViewById(R.id.textAchievementsLevelSubtitle);
         xpText = findViewById(R.id.textAchievementsXp);
+        xpRemainingText = findViewById(R.id.textAchievementsXpRemaining);
         unlockedCountText = findViewById(R.id.textAchievementsUnlockedCount);
+        xpProgressBar = findViewById(R.id.progressAchievementsXp);
         recyclerView = findViewById(R.id.recyclerAchievements);
         chipGroup = findViewById(R.id.chipGroupAchievementFilters);
     }
@@ -116,9 +133,11 @@ public class AchievementsActivity extends AppCompatActivity {
     private void setupViewModels() {
         achievementViewModel = new ViewModelProvider(this).get(AchievementViewModel.class);
         userStatsViewModel = new ViewModelProvider(this).get(UserStatsViewModel.class);
+        levelViewModel = new ViewModelProvider(this).get(LevelViewModel.class);
 
         achievementViewModel.getActiveAchievements().observe(this, result -> {
             achievements = result == null ? new ArrayList<>() : result;
+            renderStats();
             renderAchievements();
         });
         achievementViewModel.getUserAchievements().observe(this, result -> {
@@ -132,9 +151,26 @@ public class AchievementsActivity extends AppCompatActivity {
             userStats = stats == null ? defaultStats() : stats;
             renderStats();
             renderAchievements();
+            levelViewModel.loadLevelProgress(Math.max(0, userStats.getTotalXp()));
         });
         userStatsViewModel.getLoading().observe(this, this::renderLoading);
         userStatsViewModel.getError().observe(this, this::renderError);
+        userStatsViewModel.getReconciliationComplete().observe(this, complete -> {
+            if (Boolean.TRUE.equals(complete) && !achievementDataLoaded) {
+                loadAchievementData();
+            }
+        });
+
+        levelViewModel.getCurrentLevel().observe(this, level -> {
+            currentLevel = level;
+            renderStats();
+        });
+        levelViewModel.getNextLevel().observe(this, level -> {
+            nextLevel = level;
+            renderStats();
+        });
+        levelViewModel.getError().observe(this, message -> renderFallbackXpProgress(
+                Math.max(0, userStats == null ? 0 : userStats.getTotalXp())));
     }
 
     private void loadData() {
@@ -144,6 +180,12 @@ public class AchievementsActivity extends AppCompatActivity {
         }
         userStats = defaultStats();
         renderStats();
+        levelViewModel.loadLevelProgress(0);
+        userStatsViewModel.reconcileExistingStatsAndAchievements(userId);
+    }
+
+    private void loadAchievementData() {
+        achievementDataLoaded = true;
         achievementViewModel.loadActiveAchievements();
         achievementViewModel.loadUserAchievements(userId);
         userStatsViewModel.loadUserStats(userId);
@@ -159,10 +201,64 @@ public class AchievementsActivity extends AppCompatActivity {
         long unlockedCount = Math.max(stats.getUnlockedAchievementCount(),
                 userAchievements == null ? 0 : userAchievements.size());
         int level = stats.getLevel() <= 0 ? 1 : stats.getLevel();
-        levelText.setText(getString(R.string.level_format, level));
-        xpText.setText(getString(R.string.xp_total_format, Math.max(0, stats.getTotalXp())));
+        levelText.setText(getString(R.string.profile_level_with_icon_format, level));
+        levelSubtitleText.setText(levelSubtitle(currentLevel));
         unlockedCountText.setText(getString(
-                R.string.unlocked_achievement_count_format, unlockedCount));
+                R.string.achievement_summary_count_format, unlockedCount,
+                Math.max(achievements == null ? 0 : achievements.size(), unlockedCount)));
+        renderXpProgress(stats, currentLevel, nextLevel);
+    }
+
+    private void renderXpProgress(UserStats stats, Level current, Level next) {
+        long totalXp = Math.max(0, stats == null ? 0 : stats.getTotalXp());
+        if (current == null) {
+            renderFallbackXpProgress(totalXp);
+            return;
+        }
+        if (next == null) {
+            xpProgressBar.setProgress(100);
+            xpText.setText(getString(R.string.xp_total_format, totalXp));
+            xpRemainingText.setText(R.string.xp_progress_max);
+            return;
+        }
+        long currentRequiredXp = Math.max(0, current.getRequiredTotalXp());
+        long nextRequiredXp = Math.max(currentRequiredXp + 1, next.getRequiredTotalXp());
+        long progress = Math.max(0, totalXp - currentRequiredXp);
+        long range = Math.max(1, nextRequiredXp - currentRequiredXp);
+        xpProgressBar.setProgress((int) Math.min(100, (progress * 100) / range));
+        xpText.setText(getString(R.string.xp_progress_format, totalXp, nextRequiredXp));
+        xpRemainingText.setText(getString(R.string.xp_remaining_format,
+                Math.max(0, nextRequiredXp - totalXp)));
+    }
+
+    private void renderFallbackXpProgress(long totalXp) {
+        long safeXp = Math.max(0, totalXp);
+        long fallbackTarget = 100;
+        xpProgressBar.setProgress((int) Math.min(100, (safeXp * 100) / fallbackTarget));
+        xpText.setText(getString(R.string.xp_progress_format, safeXp, fallbackTarget));
+        xpRemainingText.setText(getString(R.string.xp_remaining_format,
+                Math.max(0, fallbackTarget - safeXp)));
+        if (levelSubtitleText != null) {
+            levelSubtitleText.setText(getString(R.string.next_level_format, 2));
+        }
+    }
+
+    private String levelSubtitle(Level level) {
+        if (level == null) {
+            return getString(R.string.next_level_format, 2);
+        }
+        String title = level.getTitle();
+        String badge = level.getBadgeName();
+        if (isBlank(title) && isBlank(badge)) {
+            return getString(R.string.level_format, Math.max(1, level.getLevel()));
+        }
+        if (isBlank(title)) {
+            return badge;
+        }
+        if (isBlank(badge)) {
+            return title;
+        }
+        return title + " • " + badge;
     }
 
     private void renderLoading(Boolean loading) {
@@ -185,10 +281,12 @@ public class AchievementsActivity extends AppCompatActivity {
                 && chipGroup != null
                 && chipGroup.getCheckedChipId() == R.id.chipAchievementUnlocked) {
             emptyText.setText(R.string.user_achievements_empty);
+            emptySubtitleText.setText(R.string.achievement_empty_subtitle);
         } else {
             emptyText.setText(R.string.achievement_list_empty);
+            emptySubtitleText.setText(R.string.achievement_empty_subtitle);
         }
-        emptyText.setVisibility(empty ? View.VISIBLE : View.GONE);
+        emptyLayout.setVisibility(empty ? View.VISIBLE : View.GONE);
     }
 
     private UserStats defaultStats() {
@@ -198,5 +296,9 @@ public class AchievementsActivity extends AppCompatActivity {
         stats.setTotalXp(0);
         stats.setUnlockedAchievementCount(0);
         return stats;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

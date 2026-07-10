@@ -4,110 +4,174 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/quote_background"
+    android:background="@color/home_v2_background"
     tools:context=".ui.profile.AchievementsActivity">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbarAchievements"
         android:layout_width="0dp"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/quote_surface"
+        android:layout_height="56dp"
+        android:background="@color/home_v2_background"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/ic_arrow_back"
-        app:navigationIconTint="@color/quote_text_primary"
-        app:title="@string/all_achievements"
-        app:titleTextColor="@color/quote_text_primary" />
+        app:navigationIconTint="@color/home_v2_text_primary"
+        app:title=""
+        app:titleTextColor="@color/home_v2_text_primary" />
 
     <LinearLayout
         android:id="@+id/layoutAchievementsHeader"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingStart="20dp"
-        android:paddingTop="18dp"
-        android:paddingEnd="20dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbarAchievements">
 
-        <com.google.android.material.card.MaterialCardView
+        <TextView
+            android:id="@+id/textAchievementsTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/quote_surface"
-            app:cardCornerRadius="22dp"
-            app:cardElevation="1dp"
-            app:strokeColor="#E2D8DC"
+            android:text="@string/achievements"
+            android:textColor="@color/home_v2_text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textAchievementsSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/achievements_screen_subtitle"
+            android:textColor="@color/home_v2_text_secondary"
+            android:textSize="14sp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardAchievementsSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="@color/home_v2_card"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:strokeColor="@color/home_v2_divider"
             app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="18dp">
-
-                <FrameLayout
-                    android:layout_width="54dp"
-                    android:layout_height="54dp"
-                    android:background="@drawable/bg_achievement_icon"
-                    android:padding="12dp">
-
-                    <ImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:contentDescription="@string/all_achievements"
-                        android:src="@drawable/ic_achievement"
-                        app:tint="@color/quote_primary" />
-                </FrameLayout>
+                android:orientation="vertical"
+                android:padding="16dp">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <FrameLayout
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_achievement_icon"
+                        android:padding="10dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="@string/achievements"
+                            android:src="@drawable/ic_achievement"
+                            app:tint="@color/home_v2_accent" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/textAchievementsLevel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/home_v2_text_primary"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            tools:text="⭐ Seviye 12" />
+
+                        <TextView
+                            android:id="@+id/textAchievementsLevelSubtitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@color/home_v2_text_secondary"
+                            android:textSize="12sp"
+                            tools:text="Usta Alıntıcı • Altın Rozet" />
+                    </LinearLayout>
 
                     <TextView
-                        android:id="@+id/textAchievementsLevel"
-                        android:layout_width="match_parent"
+                        android:id="@+id/textAchievementsUnlockedCount"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/quote_text_primary"
-                        android:textSize="20sp"
+                        android:background="@drawable/bg_chip_soft"
+                        android:paddingStart="12dp"
+                        android:paddingTop="8dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="8dp"
+                        android:textColor="@color/home_v2_accent"
+                        android:textSize="12sp"
                         android:textStyle="bold"
-                        tools:text="Seviye 1" />
+                        tools:text="18 / 28 Başarım" />
+                </LinearLayout>
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/progressAchievementsXp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:progress="0"
+                    app:indicatorColor="@color/home_v2_primary"
+                    app:trackColor="@color/home_v2_divider"
+                    app:trackCornerRadius="8dp"
+                    app:trackThickness="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/textAchievementsXp"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textColor="@color/quote_text_secondary"
+                        android:layout_weight="1"
+                        android:textColor="@color/home_v2_text_secondary"
                         android:textSize="13sp"
-                        tools:text="0 XP" />
-                </LinearLayout>
+                        tools:text="1240 / 1800 XP" />
 
-                <TextView
-                    android:id="@+id/textAchievementsUnlockedCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_chip_soft"
-                    android:paddingStart="12dp"
-                    android:paddingTop="7dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="7dp"
-                    android:textColor="@color/quote_primary"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    tools:text="0 başarım" />
+                    <TextView
+                        android:id="@+id/textAchievementsXpRemaining"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/home_v2_secondary"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        tools:text="560 XP kaldı" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="12dp"
+            android:fillViewport="false"
             android:scrollbars="none">
 
             <com.google.android.material.chip.ChipGroup
@@ -115,6 +179,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:checkedChip="@id/chipAchievementAll"
+                app:singleLine="true"
                 app:singleSelection="true">
 
                 <com.google.android.material.chip.Chip
@@ -122,110 +187,166 @@
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/filter_all" />
+                    android:text="@string/filter_all"
+                    android:textColor="@color/achievement_chip_text"
+                    app:chipBackgroundColor="@color/achievement_chip_background"
+                    app:chipStrokeColor="@color/achievement_chip_stroke"
+                    app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipAchievementUnlocked"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/achievement_filter_unlocked" />
+                    android:text="@string/achievement_filter_unlocked"
+                    android:textColor="@color/achievement_chip_text"
+                    app:chipBackgroundColor="@color/achievement_chip_background"
+                    app:chipStrokeColor="@color/achievement_chip_stroke"
+                    app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipAchievementLocked"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/achievement_filter_locked" />
+                    android:text="@string/achievement_filter_locked"
+                    android:textColor="@color/achievement_chip_text"
+                    app:chipBackgroundColor="@color/achievement_chip_background"
+                    app:chipStrokeColor="@color/achievement_chip_stroke"
+                    app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipAchievementSocial"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/achievement_filter_social" />
+                    android:text="@string/achievement_filter_social"
+                    android:textColor="@color/achievement_chip_text"
+                    app:chipBackgroundColor="@color/achievement_chip_background"
+                    app:chipStrokeColor="@color/achievement_chip_stroke"
+                    app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipAchievementQuote"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/achievement_filter_quote" />
+                    android:text="@string/achievement_filter_quote"
+                    android:textColor="@color/achievement_chip_text"
+                    app:chipBackgroundColor="@color/achievement_chip_background"
+                    app:chipStrokeColor="@color/achievement_chip_stroke"
+                    app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipAchievementModeration"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/achievement_filter_moderation" />
+                    android:text="@string/achievement_filter_moderation"
+                    android:textColor="@color/achievement_chip_text"
+                    app:chipBackgroundColor="@color/achievement_chip_background"
+                    app:chipStrokeColor="@color/achievement_chip_stroke"
+                    app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipAchievementType"
                     style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/achievement_filter_type" />
+                    android:text="@string/achievement_filter_type"
+                    android:textColor="@color/achievement_chip_text"
+                    app:chipBackgroundColor="@color/achievement_chip_background"
+                    app:chipStrokeColor="@color/achievement_chip_stroke"
+                    app:chipStrokeWidth="1dp" />
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
     </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerAchievements"
+    <FrameLayout
+        android:id="@+id/containerAchievementsContent"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:paddingStart="20dp"
-        android:paddingTop="10dp"
-        android:paddingEnd="20dp"
-        android:paddingBottom="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutAchievementsHeader"
-        tools:listitem="@layout/item_achievement" />
+        app:layout_constraintTop_toBottomOf="@id/layoutAchievementsHeader">
 
-    <ProgressBar
-        android:id="@+id/progressAchievements"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutAchievementsHeader"
-        tools:visibility="visible" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerAchievements"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="24dp"
+            tools:listitem="@layout/item_achievement" />
 
-    <TextView
-        android:id="@+id/textAchievementsEmpty"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:gravity="center"
-        android:text="@string/achievement_list_empty"
-        android:textColor="@color/quote_text_secondary"
-        android:textSize="15sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutAchievementsHeader"
-        tools:visibility="visible" />
+        <ProgressBar
+            android:id="@+id/progressAchievements"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/home_v2_primary"
+            android:visibility="gone"
+            tools:visibility="visible" />
 
-    <TextView
-        android:id="@+id/textAchievementsError"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:gravity="center"
-        android:textColor="@color/quote_status_error"
-        android:textSize="14sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutAchievementsHeader"
-        tools:text="Başarımlar yüklenemedi."
-        tools:visibility="visible" />
+        <LinearLayout
+            android:id="@+id/layoutAchievementsEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:background="@drawable/bg_home_v2_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏆"
+                android:textSize="32sp" />
+
+            <TextView
+                android:id="@+id/textAchievementsEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="@string/achievement_list_empty"
+                android:textColor="@color/home_v2_text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textAchievementsEmptySubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/achievement_empty_subtitle"
+                android:textColor="@color/home_v2_text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/textAchievementsError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:background="@drawable/bg_home_v2_card"
+            android:gravity="center"
+            android:padding="24dp"
+            android:textColor="@color/home_v2_error"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Başarımlar şu anda yüklenemedi."
+            tools:visibility="visible" />
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

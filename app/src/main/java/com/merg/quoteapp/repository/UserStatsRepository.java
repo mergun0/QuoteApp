@@ -5,8 +5,13 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.AggregateSource;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.UserStats;
 
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,6 +36,9 @@ public class UserStatsRepository {
     }
 
     private static final String USER_STATS_COLLECTION = "userStats";
+    private static final String QUOTES_COLLECTION = "quotes";
+    private static final String LIKES_COLLECTION = "likes";
+    private static final long STATS_SYNC_INTERVAL_MILLIS = 6L * 60L * 60L * 1000L;
     private static volatile UserStatsRepository instance;
 
     private final FirebaseFirestore firestore;
@@ -189,11 +197,164 @@ public class UserStatsRepository {
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 
+    /**
+     * Safely recalculates public user stats from existing quotes and likes.
+     * Existing XP and moderation counters are preserved and never decreased.
+     *
+     * @param userId user id whose stats will be synchronized
+     * @param callback synchronized stats callback
+     */
+    public void syncUserStatsFromExistingData(String userId, UserStatsCallback callback) {
+        if (isBlank(userId)) {
+            callback.onError("KullanÄ±cÄ± bilgisi bulunamadÄ±.");
+            return;
+        }
+
+        firestore.collection(USER_STATS_COLLECTION)
+                .document(userId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    UserStats existingStats = statsFromDocument(userId, document);
+                    if (isSyncFresh(existingStats)) {
+                        callback.onSuccess(existingStats);
+                        return;
+                    }
+                    recalculateFromQuotes(userId, existingStats, callback);
+                })
+                .addOnFailureListener(error -> recalculateFromQuotes(
+                        userId, defaultStats(userId), callback));
+    }
+
+    private void recalculateFromQuotes(String userId, UserStats existingStats,
+                                       UserStatsCallback callback) {
+        firestore.collection(QUOTES_COLLECTION)
+                .whereEqualTo("userId", userId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<DocumentSnapshot> documents = snapshot.getDocuments();
+                    RecalculatedStats totals = new RecalculatedStats();
+                    totals.totalQuotes = documents.size();
+                    for (DocumentSnapshot document : documents) {
+                        Quote quote = document.toObject(Quote.class);
+                        if (quote == null) {
+                            continue;
+                        }
+                        countType(quote.getType(), totals);
+                    }
+                    if (documents.isEmpty()) {
+                        persistSyncedStats(userId, existingStats, totals, callback);
+                        return;
+                    }
+                    countLikesForQuotes(userId, existingStats, documents, totals,
+                            0, callback);
+                })
+                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
+    private void countLikesForQuotes(String userId, UserStats existingStats,
+                                     List<DocumentSnapshot> quoteDocuments,
+                                     RecalculatedStats totals, int index,
+                                     UserStatsCallback callback) {
+        if (index >= quoteDocuments.size()) {
+            persistSyncedStats(userId, existingStats, totals, callback);
+            return;
+        }
+
+        DocumentSnapshot quoteDocument = quoteDocuments.get(index);
+        String quoteId = quoteDocument.getId();
+        Quote quote = quoteDocument.toObject(Quote.class);
+        if (quote != null && !isBlank(quote.getQuoteId())) {
+            quoteId = quote.getQuoteId();
+        }
+        if (isBlank(quoteId)) {
+            countLikesForQuotes(userId, existingStats, quoteDocuments, totals,
+                    index + 1, callback);
+            return;
+        }
+
+        firestore.collection(LIKES_COLLECTION)
+                .whereEqualTo("quoteId", quoteId)
+                .count()
+                .get(AggregateSource.SERVER)
+                .addOnSuccessListener(snapshot -> {
+                    long likeCount = Math.max(0, snapshot.getCount());
+                    totals.totalLikesReceived += likeCount;
+                    totals.maxSingleQuoteLikes = Math.max(totals.maxSingleQuoteLikes, likeCount);
+                    countLikesForQuotes(userId, existingStats, quoteDocuments, totals,
+                            index + 1, callback);
+                })
+                .addOnFailureListener(error -> countLikesForQuotes(userId, existingStats,
+                        quoteDocuments, totals, index + 1, callback));
+    }
+
+    private void persistSyncedStats(String userId, UserStats existingStats,
+                                    RecalculatedStats totals,
+                                    UserStatsCallback callback) {
+        UserStats syncedStats = existingStats == null ? defaultStats(userId) : existingStats;
+        syncedStats.setUserId(userId);
+        syncedStats.setLevel(syncedStats.getLevel() <= 0 ? 1 : syncedStats.getLevel());
+        syncedStats.setTotalQuotes(Math.max(0, totals.totalQuotes));
+        syncedStats.setTotalMovieQuotes(Math.max(0, totals.totalMovieQuotes));
+        syncedStats.setTotalSeriesQuotes(Math.max(0, totals.totalSeriesQuotes));
+        syncedStats.setTotalBookQuotes(Math.max(0, totals.totalBookQuotes));
+        syncedStats.setTotalLikesReceived(Math.max(0, totals.totalLikesReceived));
+        syncedStats.setMaxSingleQuoteLikes(Math.max(0, totals.maxSingleQuoteLikes));
+        syncedStats.setTotalXp(Math.max(0, syncedStats.getTotalXp()));
+
+        Map<String, Object> data = statsMap(userId, syncedStats);
+        data.put("statsSyncedAt", FieldValue.serverTimestamp());
+
+        firestore.collection(USER_STATS_COLLECTION)
+                .document(userId)
+                .set(data, SetOptions.merge())
+                .addOnSuccessListener(unused -> callback.onSuccess(syncedStats))
+                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
     private UserStats defaultStats(String userId) {
         UserStats stats = new UserStats();
         stats.setUserId(userId);
         stats.setLevel(1);
         return stats;
+    }
+
+    private UserStats statsFromDocument(String userId, DocumentSnapshot document) {
+        if (document != null && document.exists()) {
+            UserStats stats = document.toObject(UserStats.class);
+            if (stats != null) {
+                if (isBlank(stats.getUserId())) {
+                    stats.setUserId(userId);
+                }
+                if (stats.getLevel() <= 0) {
+                    stats.setLevel(1);
+                }
+                return stats;
+            }
+        }
+        return defaultStats(userId);
+    }
+
+    private boolean isSyncFresh(UserStats stats) {
+        if (stats == null || stats.getStatsSyncedAt() == null) {
+            return false;
+        }
+        long syncedAt = stats.getStatsSyncedAt().toDate().getTime();
+        return System.currentTimeMillis() - syncedAt < STATS_SYNC_INTERVAL_MILLIS;
+    }
+
+    private void countType(String type, RecalculatedStats totals) {
+        if (isBlank(type)) {
+            return;
+        }
+        String normalized = type.trim().toLowerCase();
+        if ("film".equals(normalized) || "movie".equals(normalized)) {
+            totals.totalMovieQuotes++;
+        } else if ("dizi".equals(normalized) || "series".equals(normalized)
+                || "tv".equals(normalized)) {
+            totals.totalSeriesQuotes++;
+        } else if ("kitap".equals(normalized) || "book".equals(normalized)) {
+            totals.totalBookQuotes++;
+        }
     }
 
     private Map<String, Object> defaultStatsMap(String userId) {
@@ -230,6 +391,15 @@ public class UserStatsRepository {
         data.put("unlockedAchievementCount", stats.getUnlockedAchievementCount());
         data.put("lastUpdatedAt", FieldValue.serverTimestamp());
         return data;
+    }
+
+    private static class RecalculatedStats {
+        private long totalQuotes;
+        private long totalLikesReceived;
+        private long maxSingleQuoteLikes;
+        private long totalMovieQuotes;
+        private long totalSeriesQuotes;
+        private long totalBookQuotes;
     }
 
     private boolean isBlank(String value) {

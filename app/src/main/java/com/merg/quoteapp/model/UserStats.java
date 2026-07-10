@@ -17,6 +17,7 @@ public class UserStats {
     private long invalidReports;
     private long unlockedAchievementCount;
     private Timestamp lastUpdatedAt;
+    private Timestamp statsSyncedAt;
 
     public UserStats() {
         // Required by Firestore.
@@ -124,5 +125,13 @@ public class UserStats {
 
     public void setLastUpdatedAt(Timestamp lastUpdatedAt) {
         this.lastUpdatedAt = lastUpdatedAt;
+    }
+
+    public Timestamp getStatsSyncedAt() {
+        return statsSyncedAt;
+    }
+
+    public void setStatsSyncedAt(Timestamp statsSyncedAt) {
+        this.statsSyncedAt = statsSyncedAt;
     }
 }

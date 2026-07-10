@@ -19,6 +19,23 @@
 
     <style name="Theme.QuoteApp" parent="Base.Theme.QuoteApp" />
 
+    <style name="Theme.QuoteApp.DarkSurface" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/home_v2_primary</item>
+        <item name="colorOnPrimary">@color/home_v2_text_primary</item>
+        <item name="colorSecondary">@color/home_v2_secondary</item>
+        <item name="colorOnSecondary">@color/home_v2_text_primary</item>
+        <item name="android:colorBackground">@color/home_v2_background</item>
+        <item name="colorOnBackground">@color/home_v2_text_primary</item>
+        <item name="colorSurface">@color/home_v2_card</item>
+        <item name="colorOnSurface">@color/home_v2_text_primary</item>
+        <item name="colorControlNormal">@color/home_v2_text_secondary</item>
+        <item name="colorControlActivated">@color/home_v2_primary</item>
+        <item name="colorControlHighlight">@color/bottom_nav_ripple</item>
+        <item name="android:navigationBarColor">@color/home_v2_background</item>
+        <item name="android:statusBarColor">@color/home_v2_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
     <style name="Theme.QuoteApp.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowBackground">@drawable/bg_splash</item>
         <item name="android:colorBackground">@color/quote_primary_dark</item>
