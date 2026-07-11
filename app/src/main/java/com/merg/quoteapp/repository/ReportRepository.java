@@ -7,6 +7,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.merg.quoteapp.model.Report;
+import com.merg.quoteapp.utils.FriendlyErrorMapper;
 
 import java.util.Calendar;
 import java.util.HashMap;
@@ -216,6 +217,9 @@ public class ReportRepository {
     }
 
     private String readableError(Exception error) {
+        if (FriendlyErrorMapper.isNetworkError(error)) {
+            return FriendlyErrorMapper.NETWORK_MESSAGE;
+        }
         if (error instanceof FirebaseFirestoreException) {
             FirebaseFirestoreException firestoreError = (FirebaseFirestoreException) error;
             String details = firestoreError.getMessage();

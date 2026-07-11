@@ -152,6 +152,7 @@ public class HomeFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerQuotes);
         progressBar = view.findViewById(R.id.progressQuotes);
         xpProgressBar = view.findViewById(R.id.progressHomeXp);
+        xpProgressBar.setProgress(0);
         emptyLayout = view.findViewById(R.id.layoutEmptyQuotes);
         statusText = view.findViewById(R.id.textQuotesStatus);
         greetingText = view.findViewById(R.id.textHomeGreeting);
@@ -512,29 +513,24 @@ public class HomeFragment extends Fragment {
     private void renderXpProgress(long totalXp) {
         Level currentLevel = levelViewModel.getCurrentLevel().getValue();
         Level nextLevel = levelViewModel.getNextLevel().getValue();
-        if (currentLevel == null) {
-            renderFallbackXpProgress(totalXp);
-            return;
-        }
-        if (nextLevel == null) {
-            xpProgressBar.setProgress(100);
-            xpProgressText.setText(R.string.xp_progress_max);
+        if (currentLevel == null || nextLevel == null) {
+            xpProgressBar.setProgress(0);
+            xpProgressText.setText(getString(R.string.xp_total_format, totalXp));
             return;
         }
         long currentRequiredXp = Math.max(0, currentLevel.getRequiredTotalXp());
         long nextRequiredXp = Math.max(currentRequiredXp + 1, nextLevel.getRequiredTotalXp());
-        long range = nextRequiredXp - currentRequiredXp;
+        long range = Math.max(1, nextRequiredXp - currentRequiredXp);
         long progress = Math.max(0, totalXp - currentRequiredXp);
-        xpProgressBar.setProgress((int) Math.min(100, (progress * 100) / range));
+        int progressPercent = (int) Math.max(0, Math.min(100, (progress * 100) / range));
+        xpProgressBar.setProgress(progressPercent);
         xpProgressText.setText(getString(R.string.xp_progress_format, totalXp, nextRequiredXp));
     }
 
     private void renderFallbackXpProgress(long totalXp) {
-        long fallbackTarget = 100;
         long safeXp = Math.max(0, totalXp);
-        xpProgressBar.setProgress((int) Math.min(100, (safeXp * 100) / fallbackTarget));
-        xpProgressText.setText(getString(R.string.xp_progress_format,
-                Math.min(safeXp, fallbackTarget), fallbackTarget));
+        xpProgressBar.setProgress(0);
+        xpProgressText.setText(getString(R.string.xp_total_format, safeXp));
     }
 
     private UserStats defaultStats() {

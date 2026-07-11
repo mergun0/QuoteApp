@@ -7,6 +7,9 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.merg.quoteapp.utils.FriendlyErrorMapper;
+
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +18,8 @@ import java.util.Locale;
 import java.util.Map;
 
 public class LikeRepository {
+
+    private static final String TAG = "LikeRepository";
 
     public interface OperationCallback {
 
@@ -136,20 +141,23 @@ public class LikeRepository {
         data.put("createdAt", FieldValue.serverTimestamp());
 
         DocumentReference document = firestore.collection(LIKES_COLLECTION).document(likeId);
-        document.get()
-                .addOnSuccessListener(existingLike -> {
-                    if (existingLike.exists()) {
-                        callback.onSuccess();
-                        return;
+        firestore.runTransaction(transaction -> {
+                    if (transaction.get(document).exists()) {
+                        return false;
                     }
-                    document.set(data)
-                            .addOnSuccessListener(unused -> {
-                                achievementEngineRepository.onQuoteLiked(quoteId, user.getUid());
-                                callback.onSuccess();
-                            })
-                            .addOnFailureListener(error -> callback.onError(readableError(error)));
+                    transaction.set(document, data);
+                    return true;
                 })
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+                .addOnSuccessListener(created -> {
+                    if (Boolean.TRUE.equals(created)) {
+                        achievementEngineRepository.onQuoteLiked(quoteId, user.getUid());
+                    }
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(error -> {
+                    Log.e(TAG, "Like transaction failed", error);
+                    callback.onError(readableError(error));
+                });
     }
 
     /**
@@ -172,8 +180,14 @@ public class LikeRepository {
         firestore.collection(LIKES_COLLECTION)
                 .document(likeDocumentId(quoteId, user.getUid()))
                 .delete()
-                .addOnSuccessListener(unused -> callback.onSuccess())
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+                .addOnSuccessListener(unused -> {
+                    achievementEngineRepository.onQuoteUnliked(quoteId);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(error -> {
+                    Log.e(TAG, "Unlike failed", error);
+                    callback.onError(readableError(error));
+                });
     }
 
     /**

@@ -8,6 +8,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.merg.quoteapp.model.Quote;
+import com.merg.quoteapp.utils.FriendlyErrorMapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -281,6 +282,9 @@ public class FavoriteRepository {
     }
 
     private String readableError(Exception error) {
+        if (FriendlyErrorMapper.isNetworkError(error)) {
+            return FriendlyErrorMapper.NETWORK_MESSAGE;
+        }
         if (error instanceof FirebaseFirestoreException) {
             FirebaseFirestoreException firestoreError = (FirebaseFirestoreException) error;
             String details = firestoreError.getMessage();

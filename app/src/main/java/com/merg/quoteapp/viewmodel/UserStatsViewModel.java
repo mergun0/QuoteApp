@@ -116,7 +116,7 @@ public class UserStatsViewModel extends ViewModel {
         loading.setValue(true);
         error.setValue(null);
         reconciliationComplete.setValue(false);
-        repository.syncUserStatsFromExistingData(userId, new UserStatsRepository.UserStatsCallback() {
+        repository.syncUserStatsFromExistingData(userId, true, new UserStatsRepository.UserStatsCallback() {
             @Override
             public void onSuccess(UserStats stats) {
                 userStats.setValue(stats);

@@ -1,5 +1,6 @@
 package com.merg.quoteapp.ui.auth;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -9,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.AuthState;
 import com.merg.quoteapp.viewmodel.AuthViewModel;
@@ -61,8 +63,15 @@ public class RegisterActivity extends AppCompatActivity {
             showStatus(state.getMessage(), true);
         } else if (state.getStatus() == AuthState.Status.SUCCESS) {
             showStatus(getString(R.string.register_success), false);
-            statusText.postDelayed(this::finish, 1200L);
+            statusText.postDelayed(this::openMain, 500L);
         }
+    }
+
+    private void openMain() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void showStatus(String message, boolean isError) {

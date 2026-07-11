@@ -21,8 +21,10 @@
     <string name="send_reset_link">Sıfırlama Bağlantısı Gönder</string>
     <string name="back_to_login">Giriş ekranına dön</string>
     <string name="login_success">Giriş başarılı.</string>
-    <string name="register_success">Kayıt başarılı. Şimdi giriş yapabilirsiniz.</string>
+    <string name="register_success">Kayıt başarılı. Uygulamaya yönlendiriliyorsun.</string>
     <string name="reset_success">Şifre sıfırlama bağlantısı gönderildi.</string>
+    <string name="reset_privacy_safe_success">Eğer bu e-posta adresiyle kayıtlı bir hesap varsa, şifre sıfırlama bağlantısı gönderildi.</string>
+    <string name="reset_cooldown_format">Tekrar göndermek için %1$d saniye bekle.</string>
     <string name="my_quotes">Alıntılarım</string>
     <string name="my_quotes_subtitle">Senden iz bırakan cümleler.</string>
     <string name="add_quote">Alıntı Ekle</string>

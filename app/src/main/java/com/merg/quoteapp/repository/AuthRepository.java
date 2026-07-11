@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.merg.quoteapp.utils.FriendlyErrorMapper;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -78,13 +79,10 @@ public class AuthRepository {
                     firestore.collection(USERS_COLLECTION)
                             .document(uid)
                             .set(userData)
-                            .addOnSuccessListener(unused -> {
-                                auth.signOut();
-                                callback.onSuccess();
-                            })
+                            .addOnSuccessListener(unused -> callback.onSuccess())
                             .addOnFailureListener(error -> result.getUser().delete()
                                     .addOnCompleteListener(task ->
-                                            callback.onError("Profil kaydedilemedi: " + readableError(error))));
+                                            callback.onError("Profil kaydedilemedi. Lütfen tekrar deneyin.")));
                 })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
@@ -136,6 +134,9 @@ public class AuthRepository {
     }
 
     private String readableError(Exception error) {
+        if (FriendlyErrorMapper.isNetworkError(error)) {
+            return FriendlyErrorMapper.NETWORK_MESSAGE;
+        }
         if (error instanceof FirebaseFirestoreException) {
             FirebaseFirestoreException firestoreError = (FirebaseFirestoreException) error;
             String details = firestoreError.getMessage();

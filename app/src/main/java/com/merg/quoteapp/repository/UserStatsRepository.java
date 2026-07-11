@@ -10,6 +10,7 @@ import com.google.firebase.firestore.AggregateSource;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.UserStats;
+import com.merg.quoteapp.utils.FriendlyErrorMapper;
 
 import java.util.List;
 import java.util.HashMap;
@@ -205,6 +206,11 @@ public class UserStatsRepository {
      * @param callback synchronized stats callback
      */
     public void syncUserStatsFromExistingData(String userId, UserStatsCallback callback) {
+        syncUserStatsFromExistingData(userId, false, callback);
+    }
+
+    public void syncUserStatsFromExistingData(String userId, boolean force,
+                                              UserStatsCallback callback) {
         if (isBlank(userId)) {
             callback.onError("KullanÄ±cÄ± bilgisi bulunamadÄ±.");
             return;
@@ -215,7 +221,7 @@ public class UserStatsRepository {
                 .get()
                 .addOnSuccessListener(document -> {
                     UserStats existingStats = statsFromDocument(userId, document);
-                    if (isSyncFresh(existingStats)) {
+                    if (!force && isSyncFresh(existingStats)) {
                         callback.onSuccess(existingStats);
                         return;
                     }
@@ -407,6 +413,9 @@ public class UserStatsRepository {
     }
 
     private String readableError(Exception error) {
+        if (FriendlyErrorMapper.isNetworkError(error)) {
+            return FriendlyErrorMapper.NETWORK_MESSAGE;
+        }
         if (error instanceof FirebaseFirestoreException
                 && ((FirebaseFirestoreException) error).getCode()
                 == FirebaseFirestoreException.Code.PERMISSION_DENIED) {

@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -19,11 +20,15 @@ import com.merg.quoteapp.R;
 import com.merg.quoteapp.repository.AuthRepository;
 import com.merg.quoteapp.repository.ProfileRepository;
 import com.merg.quoteapp.ui.auth.LoginActivity;
+import com.merg.quoteapp.utils.PasswordResetCooldownManager;
 
 public class SettingsActivity extends AppCompatActivity {
 
     private AuthRepository authRepository;
     private ProfileRepository profileRepository;
+    private PasswordResetCooldownManager cooldownManager;
+    private CountDownTimer resetCooldownTimer;
+    private View resetPasswordRow;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,11 +36,13 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
         authRepository = AuthRepository.getInstance();
         profileRepository = new ProfileRepository();
+        cooldownManager = new PasswordResetCooldownManager(this);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarSettings);
         toolbar.setNavigationOnClickListener(view -> finish());
 
         setupRows();
+        updateResetCooldownState();
     }
 
     private void setupRows() {
@@ -47,7 +54,7 @@ public class SettingsActivity extends AppCompatActivity {
         addRow(accountContainer, "👤", getString(R.string.settings_account_info),
                 getString(R.string.settings_account_info_subtitle), "›",
                 view -> showAccountInfo());
-        addRow(accountContainer, "🔐", getString(R.string.settings_reset_password),
+        resetPasswordRow = addRow(accountContainer, "🔐", getString(R.string.settings_reset_password),
                 getString(R.string.settings_reset_password_subtitle), "›",
                 view -> sendPasswordReset());
         addRow(accountContainer, "🚪", getString(R.string.logout),
@@ -81,7 +88,7 @@ public class SettingsActivity extends AppCompatActivity {
                 view -> sendFeedback());
     }
 
-    private void addRow(LinearLayout container, String icon, String title,
+    private View addRow(LinearLayout container, String icon, String title,
                         String subtitle, String indicator, View.OnClickListener listener) {
         View row = LayoutInflater.from(this).inflate(R.layout.item_settings_row, container, false);
         TextView iconText = row.findViewById(R.id.textSettingsRowIcon);
@@ -100,6 +107,7 @@ public class SettingsActivity extends AppCompatActivity {
             row.setOnClickListener(listener);
         }
         container.addView(row);
+        return row;
     }
 
     private void showAccountInfo() {
@@ -143,6 +151,12 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void sendPasswordReset() {
+        if (cooldownManager.isCoolingDown()) {
+            showMessage(R.string.settings_reset_password,
+                    getString(R.string.reset_cooldown_format, cooldownManager.remainingSeconds()));
+            updateResetCooldownState();
+            return;
+        }
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null || isBlank(user.getEmail())) {
             showMessage(R.string.settings_reset_password, R.string.settings_reset_email_missing);
@@ -151,7 +165,9 @@ public class SettingsActivity extends AppCompatActivity {
         authRepository.resetPassword(user.getEmail(), new AuthRepository.AuthCallback() {
             @Override
             public void onSuccess() {
-                showMessage(R.string.settings_reset_password, R.string.settings_reset_sent);
+                cooldownManager.startCooldown();
+                updateResetCooldownState();
+                showMessage(R.string.settings_reset_password, R.string.reset_privacy_safe_success);
             }
 
             @Override
@@ -213,7 +229,50 @@ public class SettingsActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void showMessage(int titleRes, String message) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(titleRes)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
+    private void updateResetCooldownState() {
+        if (resetPasswordRow == null) {
+            return;
+        }
+        long remaining = cooldownManager.remainingSeconds();
+        resetPasswordRow.setEnabled(remaining <= 0);
+        resetPasswordRow.setAlpha(remaining <= 0 ? 1f : 0.65f);
+        if (resetCooldownTimer != null) {
+            resetCooldownTimer.cancel();
+            resetCooldownTimer = null;
+        }
+        if (remaining > 0) {
+            resetCooldownTimer = new CountDownTimer(remaining * 1000L, 1000L) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    resetPasswordRow.setEnabled(false);
+                }
+
+                @Override
+                public void onFinish() {
+                    resetPasswordRow.setEnabled(true);
+                    resetPasswordRow.setAlpha(1f);
+                }
+            }.start();
+        }
+    }
+
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (resetCooldownTimer != null) {
+            resetCooldownTimer.cancel();
+        }
+        super.onDestroy();
     }
 }

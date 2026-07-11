@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
+import android.util.Log;
 import com.merg.quoteapp.model.Achievement;
 import com.merg.quoteapp.model.AchievementFeedbackEvent;
 import com.merg.quoteapp.model.Level;
@@ -23,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 public class AchievementEngineRepository {
+
+    private static final String TAG = "AchievementEngineRepo";
 
     public interface EngineCallback {
         void onComplete();
@@ -93,14 +96,54 @@ public class AchievementEngineRepository {
                 .document(quoteId)
                 .get()
                 .addOnSuccessListener(document -> {
-                    Quote quote = document.toObject(Quote.class);
-                    if (quote == null || isBlank(quote.getUserId())
-                            || quote.getUserId().equals(likerUserId)) {
+                    if (document.exists()) {
+                        handleLikedQuoteDocument(document, likerUserId);
                         return;
                     }
-                    loadXpRewards(rewards -> applyLikeReceived(
-                            quote, rewards.valueFor(XpRewards.EVENT_RECEIVE_LIKE)));
-                });
+                    firestore.collection(QUOTES_COLLECTION)
+                            .whereEqualTo("quoteId", quoteId)
+                            .limit(1)
+                            .get()
+                            .addOnSuccessListener(snapshot -> {
+                                if (!snapshot.isEmpty()) {
+                                    handleLikedQuoteDocument(snapshot.getDocuments().get(0), likerUserId);
+                                }
+                            })
+                            .addOnFailureListener(error ->
+                                    Log.e(TAG, "Quote lookup by quoteId failed", error));
+                })
+                .addOnFailureListener(error -> Log.e(TAG, "Quote lookup for like failed", error));
+    }
+
+    public void onQuoteUnliked(String quoteId) {
+        if (isBlank(quoteId)) {
+            return;
+        }
+        firestore.collection(QUOTES_COLLECTION)
+                .document(quoteId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists()) {
+                        Quote quote = document.toObject(Quote.class);
+                        if (quote != null && !isBlank(quote.getUserId())) {
+                            recalculateLikeStatsAndAchievements(quote.getUserId(), 0);
+                        }
+                    }
+                })
+                .addOnFailureListener(error -> Log.e(TAG, "Quote lookup for unlike failed", error));
+    }
+
+    private void handleLikedQuoteDocument(DocumentSnapshot document, String likerUserId) {
+        Quote quote = document.toObject(Quote.class);
+        if (quote == null || isBlank(quote.getUserId())
+                || quote.getUserId().equals(likerUserId)) {
+            return;
+        }
+        if (isBlank(quote.getQuoteId())) {
+            quote.setQuoteId(document.getId());
+        }
+        loadXpRewards(rewards -> applyLikeReceived(
+                quote, rewards.valueFor(XpRewards.EVENT_RECEIVE_LIKE)));
     }
 
     /**
@@ -149,15 +192,57 @@ public class AchievementEngineRepository {
     }
 
     private void applyLikeReceived(Quote quote, long xpAmount) {
+        recalculateLikeStatsAndAchievements(quote.getUserId(), xpAmount);
+    }
+
+    private void recalculateLikeStatsAndAchievements(String userId, long xpAmount) {
+        firestore.collection(QUOTES_COLLECTION)
+                .whereEqualTo("userId", userId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    List<DocumentSnapshot> quoteDocuments = snapshot.getDocuments();
+                    if (quoteDocuments.isEmpty()) {
+                        updateStatsForEvent(userId, xpAmount, stats -> {
+                            stats.setTotalLikesReceived(0);
+                            stats.setMaxSingleQuoteLikes(0);
+                        });
+                        return;
+                    }
+                    LikeTotals totals = new LikeTotals();
+                    countOwnerQuoteLikes(userId, xpAmount, quoteDocuments, 0, totals);
+                })
+                .addOnFailureListener(error -> Log.e(TAG, "Owner quote lookup for like stats failed", error));
+    }
+
+    private void countOwnerQuoteLikes(String userId, long xpAmount,
+                                      List<DocumentSnapshot> quoteDocuments,
+                                      int index, LikeTotals totals) {
+        if (index >= quoteDocuments.size()) {
+            updateStatsForEvent(userId, xpAmount, stats -> {
+                stats.setTotalLikesReceived(Math.max(0, totals.totalLikes));
+                stats.setMaxSingleQuoteLikes(Math.max(0, totals.maxSingleQuoteLikes));
+            });
+            return;
+        }
+        DocumentSnapshot quoteDocument = quoteDocuments.get(index);
+        String quoteId = quoteDocument.getString("quoteId");
+        if (isBlank(quoteId)) {
+            quoteId = quoteDocument.getId();
+        }
         firestore.collection(LIKES_COLLECTION)
-                .whereEqualTo("quoteId", quote.getQuoteId())
+                .whereEqualTo("quoteId", quoteId)
                 .count()
                 .get(AggregateSource.SERVER)
-                .addOnSuccessListener(snapshot -> updateStatsForEvent(quote.getUserId(), xpAmount, stats -> {
-                    stats.setTotalLikesReceived(stats.getTotalLikesReceived() + 1);
-                    stats.setMaxSingleQuoteLikes(Math.max(
-                            stats.getMaxSingleQuoteLikes(), snapshot.getCount()));
-                }));
+                .addOnSuccessListener(count -> {
+                    long quoteLikes = Math.max(0, count.getCount());
+                    totals.totalLikes += quoteLikes;
+                    totals.maxSingleQuoteLikes = Math.max(totals.maxSingleQuoteLikes, quoteLikes);
+                    countOwnerQuoteLikes(userId, xpAmount, quoteDocuments, index + 1, totals);
+                })
+                .addOnFailureListener(error -> {
+                    Log.e(TAG, "Like count for owner quote failed", error);
+                    countOwnerQuoteLikes(userId, xpAmount, quoteDocuments, index + 1, totals);
+                });
     }
 
     private void updateStatsForEvent(String userId, long xpAmount, StatsMutator mutator) {
@@ -525,5 +610,10 @@ public class AchievementEngineRepository {
 
     private interface LevelSaveCallback {
         void onSaved(Level level);
+    }
+
+    private static class LikeTotals {
+        private long totalLikes;
+        private long maxSingleQuoteLikes;
     }
 }
