@@ -1,8 +1,11 @@
 package com.merg.quoteapp.repository;
 
+import android.util.Log;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.AggregateSource;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -14,10 +17,11 @@ import com.merg.quoteapp.utils.FriendlyErrorMapper;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class FavoriteRepository {
+
+    private static final String TAG = "FavoriteRepository";
 
     public interface OperationCallback {
         void onSuccess();
@@ -82,11 +86,11 @@ public class FavoriteRepository {
     public void saveQuote(String quoteId, OperationCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError("Alıntı kaydetmek için giriş yapmalısınız.");
+            callback.onError("AlÄ±ntÄ± kaydetmek iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.");
             return;
         }
         if (isBlank(quoteId)) {
-            callback.onError("Kaydedilecek alıntı bulunamadı.");
+            callback.onError("Kaydedilecek alÄ±ntÄ± bulunamadÄ±.");
             return;
         }
 
@@ -97,11 +101,40 @@ public class FavoriteRepository {
         data.put("userId", user.getUid());
         data.put("createdAt", FieldValue.serverTimestamp());
 
-        firestore.collection(FAVORITES_COLLECTION)
-                .document(favoriteId)
-                .set(data)
-                .addOnSuccessListener(unused -> callback.onSuccess())
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+        DocumentReference favoriteRef = firestore.collection(FAVORITES_COLLECTION)
+                .document(favoriteId);
+        DocumentReference quoteRef = firestore.collection(QUOTES_COLLECTION).document(quoteId);
+        final String userId = user.getUid();
+        final String[] transactionStep = {"prepare save transaction"};
+
+        firestore.runTransaction(transaction -> {
+                    transactionStep[0] = "read favorite document";
+                    DocumentSnapshot favoriteSnapshot = transaction.get(favoriteRef);
+                    transactionStep[0] = "read quote document";
+                    DocumentSnapshot quoteSnapshot = transaction.get(quoteRef);
+                    if (favoriteSnapshot.exists()) {
+                        return false;
+                    }
+                    if (!quoteSnapshot.exists()) {
+                        throw new FirebaseFirestoreException(
+                                "Quote document not found for favorite save.",
+                                FirebaseFirestoreException.Code.NOT_FOUND);
+                    }
+                    transactionStep[0] = "create favorite document";
+                    transaction.set(favoriteRef, data);
+                    transactionStep[0] = "update quote favoriteCount";
+                    transaction.update(quoteRef, "favoriteCount",
+                            favoriteCountFrom(quoteSnapshot) + 1L);
+                    return true;
+                })
+                .addOnSuccessListener(unused -> {
+                    Log.d(TAG, "saveQuote success. quoteId=" + quoteId + ", userId=" + userId);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(error -> {
+                    logFavoriteFailure("saveQuote", quoteId, userId, transactionStep[0], error);
+                    callback.onError(readableError(error));
+                });
     }
 
     /**
@@ -113,19 +146,48 @@ public class FavoriteRepository {
     public void unsaveQuote(String quoteId, OperationCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError("Kaydı kaldırmak için giriş yapmalısınız.");
+            callback.onError("KaydÄ± kaldÄ±rmak iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.");
             return;
         }
         if (isBlank(quoteId)) {
-            callback.onError("Kaydı kaldırılacak alıntı bulunamadı.");
+            callback.onError("KaydÄ± kaldÄ±rÄ±lacak alÄ±ntÄ± bulunamadÄ±.");
             return;
         }
 
-        firestore.collection(FAVORITES_COLLECTION)
-                .document(favoriteDocumentId(quoteId, user.getUid()))
-                .delete()
-                .addOnSuccessListener(unused -> callback.onSuccess())
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+        DocumentReference favoriteRef = firestore.collection(FAVORITES_COLLECTION)
+                .document(favoriteDocumentId(quoteId, user.getUid()));
+        DocumentReference quoteRef = firestore.collection(QUOTES_COLLECTION).document(quoteId);
+        final String userId = user.getUid();
+        final String[] transactionStep = {"prepare unsave transaction"};
+
+        firestore.runTransaction(transaction -> {
+                    transactionStep[0] = "read favorite document";
+                    DocumentSnapshot favoriteSnapshot = transaction.get(favoriteRef);
+                    transactionStep[0] = "read quote document";
+                    DocumentSnapshot quoteSnapshot = transaction.get(quoteRef);
+                    if (!favoriteSnapshot.exists()) {
+                        return false;
+                    }
+                    if (!quoteSnapshot.exists()) {
+                        throw new FirebaseFirestoreException(
+                                "Quote document not found for favorite unsave.",
+                                FirebaseFirestoreException.Code.NOT_FOUND);
+                    }
+                    transactionStep[0] = "delete favorite document";
+                    transaction.delete(favoriteRef);
+                    transactionStep[0] = "update quote favoriteCount";
+                    transaction.update(quoteRef, "favoriteCount",
+                            Math.max(0L, favoriteCountFrom(quoteSnapshot) - 1L));
+                    return true;
+                })
+                .addOnSuccessListener(unused -> {
+                    Log.d(TAG, "unsaveQuote success. quoteId=" + quoteId + ", userId=" + userId);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(error -> {
+                    logFavoriteFailure("unsaveQuote", quoteId, userId, transactionStep[0], error);
+                    callback.onError(readableError(error));
+                });
     }
 
     /**
@@ -137,11 +199,11 @@ public class FavoriteRepository {
     public void isSavedByCurrentUser(String quoteId, SavedStateCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError("Kayıt durumunu görmek için giriş yapmalısınız.");
+            callback.onError("KayÄ±t durumunu gÃ¶rmek iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.");
             return;
         }
         if (isBlank(quoteId)) {
-            callback.onError("Alıntı bilgisi bulunamadı.");
+            callback.onError("AlÄ±ntÄ± bilgisi bulunamadÄ±.");
             return;
         }
 
@@ -160,7 +222,7 @@ public class FavoriteRepository {
      */
     public void getFavoriteCount(String quoteId, FavoriteCountCallback callback) {
         if (isBlank(quoteId)) {
-            callback.onError("Alıntı bilgisi bulunamadı.");
+            callback.onError("AlÄ±ntÄ± bilgisi bulunamadÄ±.");
             return;
         }
 
@@ -180,7 +242,7 @@ public class FavoriteRepository {
     public void getSavedQuotesForCurrentUser(SavedQuotesCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError("Kaydedilen alıntıları görmek için giriş yapmalısınız.");
+            callback.onError("Kaydedilen alÄ±ntÄ±larÄ± gÃ¶rmek iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.");
             return;
         }
 
@@ -264,7 +326,7 @@ public class FavoriteRepository {
             return;
         }
         if (isBlank(quote.getUserId())) {
-            quote.setUsername("kullanıcı");
+            quote.setUsername("kullanÄ±cÄ±");
             callback.onComplete(quote);
             return;
         }
@@ -282,7 +344,7 @@ public class FavoriteRepository {
                     String username = task.isSuccessful() && task.getResult() != null
                             ? task.getResult().getString("username") : null;
                     if (isBlank(username)) {
-                        username = "kullanıcı";
+                        username = "kullanÄ±cÄ±";
                     }
                     usernameCache.put(quote.getUserId(), username);
                     quote.setUsername(username);
@@ -304,32 +366,69 @@ public class FavoriteRepository {
         return quoteId + "_" + userId;
     }
 
+    private long favoriteCountFrom(DocumentSnapshot quoteSnapshot) {
+        Object rawValue = quoteSnapshot.get("favoriteCount");
+        if (rawValue instanceof Long) {
+            return Math.max(0L, (Long) rawValue);
+        }
+        if (rawValue instanceof Integer) {
+            return Math.max(0L, ((Integer) rawValue).longValue());
+        }
+        if (rawValue instanceof Double) {
+            return Math.max(0L, ((Double) rawValue).longValue());
+        }
+        if (rawValue instanceof Number) {
+            return Math.max(0L, ((Number) rawValue).longValue());
+        }
+        return 0L;
+    }
+
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
 
     private String readableError(Exception error) {
-        if (FriendlyErrorMapper.isNetworkError(error)) {
-            return FriendlyErrorMapper.NETWORK_MESSAGE;
-        }
         if (error instanceof FirebaseFirestoreException) {
             FirebaseFirestoreException firestoreError = (FirebaseFirestoreException) error;
-            String details = firestoreError.getMessage();
-            if (firestoreError.getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                return "Kaydetme işlemi için Firestore kurallarını kontrol edin.";
-            }
-            if (firestoreError.getCode() == FirebaseFirestoreException.Code.FAILED_PRECONDITION
-                    && details != null && details.toLowerCase(Locale.ROOT).contains("index")) {
-                return "Kaydedilen alıntılar için gerekli Firestore indeksi eksik.";
-            }
-            if (firestoreError.getCode() == FirebaseFirestoreException.Code.UNAVAILABLE) {
-                return "Kaydedilen alıntılar yüklenemedi. İnternet bağlantınızı kontrol edin.";
+            switch (firestoreError.getCode()) {
+                case PERMISSION_DENIED:
+                    return "Bu işlem için gerekli izin alınamadı.";
+                case UNAVAILABLE:
+                    return "İnternet bağlantısı kurulamadı.";
+                case ABORTED:
+                    return "İşlem tamamlanamadı. Lütfen tekrar dene.";
+                case NOT_FOUND:
+                    return "Alıntı artık mevcut değil.";
+                case FAILED_PRECONDITION:
+                    return "Kaydetme işlemi şu anda tamamlanamadı.";
+                default:
+                    break;
             }
         }
-        return "Kaydetme işlemi tamamlanamadı. Lütfen tekrar deneyin.";
+        if (FriendlyErrorMapper.isNetworkError(error)) {
+            return "İnternet bağlantısı kurulamadı.";
+        }
+        return "Kaydetme işlemi tamamlanamadı.";
+    }
+
+    private void logFavoriteFailure(String operation, String quoteId, String userId,
+                                    String transactionStep, Exception exception) {
+        StringBuilder details = new StringBuilder(operation)
+                .append(" failed. quoteId=").append(quoteId)
+                .append(", userId=").append(userId)
+                .append(", step=").append(transactionStep)
+                .append(", exceptionClass=").append(exception.getClass().getName())
+                .append(", message=").append(exception.getMessage());
+        if (exception instanceof FirebaseFirestoreException) {
+            details.append(", firebaseCode=")
+                    .append(((FirebaseFirestoreException) exception).getCode());
+        }
+        Log.e(TAG, details.toString(), exception);
     }
 
     private interface QuoteUsernameCallback {
         void onComplete(Quote quote);
     }
 }
+
+

@@ -24,6 +24,8 @@ public class FavoriteViewModel extends ViewModel {
     private final MutableLiveData<Map<String, Boolean>> itemLoadingStates =
             new MutableLiveData<>(new HashMap<>());
     private final MutableLiveData<Long> favoriteCount = new MutableLiveData<>(0L);
+    private final MutableLiveData<Map<String, Long>> favoriteCounts =
+            new MutableLiveData<>(new HashMap<>());
     private final Map<String, Integer> stateVersions = new HashMap<>();
     private String loadedQuoteId;
 
@@ -82,6 +84,15 @@ public class FavoriteViewModel extends ViewModel {
     }
 
     /**
+     * Returns favorite counts keyed by quote id.
+     *
+     * @return favorite count map LiveData
+     */
+    public LiveData<Map<String, Long>> getFavoriteCounts() {
+        return favoriteCounts;
+    }
+
+    /**
      * Loads saved quotes for current user.
      */
     public void loadSavedQuotes() {
@@ -124,6 +135,25 @@ public class FavoriteViewModel extends ViewModel {
             }
             loadSavedStateForQuote(quote.getQuoteId());
         }
+    }
+
+    /**
+     * Reads denormalized favorite counts from quote models without extra Firestore queries.
+     *
+     * @param quotes quotes whose counts will be exposed to UI
+     */
+    public void loadFavoriteCounts(List<Quote> quotes) {
+        if (quotes == null || quotes.isEmpty()) {
+            return;
+        }
+        Map<String, Long> current = favoriteCounts.getValue();
+        Map<String, Long> updated = current == null ? new HashMap<>() : new HashMap<>(current);
+        for (Quote quote : quotes) {
+            if (quote != null && !isBlank(quote.getQuoteId())) {
+                updated.put(quote.getQuoteId(), Math.max(0L, quote.getFavoriteCount()));
+            }
+        }
+        favoriteCounts.setValue(updated);
     }
 
     /**
@@ -170,9 +200,7 @@ public class FavoriteViewModel extends ViewModel {
         repository.getFavoriteCount(quoteId, new FavoriteRepository.FavoriteCountCallback() {
             @Override
             public void onSuccess(long count) {
-                if (quoteId.equals(loadedQuoteId)) {
-                    favoriteCount.setValue(Math.max(0L, count));
-                }
+                setFavoriteCount(quoteId, Math.max(0L, count));
             }
 
             @Override
@@ -198,6 +226,7 @@ public class FavoriteViewModel extends ViewModel {
         incrementVersion(quoteId);
         boolean previousState = getMapValue(savedStates.getValue(), quoteId);
         boolean nextState = !previousState;
+        long previousCount = getCountValue(favoriteCounts.getValue(), quoteId);
         setSavedState(quoteId, nextState);
         applyOptimisticFavoriteCount(quoteId, previousState, nextState);
         setItemLoading(quoteId, true);
@@ -217,7 +246,7 @@ public class FavoriteViewModel extends ViewModel {
             @Override
             public void onError(String message) {
                 setSavedState(quoteId, previousState);
-                applyOptimisticFavoriteCount(quoteId, nextState, previousState);
+                setFavoriteCount(quoteId, previousCount);
                 setItemLoading(quoteId, false);
                 operationState.setValue(QuoteState.error(message));
             }
@@ -292,11 +321,31 @@ public class FavoriteViewModel extends ViewModel {
     private void applyOptimisticFavoriteCount(String quoteId, boolean previousState,
                                               boolean nextState) {
         if (previousState == nextState || !quoteId.equals(loadedQuoteId)) {
-            return;
+            if (previousState == nextState) {
+                return;
+            }
         }
-        long currentCount = favoriteCount.getValue() == null ? 0L : favoriteCount.getValue();
+        long currentCount = quoteId.equals(loadedQuoteId)
+                ? (favoriteCount.getValue() == null ? 0L : favoriteCount.getValue())
+                : getCountValue(favoriteCounts.getValue(), quoteId);
         long nextCount = nextState ? currentCount + 1L : Math.max(0L, currentCount - 1L);
-        favoriteCount.setValue(nextCount);
+        setFavoriteCount(quoteId, nextCount);
+    }
+
+    private void setFavoriteCount(String quoteId, long count) {
+        Map<String, Long> current = favoriteCounts.getValue();
+        Map<String, Long> updated = current == null ? new HashMap<>() : new HashMap<>(current);
+        long safeCount = Math.max(0L, count);
+        updated.put(quoteId, safeCount);
+        favoriteCounts.setValue(updated);
+        if (quoteId.equals(loadedQuoteId)) {
+            favoriteCount.setValue(safeCount);
+        }
+    }
+
+    private long getCountValue(Map<String, Long> map, String quoteId) {
+        Long count = map == null ? null : map.get(quoteId);
+        return count == null ? 0L : Math.max(0L, count);
     }
 
     private int getVersion(String quoteId) {

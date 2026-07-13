@@ -93,6 +93,7 @@ public class QuoteRepository {
     private void writeNewQuote(DocumentReference document, Quote quote,
                                OperationCallback callback) {
         Map<String, Object> data = quoteData(quote);
+        data.put("favoriteCount", 0L);
         data.put("createdAt", FieldValue.serverTimestamp());
         data.put("updatedAt", FieldValue.serverTimestamp());
 

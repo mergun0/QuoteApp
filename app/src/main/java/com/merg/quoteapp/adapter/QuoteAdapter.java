@@ -58,6 +58,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
     private final Set<String> savedQuoteIds = new HashSet<>();
     private final Set<String> saveLoadingQuoteIds = new HashSet<>();
     private final java.util.Map<String, Long> likeCounts = new java.util.HashMap<>();
+    private final java.util.Map<String, Long> saveCounts = new java.util.HashMap<>();
     private final QuoteActionListener listener;
     private final boolean showUsername;
     private final boolean restrictManagementToCurrentUser;
@@ -217,6 +218,20 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         notifyQuoteChanged(quoteId);
     }
 
+    /**
+     * Updates save count for one quote item.
+     *
+     * @param quoteId quote id to update
+     * @param count total save count
+     */
+    public void updateSaveCount(String quoteId, long count) {
+        if (quoteId == null || quoteId.trim().isEmpty()) {
+            return;
+        }
+        saveCounts.put(quoteId, Math.max(0L, count));
+        notifyQuoteChanged(quoteId);
+    }
+
     @NonNull
     @Override
     public QuoteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -240,9 +255,11 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         boolean saved = quote.getQuoteId() != null && savedQuoteIds.contains(quote.getQuoteId());
         boolean saveLoading = quote.getQuoteId() != null
                 && saveLoadingQuoteIds.contains(quote.getQuoteId());
+        long saveCount = quote.getQuoteId() == null || saveCounts.get(quote.getQuoteId()) == null
+                ? Math.max(0L, quote.getFavoriteCount()) : saveCounts.get(quote.getQuoteId());
         holder.bind(quote, listener, spoilerRevealed, showUsername, canManage,
                 liked, likeLoading, likeCount, likeActionsEnabled,
-                saved, saveLoading, saveActionsEnabled, reportActionsEnabled,
+                saved, saveLoading, saveCount, saveActionsEnabled, reportActionsEnabled,
                 () -> revealSpoiler(holder, quote));
     }
 
@@ -324,7 +341,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         void bind(Quote quote, QuoteActionListener listener, boolean spoilerRevealed,
                   boolean showUsername, boolean canManage, boolean liked,
                   boolean likeLoading, long likeCount, boolean likeActionsEnabled,
-                  boolean saved, boolean saveLoading, boolean saveActionsEnabled,
+                  boolean saved, boolean saveLoading, long saveCount, boolean saveActionsEnabled,
                   boolean reportActionsEnabled, Runnable revealSpoiler) {
             typeText.setText(safe(quote.getType()).toUpperCase());
             usernameText.setText(displayUsername(quote.getUsername()));
@@ -366,7 +383,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             }
 
             shareButton.setOnClickListener(view -> listener.onShare(quote));
-            renderSecondaryActions(saved, saveLoading, saveActionsEnabled);
+            renderSecondaryActions(saved, saveLoading, saveCount, saveActionsEnabled);
             saveButton.setOnClickListener(saveActionsEnabled && !saveLoading
                     ? view -> listener.onSave(quote)
                     : null);
@@ -474,6 +491,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         }
 
         private void renderSecondaryActions(boolean saved, boolean saveLoading,
+                                            long saveCount,
                                             boolean saveActionsEnabled) {
             Context context = itemView.getContext();
             int shareColor = ContextCompat.getColor(context, R.color.home_v2_primary);
@@ -487,7 +505,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             saveButton.setEnabled(saveActionsEnabled && !saveLoading);
             saveButton.setSelected(saved);
             saveButton.setAlpha(saveLoading ? 0.55f : 1f);
-            saveButton.setText("");
+            saveButton.setText(String.valueOf(Math.max(0L, saveCount)));
             saveButton.setTextColor(saveColor);
             saveButton.setIconTint(ColorStateList.valueOf(saveColor));
             moreButton.setIconTint(ColorStateList.valueOf(overflowColor));

@@ -72,6 +72,7 @@ public class DiscoverFragment extends Fragment {
     private Map<String, Long> renderedLikeCounts = new HashMap<>();
     private Map<String, Boolean> renderedSavedStates = new HashMap<>();
     private Map<String, Boolean> renderedSaveLoadingStates = new HashMap<>();
+    private Map<String, Long> renderedSaveCounts = new HashMap<>();
     private String searchQuery = "";
     private QuoteFilter selectedFilter = QuoteFilter.ALL;
     private boolean firstResume = true;
@@ -104,6 +105,8 @@ public class DiscoverFragment extends Fragment {
         favoriteViewModel.getSavedStates().observe(getViewLifecycleOwner(), this::renderSavedStates);
         favoriteViewModel.getItemLoadingStates().observe(
                 getViewLifecycleOwner(), this::renderSaveLoadingStates);
+        favoriteViewModel.getFavoriteCounts().observe(
+                getViewLifecycleOwner(), this::renderSaveCounts);
         favoriteViewModel.getOperationState().observe(
                 getViewLifecycleOwner(), this::renderFavoriteState);
         observeReportState();
@@ -237,6 +240,7 @@ public class DiscoverFragment extends Fragment {
         }
         if (favoriteViewModel != null) {
             favoriteViewModel.loadSavedStates(allQuotes);
+            favoriteViewModel.loadFavoriteCounts(allQuotes);
         }
         applyFilters();
     }
@@ -318,6 +322,18 @@ public class DiscoverFragment extends Fragment {
             }
         }
         renderedSaveLoadingStates = new HashMap<>(loadingStates);
+    }
+
+    private void renderSaveCounts(Map<String, Long> saveCounts) {
+        if (saveCounts == null) {
+            return;
+        }
+        for (Map.Entry<String, Long> entry : saveCounts.entrySet()) {
+            if (!entry.getValue().equals(renderedSaveCounts.get(entry.getKey()))) {
+                adapter.updateSaveCount(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedSaveCounts = new HashMap<>(saveCounts);
     }
 
     private void renderFavoriteState(QuoteState state) {

@@ -64,6 +64,7 @@ public class FavoritesFragment extends Fragment {
     private Map<String, Boolean> renderedLikedStates = new HashMap<>();
     private Map<String, Boolean> renderedLikeLoadingStates = new HashMap<>();
     private Map<String, Long> renderedLikeCounts = new HashMap<>();
+    private Map<String, Long> renderedSaveCounts = new HashMap<>();
     private boolean firstResume = true;
 
     public FavoritesFragment() {
@@ -86,6 +87,8 @@ public class FavoritesFragment extends Fragment {
         favoriteViewModel.getSavedStates().observe(getViewLifecycleOwner(), this::renderSavedStates);
         favoriteViewModel.getItemLoadingStates().observe(
                 getViewLifecycleOwner(), this::renderSaveLoadingStates);
+        favoriteViewModel.getFavoriteCounts().observe(
+                getViewLifecycleOwner(), this::renderSaveCounts);
         likeViewModel.getLikedStates().observe(getViewLifecycleOwner(), this::renderLikedStates);
         likeViewModel.getItemLoadingStates().observe(
                 getViewLifecycleOwner(), this::renderLikeLoadingStates);
@@ -213,6 +216,7 @@ public class FavoritesFragment extends Fragment {
         applyFilters();
         if (quotes != null) {
             favoriteViewModel.loadSavedStates(quotes);
+            favoriteViewModel.loadFavoriteCounts(quotes);
             likeViewModel.loadLikedStates(quotes);
             likeViewModel.loadLikeCounts(quotes);
         }
@@ -308,6 +312,18 @@ public class FavoritesFragment extends Fragment {
             }
         }
         renderedSaveLoadingStates = new HashMap<>(loadingStates);
+    }
+
+    private void renderSaveCounts(Map<String, Long> saveCounts) {
+        if (saveCounts == null) {
+            return;
+        }
+        for (Map.Entry<String, Long> entry : saveCounts.entrySet()) {
+            if (!entry.getValue().equals(renderedSaveCounts.get(entry.getKey()))) {
+                adapter.updateSaveCount(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedSaveCounts = new HashMap<>(saveCounts);
     }
 
     private void renderLikedStates(Map<String, Boolean> likedStates) {

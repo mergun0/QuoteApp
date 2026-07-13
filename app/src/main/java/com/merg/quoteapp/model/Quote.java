@@ -19,6 +19,7 @@ public class Quote {
     private String episode;
     private List<String> tags;
     private boolean spoiler;
+    private long favoriteCount;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -120,6 +121,14 @@ public class Quote {
 
     public void setSpoiler(boolean spoiler) {
         this.spoiler = spoiler;
+    }
+
+    public long getFavoriteCount() {
+        return Math.max(0L, favoriteCount);
+    }
+
+    public void setFavoriteCount(long favoriteCount) {
+        this.favoriteCount = Math.max(0L, favoriteCount);
     }
 
     public Timestamp getCreatedAt() {

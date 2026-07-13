@@ -63,6 +63,23 @@ The script will:
 3. Write each `achievements` item to `achievements/{documentId}`.
 4. Use `{ merge: true }` so re-running the script safely updates existing documents.
 
+## Backfill favorite counts
+
+If legacy favorite documents exist but quote documents have missing or stale `favoriteCount`
+values, run this one-time Admin SDK script from the project root:
+
+```bash
+node scripts/backfillFavoriteCounts.js
+```
+
+The script will:
+
+1. Read every document in `favorites`.
+2. Group favorites by `quoteId`.
+3. Update every `quotes/{quoteId}.favoriteCount` with the matching favorite count.
+4. Set quotes with no matching favorites to `0`.
+5. Log scanned favorites, updated quotes, missing quote documents and final status.
+
 ## Notes
 
 - Run this script from a trusted local machine or CI environment.
