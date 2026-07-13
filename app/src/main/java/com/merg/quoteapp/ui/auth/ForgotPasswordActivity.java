@@ -8,6 +8,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.merg.quoteapp.R;
@@ -22,6 +23,8 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     private TextView statusText;
     private PasswordResetCooldownManager cooldownManager;
     private CountDownTimer cooldownTimer;
+    private AuthViewModel viewModel;
+    private String originalButtonText;
     private boolean loading;
 
     @Override
@@ -34,7 +37,8 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         statusText = findViewById(R.id.textResetStatus);
         cooldownManager = new PasswordResetCooldownManager(this);
 
-        AuthViewModel viewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        originalButtonText = sendButton.getText().toString();
+        viewModel = new ViewModelProvider(this).get(AuthViewModel.class);
         viewModel.getResetState().observe(this, this::renderResetState);
 
         sendButton.setOnClickListener(view -> {
@@ -50,54 +54,80 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     }
 
     private void renderResetState(AuthState state) {
+        if (state == null) {
+            loading = false;
+            updateCooldownState();
+            return;
+        }
         loading = state.getStatus() == AuthState.Status.LOADING;
         sendButton.setEnabled(!loading && !cooldownManager.isCoolingDown());
         emailInput.setEnabled(!loading);
+        sendButton.setText(loading ? getString(R.string.sending) : originalButtonText);
 
         if (loading) {
             hideStatus();
         } else if (state.getStatus() == AuthState.Status.ERROR) {
             showStatus(state.getMessage(), true);
         } else if (state.getStatus() == AuthState.Status.SUCCESS) {
+            cancelCooldownTimer();
             cooldownManager.startCooldown();
-            showStatus(getString(R.string.reset_privacy_safe_success), false);
+            showSuccessFeedback();
             updateCooldownState();
+            viewModel.clearResetState();
         }
     }
 
     private void updateCooldownState() {
         long remaining = cooldownManager.remainingSeconds();
         if (remaining <= 0) {
+            cancelCooldownTimer();
             sendButton.setEnabled(!loading);
-            if (cooldownTimer != null) {
-                cooldownTimer.cancel();
-                cooldownTimer = null;
-            }
+            sendButton.setText(originalButtonText);
+            hideStatus();
             return;
         }
-        showCooldown();
-        if (cooldownTimer != null) {
-            cooldownTimer.cancel();
-        }
+        showCooldown(remaining);
+        cancelCooldownTimer();
         cooldownTimer = new CountDownTimer(remaining * 1000L, 1000L) {
             @Override
             public void onTick(long millisUntilFinished) {
-                showCooldown();
+                long seconds = Math.max(1L, (millisUntilFinished + 999L) / 1000L);
+                showCooldown(seconds);
             }
 
             @Override
             public void onFinish() {
+                cooldownManager.clearCooldown();
                 sendButton.setEnabled(!loading);
+                sendButton.setText(originalButtonText);
+                hideStatus();
             }
         }.start();
     }
 
-    private void showCooldown() {
-        long remaining = cooldownManager.remainingSeconds();
+    private void showCooldown(long remaining) {
         sendButton.setEnabled(false);
+        sendButton.setText(originalButtonText);
         if (remaining > 0) {
             showStatus(getString(R.string.reset_cooldown_format, remaining), false);
         }
+    }
+
+    private void showCooldown() {
+        long remaining = cooldownManager.remainingSeconds();
+        if (remaining <= 0) {
+            updateCooldownState();
+            return;
+        }
+        showCooldown(remaining);
+    }
+
+    private void showSuccessFeedback() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.reset_success_feedback_title)
+                .setMessage(R.string.reset_success_feedback_message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
     }
 
     private void showStatus(String message, boolean isError) {
@@ -116,11 +146,16 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         return input.getText() == null ? "" : input.getText().toString();
     }
 
-    @Override
-    protected void onDestroy() {
+    private void cancelCooldownTimer() {
         if (cooldownTimer != null) {
             cooldownTimer.cancel();
+            cooldownTimer = null;
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        cancelCooldownTimer();
         super.onDestroy();
     }
 }

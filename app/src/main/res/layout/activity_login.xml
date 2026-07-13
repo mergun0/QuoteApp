@@ -60,12 +60,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/email_or_username"
-            app:boxBackgroundMode="outline">
+            app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editLoginIdentity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="textEmailAddress"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -77,12 +82,17 @@
             android:layout_marginTop="14dp"
             android:hint="@string/password"
             app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary"
             app:endIconMode="password_toggle">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editLoginPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="textPassword"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>

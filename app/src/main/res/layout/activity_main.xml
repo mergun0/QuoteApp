@@ -22,6 +22,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@color/quote_surface"
+        app:itemIconSize="24dp"
         app:itemIconTint="@color/bottom_nav_item_color"
         app:itemRippleColor="@color/bottom_nav_ripple"
         app:itemTextColor="@color/bottom_nav_item_color"

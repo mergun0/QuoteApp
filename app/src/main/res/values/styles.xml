@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="TextAppearance.QuoteApp.QuoteText" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">@color/home_v2_text_primary</item>
+        <item name="android:textSize">19sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>

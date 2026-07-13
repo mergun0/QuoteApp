@@ -23,7 +23,9 @@ public class FavoriteViewModel extends ViewModel {
             new MutableLiveData<>(new HashMap<>());
     private final MutableLiveData<Map<String, Boolean>> itemLoadingStates =
             new MutableLiveData<>(new HashMap<>());
+    private final MutableLiveData<Long> favoriteCount = new MutableLiveData<>(0L);
     private final Map<String, Integer> stateVersions = new HashMap<>();
+    private String loadedQuoteId;
 
     /**
      * Returns current user's saved quotes.
@@ -68,6 +70,15 @@ public class FavoriteViewModel extends ViewModel {
      */
     public LiveData<Map<String, Boolean>> getItemLoadingStates() {
         return itemLoadingStates;
+    }
+
+    /**
+     * Returns favorite/save count for the currently loaded quote.
+     *
+     * @return favorite count LiveData
+     */
+    public LiveData<Long> getFavoriteCount() {
+        return favoriteCount;
     }
 
     /**
@@ -116,6 +127,64 @@ public class FavoriteViewModel extends ViewModel {
     }
 
     /**
+     * Forces saved state reload for provided quotes even if cached state exists.
+     *
+     * @param quotes quotes whose saved states will be refreshed
+     */
+    public void refreshSavedStates(List<Quote> quotes) {
+        if (quotes == null || quotes.isEmpty()) {
+            return;
+        }
+        for (Quote quote : quotes) {
+            if (quote == null || isBlank(quote.getQuoteId())) {
+                continue;
+            }
+            loadSavedStateForQuote(quote.getQuoteId());
+        }
+    }
+
+    /**
+     * Loads saved state and save count for a single quote detail.
+     *
+     * @param quote quote to load
+     */
+    public void loadQuoteDetailState(Quote quote) {
+        if (quote == null || isBlank(quote.getQuoteId())) {
+            return;
+        }
+        loadedQuoteId = quote.getQuoteId();
+        loadSavedStateForQuote(quote.getQuoteId());
+        loadFavoriteCount(quote.getQuoteId());
+    }
+
+    /**
+     * Loads how many users saved a quote.
+     *
+     * @param quoteId quote id whose save count will be loaded
+     */
+    public void loadFavoriteCount(String quoteId) {
+        if (isBlank(quoteId)) {
+            favoriteCount.setValue(0L);
+            return;
+        }
+        repository.getFavoriteCount(quoteId, new FavoriteRepository.FavoriteCountCallback() {
+            @Override
+            public void onSuccess(long count) {
+                if (quoteId.equals(loadedQuoteId)) {
+                    favoriteCount.setValue(Math.max(0L, count));
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                if (favoriteCount.getValue() == null) {
+                    favoriteCount.setValue(0L);
+                }
+            }
+        });
+    }
+
+    /**
      * Toggles current user's saved state for a quote.
      *
      * @param quote quote to save or unsave
@@ -130,6 +199,7 @@ public class FavoriteViewModel extends ViewModel {
         boolean previousState = getMapValue(savedStates.getValue(), quoteId);
         boolean nextState = !previousState;
         setSavedState(quoteId, nextState);
+        applyOptimisticFavoriteCount(quoteId, previousState, nextState);
         setItemLoading(quoteId, true);
 
         FavoriteRepository.OperationCallback callback = new FavoriteRepository.OperationCallback() {
@@ -137,6 +207,7 @@ public class FavoriteViewModel extends ViewModel {
             public void onSuccess() {
                 setSavedState(quoteId, nextState);
                 setItemLoading(quoteId, false);
+                loadFavoriteCount(quoteId);
                 if (!nextState) {
                     removeFromSavedQuotes(quoteId);
                 }
@@ -146,6 +217,7 @@ public class FavoriteViewModel extends ViewModel {
             @Override
             public void onError(String message) {
                 setSavedState(quoteId, previousState);
+                applyOptimisticFavoriteCount(quoteId, nextState, previousState);
                 setItemLoading(quoteId, false);
                 operationState.setValue(QuoteState.error(message));
             }
@@ -215,6 +287,16 @@ public class FavoriteViewModel extends ViewModel {
         Map<String, Boolean> updated = current == null ? new HashMap<>() : new HashMap<>(current);
         updated.put(quoteId, loading);
         itemLoadingStates.setValue(updated);
+    }
+
+    private void applyOptimisticFavoriteCount(String quoteId, boolean previousState,
+                                              boolean nextState) {
+        if (previousState == nextState || !quoteId.equals(loadedQuoteId)) {
+            return;
+        }
+        long currentCount = favoriteCount.getValue() == null ? 0L : favoriteCount.getValue();
+        long nextCount = nextState ? currentCount + 1L : Math.max(0L, currentCount - 1L);
+        favoriteCount.setValue(nextCount);
     }
 
     private int getVersion(String quoteId) {

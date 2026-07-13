@@ -45,17 +45,32 @@
             android:entries="@array/quote_types"
             android:spinnerMode="dropdown" />
 
+        <TextView
+            android:id="@+id/textQuoteTypeOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/quote_type_options"
+            android:textColor="@color/quote_text_secondary"
+            android:textSize="13sp" />
+
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutQuoteText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="@string/quote_text"
-            app:boxBackgroundMode="outline">
+            app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editQuoteText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:gravity="top"
                 android:inputType="textCapSentences|textMultiLine"
                 android:maxLines="6"
@@ -63,46 +78,64 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutQuoteTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:hint="@string/work_title"
-            app:boxBackgroundMode="outline">
+            app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editQuoteTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="textCapWords"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutQuoteAuthor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:hint="@string/author_director"
-            app:boxBackgroundMode="outline">
+            app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editQuoteAuthor"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="textCapWords"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutQuoteCharacter"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:hint="@string/character_optional"
-            app:boxBackgroundMode="outline">
+            app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editQuoteCharacter"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="textCapWords"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -122,13 +155,18 @@
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
                 android:hint="@string/season"
-                app:boxBackgroundMode="outline">
+                app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editQuoteSeason"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="number"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
+                android:inputType="number"
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -139,13 +177,18 @@
                 android:layout_marginTop="12dp"
                 android:layout_weight="1"
                 android:hint="@string/episode"
-                app:boxBackgroundMode="outline">
+                app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editQuoteEpisode"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="number"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
+                android:inputType="number"
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
@@ -155,12 +198,17 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:hint="@string/tags_hint"
-            app:boxBackgroundMode="outline">
+            app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editQuoteTags"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="text"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>

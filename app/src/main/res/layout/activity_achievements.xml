@@ -189,6 +189,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/filter_all"
                     android:textColor="@color/achievement_chip_text"
+                    app:checkedIconTint="@color/quote_filter_chip_icon"
                     app:chipBackgroundColor="@color/achievement_chip_background"
                     app:chipStrokeColor="@color/achievement_chip_stroke"
                     app:chipStrokeWidth="1dp" />
@@ -200,6 +201,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/achievement_filter_unlocked"
                     android:textColor="@color/achievement_chip_text"
+                    app:checkedIconTint="@color/quote_filter_chip_icon"
                     app:chipBackgroundColor="@color/achievement_chip_background"
                     app:chipStrokeColor="@color/achievement_chip_stroke"
                     app:chipStrokeWidth="1dp" />
@@ -211,6 +213,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/achievement_filter_locked"
                     android:textColor="@color/achievement_chip_text"
+                    app:checkedIconTint="@color/quote_filter_chip_icon"
                     app:chipBackgroundColor="@color/achievement_chip_background"
                     app:chipStrokeColor="@color/achievement_chip_stroke"
                     app:chipStrokeWidth="1dp" />
@@ -222,6 +225,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/achievement_filter_social"
                     android:textColor="@color/achievement_chip_text"
+                    app:checkedIconTint="@color/quote_filter_chip_icon"
                     app:chipBackgroundColor="@color/achievement_chip_background"
                     app:chipStrokeColor="@color/achievement_chip_stroke"
                     app:chipStrokeWidth="1dp" />
@@ -233,6 +237,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/achievement_filter_quote"
                     android:textColor="@color/achievement_chip_text"
+                    app:checkedIconTint="@color/quote_filter_chip_icon"
                     app:chipBackgroundColor="@color/achievement_chip_background"
                     app:chipStrokeColor="@color/achievement_chip_stroke"
                     app:chipStrokeWidth="1dp" />
@@ -244,6 +249,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/achievement_filter_moderation"
                     android:textColor="@color/achievement_chip_text"
+                    app:checkedIconTint="@color/quote_filter_chip_icon"
                     app:chipBackgroundColor="@color/achievement_chip_background"
                     app:chipStrokeColor="@color/achievement_chip_stroke"
                     app:chipStrokeWidth="1dp" />
@@ -255,6 +261,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/achievement_filter_type"
                     android:textColor="@color/achievement_chip_text"
+                    app:checkedIconTint="@color/quote_filter_chip_icon"
                     app:chipBackgroundColor="@color/achievement_chip_background"
                     app:chipStrokeColor="@color/achievement_chip_stroke"
                     app:chipStrokeWidth="1dp" />

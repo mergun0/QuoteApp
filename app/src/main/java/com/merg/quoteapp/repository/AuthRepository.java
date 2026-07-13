@@ -126,7 +126,41 @@ public class AuthRepository {
     public void resetPassword(String email, AuthCallback callback) {
         auth.sendPasswordResetEmail(email.trim())
                 .addOnSuccessListener(unused -> callback.onSuccess())
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+                .addOnFailureListener(error -> {
+                    if (isPrivacySafePasswordResetSuccess(error)) {
+                        callback.onSuccess();
+                        return;
+                    }
+                    callback.onError(readablePasswordResetError(error));
+                });
+    }
+
+    private boolean isPrivacySafePasswordResetSuccess(Exception error) {
+        if (error instanceof FirebaseAuthException) {
+            String code = ((FirebaseAuthException) error).getErrorCode();
+            return "ERROR_USER_NOT_FOUND".equals(code);
+        }
+        return false;
+    }
+
+    private String readablePasswordResetError(Exception error) {
+        if (FriendlyErrorMapper.isNetworkError(error)) {
+            return FriendlyErrorMapper.NETWORK_MESSAGE;
+        }
+        if (error instanceof FirebaseAuthException) {
+            String code = ((FirebaseAuthException) error).getErrorCode();
+            switch (code) {
+                case "ERROR_INVALID_EMAIL":
+                    return "Geçerli bir e-posta adresi girin.";
+                case "ERROR_TOO_MANY_REQUESTS":
+                    return "Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.";
+                case "ERROR_NETWORK_REQUEST_FAILED":
+                    return "İnternet bağlantınızı kontrol edin.";
+                default:
+                    break;
+            }
+        }
+        return "Şifre sıfırlama isteği gönderilemedi. Lütfen tekrar deneyin.";
     }
 
     private String normalizeUsername(String username) {

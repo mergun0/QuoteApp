@@ -2,6 +2,8 @@ package com.merg.quoteapp.repository;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -26,6 +28,8 @@ public class DiscoverRepository {
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
 
     public ListenerRegistration getAllQuotes(DiscoverCallback callback) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserId = currentUser == null ? null : currentUser.getUid();
         return firestore.collection("quotes")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .addSnapshotListener((snapshot, error) -> {
@@ -42,7 +46,9 @@ public class DiscoverRepository {
                                 if (quote.getQuoteId() == null || quote.getQuoteId().isEmpty()) {
                                     quote.setQuoteId(document.getId());
                                 }
-                                quotes.add(quote);
+                                if (currentUserId == null || !currentUserId.equals(quote.getUserId())) {
+                                    quotes.add(quote);
+                                }
                             }
                         }
                     }

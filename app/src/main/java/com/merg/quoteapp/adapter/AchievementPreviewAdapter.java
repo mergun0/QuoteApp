@@ -91,10 +91,11 @@ public class AchievementPreviewAdapter
                     ? R.string.achievement_unlocked
                     : R.string.achievement_locked);
             int color = ContextCompat.getColor(itemView.getContext(), unlocked
-                    ? R.color.quote_primary : R.color.quote_outline);
+                    ? R.color.home_v2_accent : R.color.home_v2_text_secondary);
             iconView.setColorFilter(color);
             titleText.setTextColor(ContextCompat.getColor(itemView.getContext(), unlocked
-                    ? R.color.quote_text_primary : R.color.quote_text_secondary));
+                    ? R.color.home_v2_text_primary : R.color.home_v2_text_secondary));
+            stateText.setTextColor(color);
         }
 
         private boolean isBlank(String value) {

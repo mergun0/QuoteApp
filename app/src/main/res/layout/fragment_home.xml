@@ -194,6 +194,7 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:hint="@string/search_quotes"
+            android:includeFontPadding="false"
             android:inputType="text"
             android:maxLines="1"
             android:singleLine="true"
@@ -231,8 +232,11 @@
                 android:checked="true"
                 android:textSize="13sp"
                 android:text="@string/filter_all"
-                android:textColor="@color/home_v2_text_primary"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                android:textColor="@color/quote_filter_chip_text"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
@@ -242,8 +246,11 @@
                 android:layout_height="wrap_content"
                 android:textSize="13sp"
                 android:text="@string/filter_movie"
-                android:textColor="@color/home_v2_text_primary"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                android:textColor="@color/quote_filter_chip_text"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
@@ -253,8 +260,11 @@
                 android:layout_height="wrap_content"
                 android:textSize="13sp"
                 android:text="@string/filter_series"
-                android:textColor="@color/home_v2_text_primary"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                android:textColor="@color/quote_filter_chip_text"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
@@ -264,8 +274,11 @@
                 android:layout_height="wrap_content"
                 android:textSize="13sp"
                 android:text="@string/filter_book"
-                android:textColor="@color/home_v2_text_primary"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                android:textColor="@color/quote_filter_chip_text"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
@@ -275,8 +288,11 @@
                 android:layout_height="wrap_content"
                 android:textSize="13sp"
                 android:text="@string/filter_spoiler"
-                android:textColor="@color/home_v2_text_primary"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                android:textColor="@color/quote_filter_chip_text"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>

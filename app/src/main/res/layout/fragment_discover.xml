@@ -88,6 +88,7 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:hint="@string/search_discover"
+            android:includeFontPadding="false"
             android:inputType="text"
             android:maxLines="1"
             android:singleLine="true"
@@ -124,9 +125,12 @@
                 android:layout_height="wrap_content"
                 android:checked="true"
                 android:text="@string/filter_all"
-                android:textColor="@color/home_v2_text_primary"
+                android:textColor="@color/quote_filter_chip_text"
                 android:textSize="13sp"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
@@ -135,9 +139,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/filter_movie"
-                android:textColor="@color/home_v2_text_primary"
+                android:textColor="@color/quote_filter_chip_text"
                 android:textSize="13sp"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
@@ -146,9 +153,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/filter_series"
-                android:textColor="@color/home_v2_text_primary"
+                android:textColor="@color/quote_filter_chip_text"
                 android:textSize="13sp"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
@@ -157,9 +167,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/filter_book"
-                android:textColor="@color/home_v2_text_primary"
+                android:textColor="@color/quote_filter_chip_text"
                 android:textSize="13sp"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
 
             <com.google.android.material.chip.Chip
@@ -168,9 +181,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/filter_spoiler"
-                android:textColor="@color/home_v2_text_primary"
+                android:textColor="@color/quote_filter_chip_text"
                 android:textSize="13sp"
-                app:chipBackgroundColor="@color/home_v2_surface"
+                app:checkedIconTint="@color/quote_filter_chip_icon"
+                app:chipBackgroundColor="@color/quote_filter_chip_background"
+                app:chipStrokeColor="@color/quote_filter_chip_stroke"
+                app:chipStrokeWidth="1dp"
                 app:chipMinHeight="36dp" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>

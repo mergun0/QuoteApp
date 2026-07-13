@@ -54,12 +54,15 @@ public class QuoteDetailActivity extends AppCompatActivity {
     private TextView statusText;
     private LinearLayout quoteContainer;
     private LinearLayout spoilerContainer;
+    private LinearLayout commentsPreview;
     private LinearLayout ownerActions;
     private MaterialButton deleteButton;
     private MaterialButton favoriteButton;
     private MaterialButton saveButton;
     private TextView usernameText;
     private long currentLikeCount;
+    private long currentSaveCount;
+    private boolean currentLiked;
     private boolean currentSaved;
     private boolean currentUserCanManage;
 
@@ -93,6 +96,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         likeViewModel.getLoadingState().observe(this, this::renderLikeState);
         favoriteViewModel.getSavedStates().observe(this, this::renderSavedState);
         favoriteViewModel.getItemLoadingStates().observe(this, this::renderSaveLoadingState);
+        favoriteViewModel.getFavoriteCount().observe(this, this::renderSaveCount);
         favoriteViewModel.getOperationState().observe(this, this::renderFavoriteState);
         observeReportState();
         viewModel.loadQuote(quoteId);
@@ -105,6 +109,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         statusText = findViewById(R.id.textDetailStatus);
         quoteContainer = findViewById(R.id.layoutDetailQuote);
         spoilerContainer = findViewById(R.id.layoutDetailSpoilerHidden);
+        commentsPreview = findViewById(R.id.layoutDetailCommentsPreview);
         ownerActions = findViewById(R.id.layoutDetailOwnerActions);
         deleteButton = findViewById(R.id.buttonDetailDelete);
         favoriteButton = findViewById(R.id.buttonDetailFavorite);
@@ -117,6 +122,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         });
         favoriteButton.setOnClickListener(view -> toggleLike());
         saveButton.setOnClickListener(view -> toggleSave());
+        findViewById(R.id.buttonDetailComment).setOnClickListener(view -> scrollToComments());
         findViewById(R.id.buttonDetailShare).setOnClickListener(view -> shareQuote());
         findViewById(R.id.buttonDetailReport).setOnClickListener(view -> showReportSheet());
         findViewById(R.id.buttonDetailEdit).setOnClickListener(view -> editQuote());
@@ -173,7 +179,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         currentUserCanManage = currentUserId != null && currentUserId.equals(quote.getUserId());
         ownerActions.setVisibility(View.GONE);
         likeViewModel.loadLikeState(quote.getQuoteId());
-        favoriteViewModel.loadSavedStates(java.util.Collections.singletonList(quote));
+        favoriteViewModel.loadQuoteDetailState(quote);
     }
 
     private void renderLoadState(QuoteState state) {
@@ -211,7 +217,8 @@ public class QuoteDetailActivity extends AppCompatActivity {
         }
         Boolean liked = likedStates.get(currentQuote.getQuoteId());
         if (liked != null) {
-            renderFavoriteButton(liked, false);
+            currentLiked = liked;
+            renderFavoriteButton(currentLiked, false);
         }
     }
 
@@ -222,7 +229,8 @@ public class QuoteDetailActivity extends AppCompatActivity {
         boolean loading = Boolean.TRUE.equals(loadingStates.get(currentQuote.getQuoteId()));
         Boolean liked = likeViewModel.getLikedStates().getValue() == null
                 ? false : likeViewModel.getLikedStates().getValue().get(currentQuote.getQuoteId());
-        renderFavoriteButton(Boolean.TRUE.equals(liked), loading);
+        currentLiked = Boolean.TRUE.equals(liked);
+        renderFavoriteButton(currentLiked, loading);
     }
 
     private void renderLikeState(QuoteState state) {
@@ -287,12 +295,16 @@ public class QuoteDetailActivity extends AppCompatActivity {
 
     private void renderLikeCount(Long count) {
         currentLikeCount = count == null ? 0L : count;
-        boolean liked = false;
         if (currentQuote != null && likeViewModel.getLikedStates().getValue() != null) {
-            liked = Boolean.TRUE.equals(
+            currentLiked = Boolean.TRUE.equals(
                     likeViewModel.getLikedStates().getValue().get(currentQuote.getQuoteId()));
         }
-        renderFavoriteButton(liked, false);
+        renderFavoriteButton(currentLiked, false);
+    }
+
+    private void renderSaveCount(Long count) {
+        currentSaveCount = count == null ? 0L : Math.max(0L, count);
+        renderSaveButton(false);
     }
 
     private void renderFavoriteButton(boolean liked, boolean loading) {
@@ -302,9 +314,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         favoriteButton.setEnabled(!loading);
         favoriteButton.setAlpha(loading ? 0.55f : 1f);
         favoriteButton.setSelected(liked);
-        favoriteButton.setText(currentLikeCount > 0
-                ? getString(R.string.like_button_with_count, currentLikeCount)
-                : getString(R.string.favorite));
+        favoriteButton.setText(String.valueOf(currentLikeCount));
         favoriteButton.setTextColor(color);
         favoriteButton.setIconTint(tint);
         favoriteButton.setStrokeColor(tint);
@@ -317,7 +327,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         saveButton.setEnabled(!loading);
         saveButton.setAlpha(loading ? 0.55f : 1f);
         saveButton.setSelected(currentSaved);
-        saveButton.setText(currentSaved ? R.string.unsave_quote : R.string.save_quote);
+        saveButton.setText(String.valueOf(currentSaveCount));
         saveButton.setTextColor(color);
         saveButton.setIconTint(tint);
         saveButton.setStrokeColor(tint);
@@ -461,6 +471,13 @@ public class QuoteDetailActivity extends AppCompatActivity {
         ReportBottomSheetHelper.show(this,
                 (reason, description) ->
                         reportViewModel.submitReport(currentQuote, reason, description));
+    }
+
+    private void scrollToComments() {
+        if (contentScroll == null || commentsPreview == null) {
+            return;
+        }
+        contentScroll.post(() -> contentScroll.smoothScrollTo(0, commentsPreview.getTop()));
     }
 
     private String formatCreatedAt(Timestamp timestamp) {

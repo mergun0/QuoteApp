@@ -7,7 +7,7 @@ public class PasswordResetCooldownManager {
 
     private static final String PREFS_NAME = "password_reset_cooldown";
     private static final String KEY_UNTIL = "cooldown_until";
-    private static final long COOLDOWN_MILLIS = 150_000L;
+    private static final long COOLDOWN_MILLIS = 120_000L;
 
     private final SharedPreferences preferences;
 
@@ -20,6 +20,16 @@ public class PasswordResetCooldownManager {
         preferences.edit()
                 .putLong(KEY_UNTIL, System.currentTimeMillis() + COOLDOWN_MILLIS)
                 .apply();
+    }
+
+    public void clearCooldown() {
+        preferences.edit()
+                .remove(KEY_UNTIL)
+                .apply();
+    }
+
+    public long cooldownMillis() {
+        return COOLDOWN_MILLIS;
     }
 
     public long remainingSeconds() {

@@ -1,7 +1,10 @@
 package com.merg.quoteapp;
 
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.view.View;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
@@ -107,16 +110,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showXpFeedback(AchievementFeedbackEvent event) {
-        Snackbar.make(findViewById(R.id.main),
+        Snackbar snackbar = Snackbar.make(findViewById(R.id.main),
                         getString(R.string.xp_gained_format, event.getXpAmount()),
-                        Snackbar.LENGTH_SHORT)
+                        Snackbar.LENGTH_SHORT);
+        View snackbarView = snackbar.getView();
+        snackbarView.setBackgroundColor(getColor(R.color.home_v2_card));
+        snackbar.setTextColor(getColor(R.color.home_v2_text_primary))
                 .addCallback(new Snackbar.Callback() {
                     @Override
                     public void onDismissed(Snackbar transientBottomBar, int event) {
                         finishFeedbackEvent();
                     }
-                })
-                .show();
+                });
+        snackbar.show();
     }
 
     private void showAchievementUnlockedFeedback(AchievementFeedbackEvent event) {
@@ -124,31 +130,41 @@ public class MainActivity extends AppCompatActivity {
                 safe(event.getTitle()),
                 safe(event.getDescription()),
                 event.getXpAmount());
-        new MaterialAlertDialogBuilder(this)
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.achievement_unlocked_feedback_title)
                 .setMessage(message)
                 .setPositiveButton(android.R.string.ok, null)
-                .setOnDismissListener(dialog -> finishFeedbackEvent())
+                .setOnDismissListener(dialogInterface -> finishFeedbackEvent())
                 .show();
+        styleFeedbackDialog(dialog);
     }
 
     private void showLevelUpFeedback(AchievementFeedbackEvent event) {
         String detail = safe(event.getLevelTitle());
         String badge = safe(event.getBadgeName());
-        if (!badge.isEmpty()) {
+        if (!badge.isEmpty() && !badge.equalsIgnoreCase(detail)) {
             detail = detail.isEmpty() ? badge : detail + " • " + badge;
         }
         String message = detail.isEmpty()
                 ? getString(R.string.level_up_feedback_message_simple, event.getLevel())
                 : getString(R.string.level_up_feedback_message, event.getLevel(), detail);
-        new MaterialAlertDialogBuilder(this)
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.level_up_feedback_title)
                 .setMessage(message)
                 .setPositiveButton(android.R.string.ok, null)
-                .setOnDismissListener(dialog -> finishFeedbackEvent())
+                .setOnDismissListener(dialogInterface -> finishFeedbackEvent())
                 .show();
+        styleFeedbackDialog(dialog);
     }
 
+    private void styleFeedbackDialog(AlertDialog dialog) {
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    new ColorDrawable(getColor(R.color.home_v2_card)));
+        }
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setTextColor(getColor(R.color.home_v2_primary));
+    }
     private void showFragment(Fragment fragment) {
         getSupportFragmentManager()
                 .beginTransaction()

@@ -19,7 +19,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.repository.AuthRepository;
 import com.merg.quoteapp.repository.ProfileRepository;
-import com.merg.quoteapp.ui.auth.LoginActivity;
 import com.merg.quoteapp.utils.PasswordResetCooldownManager;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -29,6 +28,7 @@ public class SettingsActivity extends AppCompatActivity {
     private PasswordResetCooldownManager cooldownManager;
     private CountDownTimer resetCooldownTimer;
     private View resetPasswordRow;
+    private boolean resetLoading;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,10 +57,6 @@ public class SettingsActivity extends AppCompatActivity {
         resetPasswordRow = addRow(accountContainer, "🔐", getString(R.string.settings_reset_password),
                 getString(R.string.settings_reset_password_subtitle), "›",
                 view -> sendPasswordReset());
-        addRow(accountContainer, "🚪", getString(R.string.logout),
-                getString(R.string.settings_logout_subtitle), "›",
-                view -> logout());
-
         addRow(appearanceContainer, "🌙", getString(R.string.settings_theme),
                 getString(R.string.settings_dark_theme_soon), getString(R.string.coming_soon),
                 null);
@@ -151,6 +147,9 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void sendPasswordReset() {
+        if (resetLoading) {
+            return;
+        }
         if (cooldownManager.isCoolingDown()) {
             showMessage(R.string.settings_reset_password,
                     getString(R.string.reset_cooldown_format, cooldownManager.remainingSeconds()));
@@ -162,16 +161,23 @@ public class SettingsActivity extends AppCompatActivity {
             showMessage(R.string.settings_reset_password, R.string.settings_reset_email_missing);
             return;
         }
+        resetLoading = true;
+        updateResetCooldownState();
         authRepository.resetPassword(user.getEmail(), new AuthRepository.AuthCallback() {
             @Override
             public void onSuccess() {
+                resetLoading = false;
+                cancelResetCooldownTimer();
                 cooldownManager.startCooldown();
                 updateResetCooldownState();
-                showMessage(R.string.settings_reset_password, R.string.reset_privacy_safe_success);
+                showMessage(R.string.reset_success_feedback_title,
+                        R.string.reset_success_feedback_message);
             }
 
             @Override
             public void onError(String message) {
+                resetLoading = false;
+                updateResetCooldownState();
                 new MaterialAlertDialogBuilder(SettingsActivity.this)
                         .setTitle(R.string.settings_reset_password)
                         .setMessage(message)
@@ -205,14 +211,6 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    private void logout() {
-        FirebaseAuth.getInstance().signOut();
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
-    }
-
     private String appVersionName() {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
@@ -242,23 +240,22 @@ public class SettingsActivity extends AppCompatActivity {
             return;
         }
         long remaining = cooldownManager.remainingSeconds();
-        resetPasswordRow.setEnabled(remaining <= 0);
-        resetPasswordRow.setAlpha(remaining <= 0 ? 1f : 0.65f);
-        if (resetCooldownTimer != null) {
-            resetCooldownTimer.cancel();
-            resetCooldownTimer = null;
-        }
+        resetPasswordRow.setEnabled(!resetLoading && remaining <= 0);
+        resetPasswordRow.setAlpha(!resetLoading && remaining <= 0 ? 1f : 0.65f);
+        cancelResetCooldownTimer();
         if (remaining > 0) {
             resetCooldownTimer = new CountDownTimer(remaining * 1000L, 1000L) {
                 @Override
                 public void onTick(long millisUntilFinished) {
                     resetPasswordRow.setEnabled(false);
+                    resetPasswordRow.setAlpha(0.65f);
                 }
 
                 @Override
                 public void onFinish() {
-                    resetPasswordRow.setEnabled(true);
-                    resetPasswordRow.setAlpha(1f);
+                    cooldownManager.clearCooldown();
+                    resetPasswordRow.setEnabled(!resetLoading);
+                    resetPasswordRow.setAlpha(resetLoading ? 0.65f : 1f);
                 }
             }.start();
         }
@@ -270,9 +267,14 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        cancelResetCooldownTimer();
+        super.onDestroy();
+    }
+
+    private void cancelResetCooldownTimer() {
         if (resetCooldownTimer != null) {
             resetCooldownTimer.cancel();
+            resetCooldownTimer = null;
         }
-        super.onDestroy();
     }
 }

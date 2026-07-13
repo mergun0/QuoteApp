@@ -652,14 +652,6 @@
                 android:padding="8dp">
 
                 <include
-                    android:id="@+id/menuProfileFavorites"
-                    layout="@layout/item_profile_menu_row" />
-
-                <include
-                    android:id="@+id/menuProfileAchievements"
-                    layout="@layout/item_profile_menu_row" />
-
-                <include
                     android:id="@+id/menuProfileSettings"
                     layout="@layout/item_profile_menu_row" />
 

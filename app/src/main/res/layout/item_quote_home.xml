@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -37,7 +37,7 @@
                 android:textColor="@color/home_v2_primary"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                tools:text="KİTAP" />
+                tools:text="KÄ°TAP" />
 
             <Space
                 android:layout_width="0dp"
@@ -48,6 +48,7 @@
                 android:id="@+id/textCardSpoiler"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/bg_home_v2_spoiler_badge"
                 android:text="@string/spoiler_warning"
                 android:textColor="@color/home_v2_error"
@@ -55,6 +56,18 @@
                 android:textStyle="bold"
                 android:visibility="gone"
                 tools:visibility="visible" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonMoreQuote"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/more_actions"
+                android:minWidth="0dp"
+                android:text=""
+                app:icon="@drawable/ic_more_vert"
+                app:iconGravity="textStart"
+                app:iconTint="@color/home_v2_text_secondary" />
         </LinearLayout>
 
         <LinearLayout
@@ -103,11 +116,23 @@
                 android:id="@+id/textCardQuote"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
                 android:lineSpacingExtra="4dp"
-                android:textColor="@color/home_v2_text_primary"
-                android:textSize="19sp"
+                android:maxLines="6"
+                android:textAppearance="@style/TextAppearance.QuoteApp.QuoteText"
+                tools:text="â€œÄ°nsan ancak yÃ¼reÄŸiyle baktÄ±ÄŸÄ± zaman doÄŸruyu gÃ¶rebilir.â€" />
+        
+            <TextView
+                android:id="@+id/textReadMoreQuote"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:gravity="center_vertical"
+                android:text="@string/read_more"
+                android:textColor="@color/home_v2_primary"
+                android:textSize="13sp"
                 android:textStyle="bold"
-                tools:text="“İnsan ancak yüreğiyle baktığı zaman doğruyu görebilir.”" />
+                android:visibility="gone"
+                tools:visibility="visible" />
         </LinearLayout>
 
         <LinearLayout
@@ -149,7 +174,7 @@
             android:textColor="@color/home_v2_text_primary"
             android:textSize="16sp"
             android:textStyle="bold"
-            tools:text="Küçük Prens" />
+            tools:text="KÃ¼Ã§Ã¼k Prens" />
 
         <TextView
             android:id="@+id/textCardAuthor"
@@ -158,7 +183,7 @@
             android:layout_marginTop="4dp"
             android:textColor="@color/home_v2_text_secondary"
             android:textSize="14sp"
-            tools:text="Antoine de Saint-Exupéry" />
+            tools:text="Antoine de Saint-ExupÃ©ry" />
 
         <TextView
             android:id="@+id/textCardCharacter"
@@ -168,7 +193,7 @@
             android:textColor="@color/home_v2_text_secondary"
             android:textSize="13sp"
             android:visibility="gone"
-            tools:text="Karakter: Küçük Prens"
+            tools:text="Karakter: KÃ¼Ã§Ã¼k Prens"
             tools:visibility="visible" />
 
         <TextView
@@ -179,7 +204,7 @@
             android:textColor="@color/home_v2_text_secondary"
             android:textSize="13sp"
             android:visibility="gone"
-            tools:text="Sezon 2 • Bölüm 4"
+            tools:text="Sezon 2 â€¢ BÃ¶lÃ¼m 4"
             tools:visibility="visible" />
 
         <TextView
@@ -206,9 +231,26 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="@string/favorite"
+                android:contentDescription="@string/favorite"
+                android:minWidth="0dp"
+                android:text=""
                 android:textColor="@color/home_v2_text_secondary"
                 app:icon="@drawable/ic_favorite"
+                app:iconGravity="textStart"
+                app:iconTint="@color/home_v2_text_secondary" />
+
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonSaveQuote"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:contentDescription="@string/save_quote"
+                android:minWidth="0dp"
+                android:text=""
+                android:textColor="@color/home_v2_text_secondary"
+                app:icon="@drawable/ic_bookmark"
                 app:iconGravity="textStart"
                 app:iconTint="@color/home_v2_text_secondary" />
 
@@ -218,23 +260,14 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="@string/share"
+                android:contentDescription="@string/share"
+                android:minWidth="0dp"
+                android:text=""
                 android:textColor="@color/home_v2_primary"
                 app:icon="@drawable/ic_share"
                 app:iconGravity="textStart"
                 app:iconTint="@color/home_v2_primary" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonMoreQuote"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/more_actions"
-                android:minWidth="0dp"
-                android:text=""
-                app:icon="@drawable/ic_more_vert"
-                app:iconGravity="textStart"
-                app:iconTint="@color/home_v2_text_secondary" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
+

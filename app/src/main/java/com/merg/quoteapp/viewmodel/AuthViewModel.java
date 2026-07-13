@@ -54,13 +54,22 @@ public class AuthViewModel extends ViewModel {
     }
 
     public void resetPassword(String email) {
-        if (email == null || !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
+        String trimmedEmail = email == null ? "" : email.trim();
+        if (trimmedEmail.isEmpty()) {
+            resetState.setValue(AuthState.error("E-posta adresinizi girin."));
+            return;
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
             resetState.setValue(AuthState.error("Geçerli bir e-posta adresi girin."));
             return;
         }
 
         resetState.setValue(AuthState.loading());
-        repository.resetPassword(email, callbackFor(resetState));
+        repository.resetPassword(trimmedEmail, callbackFor(resetState));
+    }
+
+    public void clearResetState() {
+        resetState.setValue(null);
     }
 
     private String validateRegistration(String username, String email, String password,

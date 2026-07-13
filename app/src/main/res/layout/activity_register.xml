@@ -39,11 +39,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/username"
-            app:boxBackgroundMode="outline">
+            app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editRegisterUsername"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="text"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -54,11 +59,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:hint="@string/email"
-            app:boxBackgroundMode="outline">
+            app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editRegisterEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="textEmailAddress"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -70,11 +80,16 @@
             android:layout_marginTop="14dp"
             android:hint="@string/password"
             app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary"
             app:endIconMode="password_toggle">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editRegisterPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="textPassword"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -86,11 +101,16 @@
             android:layout_marginTop="14dp"
             android:hint="@string/password_repeat"
             app:boxBackgroundMode="outline"
+            app:boxBackgroundColor="@color/quote_surface"
+            app:boxStrokeColor="@color/quote_outline"
+            app:hintTextColor="@color/quote_text_secondary"
             app:endIconMode="password_toggle">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editRegisterConfirmPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="@color/quote_text_primary"
+                android:textColorHint="@color/quote_text_secondary"
                 android:inputType="textPassword"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>

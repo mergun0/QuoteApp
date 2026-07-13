@@ -138,6 +138,23 @@ public class LikeViewModel extends ViewModel {
     }
 
     /**
+     * Forces liked state reload for provided quotes even if cached state exists.
+     *
+     * @param quotes quotes whose liked states will be refreshed
+     */
+    public void refreshLikedStates(List<Quote> quotes) {
+        if (quotes == null || quotes.isEmpty()) {
+            return;
+        }
+        for (Quote quote : quotes) {
+            if (quote == null || isBlank(quote.getQuoteId())) {
+                continue;
+            }
+            loadLikedStateForQuote(quote.getQuoteId());
+        }
+    }
+
+    /**
      * Loads like counts for the provided quotes without changing pagination.
      *
      * @param quotes quotes whose like counts will be loaded
@@ -167,6 +184,41 @@ public class LikeViewModel extends ViewModel {
                         ? new HashMap<>() : new HashMap<>(current);
                 updated.putAll(counts);
                 likeCounts.setValue(updated);
+            }
+
+            @Override
+            public void onError(String message) {
+                loadingState.setValue(QuoteState.error(message));
+            }
+        });
+    }
+
+    /**
+     * Forces like count reload for provided quotes even if cached count exists.
+     *
+     * @param quotes quotes whose like counts will be refreshed
+     */
+    public void refreshLikeCounts(List<Quote> quotes) {
+        if (quotes == null || quotes.isEmpty()) {
+            return;
+        }
+        List<String> quoteIds = new ArrayList<>();
+        for (Quote quote : quotes) {
+            if (quote != null && !isBlank(quote.getQuoteId())) {
+                quoteIds.add(quote.getQuoteId());
+            }
+        }
+        repository.getLikeCounts(quoteIds, new LikeRepository.LikeCountsCallback() {
+            @Override
+            public void onSuccess(Map<String, Long> counts) {
+                Map<String, Long> current = likeCounts.getValue();
+                Map<String, Long> updated = current == null
+                        ? new HashMap<>() : new HashMap<>(current);
+                updated.putAll(counts);
+                likeCounts.setValue(updated);
+                if (!isBlank(loadedQuoteId) && counts.containsKey(loadedQuoteId)) {
+                    likeCount.setValue(counts.get(loadedQuoteId));
+                }
             }
 
             @Override

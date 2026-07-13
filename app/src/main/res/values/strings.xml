@@ -23,8 +23,11 @@
     <string name="login_success">Giriş başarılı.</string>
     <string name="register_success">Kayıt başarılı. Uygulamaya yönlendiriliyorsun.</string>
     <string name="reset_success">Şifre sıfırlama bağlantısı gönderildi.</string>
-    <string name="reset_privacy_safe_success">Eğer bu e-posta adresiyle kayıtlı bir hesap varsa, şifre sıfırlama bağlantısı gönderildi.</string>
+    <string name="reset_success_feedback_title">Şifre sıfırlama isteğin alındı.</string>
+    <string name="reset_success_feedback_message">Bu e-posta adresiyle kayıtlı bir hesap varsa bağlantı gönderildi. Gelen kutunu ve spam klasörünü kontrol et.</string>
+    <string name="reset_privacy_safe_success">Bu e-posta adresiyle kayıtlı bir hesap varsa sıfırlama bağlantısı gönderildi. Gelen kutunu ve spam klasörünü kontrol et.</string>
     <string name="reset_cooldown_format">Tekrar göndermek için %1$d saniye bekle.</string>
+    <string name="sending">Gönderiliyor…</string>
     <string name="my_quotes">Alıntılarım</string>
     <string name="my_quotes_subtitle">Senden iz bırakan cümleler.</string>
     <string name="add_quote">Alıntı Ekle</string>
@@ -36,6 +39,12 @@
     <string name="work_title">Eser adı</string>
     <string name="author_director">Yazar / Yönetmen</string>
     <string name="character_optional">Karakter (isteğe bağlı)</string>
+    <string name="quote_type_options">Seçenekler: Film • Dizi • Kitap</string>
+    <string name="movie_title_label">Film Adı</string>
+    <string name="movie_author_label">Yönetmen / Senarist</string>
+    <string name="series_title_label">Dizi Adı</string>
+    <string name="book_title_label">Kitap Adı</string>
+    <string name="book_author_label">Yazar</string>
     <string name="season">Sezon</string>
     <string name="episode">Bölüm</string>
     <string name="tags_hint">Etiketler (virgülle ayırın)</string>
@@ -177,9 +186,9 @@
     <string name="xp_gained_format">+%1$d XP</string>
     <string name="achievement_unlocked_feedback_title">🏆 Başarım Kazanıldı</string>
     <string name="achievement_feedback_message">%1$s\n\n%2$s\n\n+%3$d XP</string>
-    <string name="level_up_feedback_title">🎉 Seviye Atladın</string>
-    <string name="level_up_feedback_message">Yeni seviye: %1$d\n%2$s</string>
-    <string name="level_up_feedback_message_simple">Yeni seviye: %1$d</string>
+    <string name="level_up_feedback_title">🎉 Seviye Atladın!</string>
+    <string name="level_up_feedback_message">Yeni Seviye: %1$d\n%2$s</string>
+    <string name="level_up_feedback_message_simple">Yeni Seviye: %1$d</string>
     <string name="unlocked_achievement_count_format">%1$d başarım</string>
     <string name="logout">Çıkış Yap</string>
     <string name="profile_loading">Profil yükleniyor…</string>
@@ -197,6 +206,7 @@
     <string name="no_filter_results_detail">Arama metnini veya seçili filtreyi değiştirmeyi dene.</string>
     <string name="favorite">Beğen</string>
     <string name="like_button_with_count">Beğen · %1$d</string>
+    <string name="read_more">Devamını Oku</string>
     <string name="share">Paylaş</string>
     <string name="more_actions">Diğer işlemler</string>
     <string name="copy_quote">Copy Quote</string>
@@ -224,6 +234,7 @@
     <string name="quote_detail_spoiler_title">🔒 Spoiler İçerik</string>
     <string name="quote_detail_spoiler_description">Bu alıntı spoiler içeriyor.</string>
     <string name="comments_placeholder">Yorum</string>
+    <string name="comments_coming_soon_short">Yakında</string>
     <string name="quote_detail_actions_title">İşlemler</string>
     <string name="quote_detail_action_save">🔖 Kaydet</string>
     <string name="quote_detail_action_unsave">🔖 Kaydı Kaldır</string>

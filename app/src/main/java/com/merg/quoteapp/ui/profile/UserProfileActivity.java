@@ -287,8 +287,8 @@ public class UserProfileActivity extends AppCompatActivity {
         statSavedValueText.setText("0");
 
         adapter.submitList(profile.getQuotes());
-        likeViewModel.loadLikedStates(profile.getQuotes());
-        likeViewModel.loadLikeCounts(profile.getQuotes());
+        likeViewModel.refreshLikedStates(profile.getQuotes());
+        likeViewModel.refreshLikeCounts(profile.getQuotes());
         boolean empty = profile.getQuotes() == null || profile.getQuotes().isEmpty();
         recyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
         emptyText.setVisibility(empty ? View.VISIBLE : View.GONE);

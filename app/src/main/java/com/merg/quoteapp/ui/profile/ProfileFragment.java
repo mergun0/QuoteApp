@@ -142,10 +142,6 @@ public class ProfileFragment extends Fragment {
                 .setOnClickListener(card -> openAchievements());
         view.findViewById(R.id.cardProfileNextAchievement)
                 .setOnClickListener(card -> openAchievements());
-        setupMenuRow(view.findViewById(R.id.menuProfileFavorites),
-                "🔖", getString(R.string.profile_menu_favorites), menu -> openFavorites());
-        setupMenuRow(view.findViewById(R.id.menuProfileAchievements),
-                "🏆", getString(R.string.profile_menu_achievements), menu -> openAchievements());
         setupMenuRow(view.findViewById(R.id.menuProfileSettings),
                 "⚙️", getString(R.string.profile_menu_settings), menu -> openSettings());
         setupMenuRow(view.findViewById(R.id.menuProfileAbout),

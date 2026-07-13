@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
@@ -45,6 +46,9 @@ public class AddQuoteActivity extends AppCompatActivity {
     private TextInputEditText seasonInput;
     private TextInputEditText episodeInput;
     private TextInputEditText tagsInput;
+    private TextInputLayout titleLayout;
+    private TextInputLayout authorLayout;
+    private TextInputLayout characterLayout;
     private MaterialCheckBox spoilerCheck;
     private MaterialButton saveButton;
     private TextView statusText;
@@ -71,6 +75,9 @@ public class AddQuoteActivity extends AppCompatActivity {
         titleInput = findViewById(R.id.editQuoteTitle);
         authorInput = findViewById(R.id.editQuoteAuthor);
         characterInput = findViewById(R.id.editQuoteCharacter);
+        titleLayout = findViewById(R.id.layoutQuoteTitle);
+        authorLayout = findViewById(R.id.layoutQuoteAuthor);
+        characterLayout = findViewById(R.id.layoutQuoteCharacter);
         seasonInput = findViewById(R.id.editQuoteSeason);
         episodeInput = findViewById(R.id.editQuoteEpisode);
         tagsInput = findViewById(R.id.editQuoteTags);
@@ -88,8 +95,10 @@ public class AddQuoteActivity extends AppCompatActivity {
         typeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                boolean isSeries = "Dizi".equals(parent.getItemAtPosition(position).toString());
+                String selectedType = parent.getItemAtPosition(position).toString();
+                boolean isSeries = "Dizi".equals(selectedType);
                 seriesDetails.setVisibility(isSeries ? View.VISIBLE : View.GONE);
+                updateTypeLabels(selectedType);
                 if (!isSeries) {
                     seasonInput.setText("");
                     episodeInput.setText("");
@@ -99,8 +108,25 @@ public class AddQuoteActivity extends AppCompatActivity {
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 seriesDetails.setVisibility(View.GONE);
+                updateTypeLabels("Film");
             }
         });
+    }
+
+    private void updateTypeLabels(String type) {
+        if ("Kitap".equals(type)) {
+            titleLayout.setHint(getString(R.string.book_title_label));
+            authorLayout.setHint(getString(R.string.book_author_label));
+            characterLayout.setHint(getString(R.string.character_optional));
+        } else if ("Dizi".equals(type)) {
+            titleLayout.setHint(getString(R.string.series_title_label));
+            authorLayout.setHint(getString(R.string.author_director));
+            characterLayout.setHint(getString(R.string.character_optional));
+        } else {
+            titleLayout.setHint(getString(R.string.movie_title_label));
+            authorLayout.setHint(getString(R.string.movie_author_label));
+            characterLayout.setHint(getString(R.string.character_optional));
+        }
     }
 
     private void readEditData() {

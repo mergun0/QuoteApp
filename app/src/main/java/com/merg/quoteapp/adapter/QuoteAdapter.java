@@ -4,6 +4,7 @@ import android.content.res.ColorStateList;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
@@ -275,7 +276,6 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
         private static final int MENU_COPY = 1;
         private static final int MENU_REPORT = 2;
-        private static final int MENU_SAVE = 3;
         private static final int MENU_BLOCK_USER = 4;
         private static final int MENU_EDIT = 5;
         private static final int MENU_DELETE = 6;
@@ -284,6 +284,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         private final TextView titleText;
         private final TextView usernameText;
         private final TextView quoteText;
+        private final TextView readMoreText;
         private final TextView authorText;
         private final TextView characterText;
         private final TextView seriesText;
@@ -295,6 +296,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         private final MaterialButton showSpoilerButton;
         private final MaterialButton shareButton;
         private final MaterialButton favoriteButton;
+        private final MaterialButton saveButton;
         private final MaterialButton moreButton;
 
         QuoteViewHolder(@NonNull View itemView) {
@@ -303,6 +305,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             titleText = itemView.findViewById(R.id.textCardTitle);
             usernameText = itemView.findViewById(R.id.textCardUsername);
             quoteText = itemView.findViewById(R.id.textCardQuote);
+            readMoreText = itemView.findViewById(R.id.textReadMoreQuote);
             authorText = itemView.findViewById(R.id.textCardAuthor);
             characterText = itemView.findViewById(R.id.textCardCharacter);
             seriesText = itemView.findViewById(R.id.textCardSeries);
@@ -314,6 +317,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             showSpoilerButton = itemView.findViewById(R.id.showSpoilerButton);
             shareButton = itemView.findViewById(R.id.buttonShareQuote);
             favoriteButton = itemView.findViewById(R.id.buttonFavoriteQuote);
+            saveButton = itemView.findViewById(R.id.buttonSaveQuote);
             moreButton = itemView.findViewById(R.id.buttonMoreQuote);
         }
 
@@ -330,6 +334,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                     : null);
             titleText.setText(safe(quote.getTitle()));
             quoteText.setText("“" + safe(quote.getText()) + "”");
+            configureReadMore(quote, listener);
             authorText.setText(safe(quote.getAuthor()));
             spoilerText.setVisibility(quote.isSpoiler() ? View.VISIBLE : View.GONE);
 
@@ -361,7 +366,10 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             }
 
             shareButton.setOnClickListener(view -> listener.onShare(quote));
-            renderSecondaryActions(saved, saveLoading);
+            renderSecondaryActions(saved, saveLoading, saveActionsEnabled);
+            saveButton.setOnClickListener(saveActionsEnabled && !saveLoading
+                    ? view -> listener.onSave(quote)
+                    : null);
             renderFavoriteButton(liked, likeLoading, likeCount, likeActionsEnabled);
             favoriteButton.setOnClickListener(likeActionsEnabled
                     ? view -> animateLikeClick(view, () -> listener.onFavorite(quote))
@@ -380,11 +388,6 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             PopupMenu popupMenu = new PopupMenu(itemView.getContext(), moreButton);
             Menu menu = popupMenu.getMenu();
             menu.add(Menu.NONE, MENU_COPY, Menu.NONE, R.string.copy_quote);
-            if (saveActionsEnabled) {
-                menu.add(Menu.NONE, MENU_SAVE, Menu.NONE,
-                        saved ? R.string.unsave_quote : R.string.save_quote)
-                        .setEnabled(!saveLoading);
-            }
             if (reportActionsEnabled) {
                 menu.add(Menu.NONE, MENU_REPORT, Menu.NONE, R.string.report_quote_menu);
             }
@@ -399,9 +402,6 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             popupMenu.setOnMenuItemClickListener(item -> {
                 if (item.getItemId() == MENU_COPY) {
                     copyQuote(quote);
-                    return true;
-                } else if (item.getItemId() == MENU_SAVE) {
-                    listener.onSave(quote);
                     return true;
                 } else if (item.getItemId() == MENU_REPORT) {
                     listener.onReport(quote);
@@ -468,23 +468,49 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             favoriteButton.setEnabled(likeActionsEnabled && !likeLoading);
             favoriteButton.setAlpha(likeLoading ? 0.55f : 1f);
             favoriteButton.setSelected(liked);
-            favoriteButton.setText(likeCount > 0
-                    ? itemView.getContext().getString(R.string.like_button_with_count, likeCount)
-                    : itemView.getContext().getString(R.string.favorite));
+            favoriteButton.setText(likeCount > 0 ? String.valueOf(likeCount) : "");
             favoriteButton.setTextColor(color);
             favoriteButton.setIconTint(tint);
         }
 
-        private void renderSecondaryActions(boolean saved, boolean saveLoading) {
+        private void renderSecondaryActions(boolean saved, boolean saveLoading,
+                                            boolean saveActionsEnabled) {
             Context context = itemView.getContext();
             int shareColor = ContextCompat.getColor(context, R.color.home_v2_primary);
-            int overflowColor = ContextCompat.getColor(context,
+            int saveColor = ContextCompat.getColor(context,
                     saved ? R.color.home_v2_accent : R.color.home_v2_text_secondary);
+            int overflowColor = ContextCompat.getColor(context, R.color.home_v2_text_secondary);
             shareButton.setTextColor(shareColor);
             shareButton.setIconTint(ColorStateList.valueOf(shareColor));
             shareButton.setAlpha(1f);
+            saveButton.setVisibility(saveActionsEnabled ? View.VISIBLE : View.GONE);
+            saveButton.setEnabled(saveActionsEnabled && !saveLoading);
+            saveButton.setSelected(saved);
+            saveButton.setAlpha(saveLoading ? 0.55f : 1f);
+            saveButton.setText("");
+            saveButton.setTextColor(saveColor);
+            saveButton.setIconTint(ColorStateList.valueOf(saveColor));
             moreButton.setIconTint(ColorStateList.valueOf(overflowColor));
-            moreButton.setAlpha(saveLoading ? 0.65f : 0.9f);
+            moreButton.setAlpha(0.9f);
+        }
+
+        private void configureReadMore(Quote quote, QuoteActionListener listener) {
+            readMoreText.setVisibility(View.GONE);
+            readMoreText.setOnClickListener(null);
+            quoteText.setMaxLines(6);
+            quoteText.setEllipsize(TextUtils.TruncateAt.END);
+            String quoteId = safe(quote.getQuoteId());
+            quoteText.setTag(quoteId);
+            quoteText.post(() -> {
+                Object tag = quoteText.getTag();
+                if (!quoteId.equals(tag) || quoteText.getLayout() == null) {
+                    return;
+                }
+                int lastVisibleLine = Math.max(0, quoteText.getLineCount() - 1);
+                boolean truncated = quoteText.getLayout().getEllipsisCount(lastVisibleLine) > 0;
+                readMoreText.setVisibility(truncated ? View.VISIBLE : View.GONE);
+                readMoreText.setOnClickListener(truncated ? view -> listener.onOpen(quote) : null);
+            });
         }
 
         private void setOptionalText(TextView view, String value, String displayValue) {

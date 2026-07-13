@@ -74,6 +74,7 @@ public class DiscoverFragment extends Fragment {
     private Map<String, Boolean> renderedSaveLoadingStates = new HashMap<>();
     private String searchQuery = "";
     private QuoteFilter selectedFilter = QuoteFilter.ALL;
+    private boolean firstResume = true;
 
     public DiscoverFragment() {
         super(R.layout.fragment_discover);
@@ -112,6 +113,16 @@ public class DiscoverFragment extends Fragment {
                 R.color.quote_primary,
                 R.color.quote_secondary);
         swipeRefreshLayout.setOnRefreshListener(viewModel::refreshQuotes);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (firstResume) {
+            firstResume = false;
+            return;
+        }
+        refreshInteractionStates();
     }
 
     private void bindViews(View view) {
@@ -228,6 +239,19 @@ public class DiscoverFragment extends Fragment {
             favoriteViewModel.loadSavedStates(allQuotes);
         }
         applyFilters();
+    }
+
+    private void refreshInteractionStates() {
+        if (allQuotes.isEmpty()) {
+            return;
+        }
+        if (likeViewModel != null) {
+            likeViewModel.refreshLikedStates(allQuotes);
+            likeViewModel.refreshLikeCounts(allQuotes);
+        }
+        if (favoriteViewModel != null) {
+            favoriteViewModel.refreshSavedStates(allQuotes);
+        }
     }
 
     private void renderLikedStates(Map<String, Boolean> likedStates) {

@@ -64,6 +64,7 @@ public class FavoritesFragment extends Fragment {
     private Map<String, Boolean> renderedLikedStates = new HashMap<>();
     private Map<String, Boolean> renderedLikeLoadingStates = new HashMap<>();
     private Map<String, Long> renderedLikeCounts = new HashMap<>();
+    private boolean firstResume = true;
 
     public FavoritesFragment() {
         super(R.layout.fragment_favorites);
@@ -95,6 +96,18 @@ public class FavoritesFragment extends Fragment {
         swipeRefreshLayout.setColorSchemeResources(R.color.home_v2_primary, R.color.home_v2_secondary);
         swipeRefreshLayout.setOnRefreshListener(favoriteViewModel::refreshSavedQuotes);
         favoriteViewModel.loadSavedQuotes();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (firstResume) {
+            firstResume = false;
+            return;
+        }
+        if (favoriteViewModel != null) {
+            favoriteViewModel.refreshSavedQuotes();
+        }
     }
 
     private void bindViews(View view) {

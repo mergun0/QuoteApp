@@ -89,6 +89,7 @@ public class HomeFragment extends Fragment {
     private Map<String, Boolean> renderedSaveLoadingStates = new HashMap<>();
     private List<UserAchievement> currentUserAchievements = new ArrayList<>();
     private UserStats currentStats;
+    private boolean firstResume = true;
     private String searchQuery = "";
     private QuoteFilter selectedFilter = QuoteFilter.ALL;
 
@@ -146,6 +147,16 @@ public class HomeFragment extends Fragment {
 
         view.findViewById(R.id.buttonAddQuote).setOnClickListener(button ->
                 startActivity(new Intent(requireContext(), AddQuoteActivity.class)));
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (firstResume) {
+            firstResume = false;
+            return;
+        }
+        refreshInteractionStates();
     }
 
     private void bindViews(View view) {
@@ -224,6 +235,19 @@ public class HomeFragment extends Fragment {
             favoriteViewModel.loadSavedStates(allQuotes);
         }
         applyFilters();
+    }
+
+    private void refreshInteractionStates() {
+        if (allQuotes.isEmpty()) {
+            return;
+        }
+        if (likeViewModel != null) {
+            likeViewModel.refreshLikedStates(allQuotes);
+            likeViewModel.refreshLikeCounts(allQuotes);
+        }
+        if (favoriteViewModel != null) {
+            favoriteViewModel.refreshSavedStates(allQuotes);
+        }
     }
 
     private void renderLikedStates(Map<String, Boolean> likedStates) {

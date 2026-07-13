@@ -2,6 +2,7 @@ package com.merg.quoteapp.repository;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.AggregateSource;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -32,6 +33,12 @@ public class FavoriteRepository {
 
     public interface SavedQuotesCallback {
         void onSuccess(List<Quote> quotes);
+
+        void onError(String message);
+    }
+
+    public interface FavoriteCountCallback {
+        void onSuccess(long count);
 
         void onError(String message);
     }
@@ -142,6 +149,26 @@ public class FavoriteRepository {
                 .document(favoriteDocumentId(quoteId, user.getUid()))
                 .get()
                 .addOnSuccessListener(document -> callback.onSuccess(document.exists()))
+                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
+    /**
+     * Loads how many users saved a quote.
+     *
+     * @param quoteId quote id whose save count will be loaded
+     * @param callback count callback
+     */
+    public void getFavoriteCount(String quoteId, FavoriteCountCallback callback) {
+        if (isBlank(quoteId)) {
+            callback.onError("Alıntı bilgisi bulunamadı.");
+            return;
+        }
+
+        firestore.collection(FAVORITES_COLLECTION)
+                .whereEqualTo("quoteId", quoteId)
+                .count()
+                .get(AggregateSource.SERVER)
+                .addOnSuccessListener(snapshot -> callback.onSuccess(snapshot.getCount()))
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 
