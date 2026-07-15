@@ -160,6 +160,8 @@
     <string name="achievements">Başarımlar</string>
     <string name="all_achievements">Tüm Başarımlar</string>
     <string name="all_my_achievements">Tüm Başarımlarım</string>
+    <string name="user_profile_earned_achievements">Kazanılan Başarımlar</string>
+    <string name="user_profile_all_earned_achievements">Kazanılan Tüm Başarımlar</string>
     <string name="achievements_screen_subtitle">İlerlemeni takip et ve yeni rozetlerin kilidini aç.</string>
     <string name="achievement_default_title">Başarım</string>
     <string name="achievement_locked">Henüz kazanılmadı</string>

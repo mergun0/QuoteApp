@@ -34,13 +34,17 @@ import com.merg.quoteapp.repository.UserStatsRepository;
 import com.merg.quoteapp.ui.auth.LoginActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
+import com.merg.quoteapp.utils.ReportBottomSheetHelper;
 import com.merg.quoteapp.viewmodel.AchievementViewModel;
+import com.merg.quoteapp.viewmodel.FavoriteViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
 import com.merg.quoteapp.viewmodel.LevelViewModel;
+import com.merg.quoteapp.viewmodel.ReportViewModel;
 import com.merg.quoteapp.viewmodel.UserStatsViewModel;
 import com.merg.quoteapp.viewmodel.UserProfileViewModel;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -55,6 +59,8 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private UserProfileViewModel viewModel;
     private LikeViewModel likeViewModel;
+    private FavoriteViewModel favoriteViewModel;
+    private ReportViewModel reportViewModel;
     private UserStatsViewModel userStatsViewModel;
     private AchievementViewModel achievementViewModel;
     private LevelViewModel levelViewModel;
@@ -85,6 +91,7 @@ public class UserProfileActivity extends AppCompatActivity {
     private TextView statSavedValueText;
     private TextView lastAchievementTitleText;
     private TextView lastAchievementDescriptionText;
+    private TextView lastAchievementMetaText;
     private TextView nextAchievementTitleText;
     private TextView nextAchievementDescriptionText;
     private TextView nextAchievementProgressText;
@@ -98,6 +105,9 @@ public class UserProfileActivity extends AppCompatActivity {
     private Map<String, Boolean> renderedLikedStates = new HashMap<>();
     private Map<String, Boolean> renderedLikeLoadingStates = new HashMap<>();
     private Map<String, Long> renderedLikeCounts = new HashMap<>();
+    private Map<String, Boolean> renderedSavedStates = new HashMap<>();
+    private Map<String, Boolean> renderedSaveLoadingStates = new HashMap<>();
+    private Map<String, Long> renderedSaveCounts = new HashMap<>();
     private List<Achievement> currentAchievements = new ArrayList<>();
     private List<UserAchievement> currentUserAchievements = new ArrayList<>();
     private UserStats currentStats;
@@ -129,6 +139,8 @@ public class UserProfileActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(UserProfileViewModel.class);
         likeViewModel = new ViewModelProvider(this).get(LikeViewModel.class);
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
+        reportViewModel = new ViewModelProvider(this).get(ReportViewModel.class);
         userStatsViewModel = new ViewModelProvider(this).get(UserStatsViewModel.class);
         achievementViewModel = new ViewModelProvider(this).get(AchievementViewModel.class);
         levelViewModel = new ViewModelProvider(this).get(LevelViewModel.class);
@@ -141,6 +153,11 @@ public class UserProfileActivity extends AppCompatActivity {
         likeViewModel.getItemLoadingStates().observe(this, this::renderLikeLoadingStates);
         likeViewModel.getLikeCounts().observe(this, this::renderLikeCounts);
         likeViewModel.getLoadingState().observe(this, this::renderLikeState);
+        favoriteViewModel.getSavedStates().observe(this, this::renderSavedStates);
+        favoriteViewModel.getItemLoadingStates().observe(this, this::renderSaveLoadingStates);
+        favoriteViewModel.getFavoriteCounts().observe(this, this::renderSaveCounts);
+        favoriteViewModel.getOperationState().observe(this, this::renderFavoriteState);
+        observeReportState();
         observeAchievementState();
         viewModel.loadProfile(profileUserId);
         loadAchievementState();
@@ -185,8 +202,9 @@ public class UserProfileActivity extends AppCompatActivity {
                 .findViewById(R.id.textUserProfileStatValue);
         statSavedValueText = findViewById(R.id.userStatSaved)
                 .findViewById(R.id.textUserProfileStatValue);
-        lastAchievementTitleText = findViewById(R.id.textUserProfileLastAchievementTitle);
-        lastAchievementDescriptionText = findViewById(R.id.textUserProfileLastAchievementDescription);
+        lastAchievementTitleText = findViewById(R.id.textLastAchievementTitle);
+        lastAchievementDescriptionText = findViewById(R.id.textLastAchievementDescription);
+        lastAchievementMetaText = findViewById(R.id.textLastAchievementMeta);
         nextAchievementTitleText = findViewById(R.id.textUserProfileNextAchievementTitle);
         nextAchievementDescriptionText = findViewById(R.id.textUserProfileNextAchievementDescription);
         nextAchievementProgressText = findViewById(R.id.textUserProfileNextAchievementProgress);
@@ -224,6 +242,16 @@ public class UserProfileActivity extends AppCompatActivity {
             }
 
             @Override
+            public void onSave(Quote quote) {
+                toggleSave(quote);
+            }
+
+            @Override
+            public void onReport(Quote quote) {
+                showReportSheet(quote);
+            }
+
+            @Override
             public void onOpen(Quote quote) {
                 Intent intent = new Intent(
                         UserProfileActivity.this, QuoteDetailActivity.class);
@@ -237,6 +265,8 @@ public class UserProfileActivity extends AppCompatActivity {
             }
         }, false, true, currentUserId, R.layout.item_quote_home);
         adapter.setLikeActionsEnabled(true);
+        adapter.setSaveActionsEnabled(true);
+        adapter.setReportActionsEnabled(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
     }
@@ -275,6 +305,10 @@ public class UserProfileActivity extends AppCompatActivity {
                 showStatus(getString(R.string.follow_coming_soon), false));
         findViewById(R.id.buttonUserProfileAllAchievements)
                 .setOnClickListener(view -> openAchievements());
+        findViewById(R.id.cardUserProfileLastAchievement)
+                .setOnClickListener(view -> openAchievements());
+        findViewById(R.id.cardUserProfileNextAchievement)
+                .setOnClickListener(view -> openAchievements());
     }
 
     private void renderProfile(UserProfileData profile) {
@@ -291,6 +325,8 @@ public class UserProfileActivity extends AppCompatActivity {
         adapter.submitList(profile.getQuotes());
         likeViewModel.refreshLikedStates(profile.getQuotes());
         likeViewModel.refreshLikeCounts(profile.getQuotes());
+        favoriteViewModel.refreshSavedStates(profile.getQuotes());
+        favoriteViewModel.loadFavoriteCounts(profile.getQuotes());
         boolean empty = profile.getQuotes() == null || profile.getQuotes().isEmpty();
         recyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
         emptyText.setVisibility(empty ? View.VISIBLE : View.GONE);
@@ -423,6 +459,80 @@ public class UserProfileActivity extends AppCompatActivity {
         }
     }
 
+    private void renderSavedStates(Map<String, Boolean> savedStates) {
+        if (savedStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : savedStates.entrySet()) {
+            if (!entry.getValue().equals(renderedSavedStates.get(entry.getKey()))) {
+                adapter.updateSaveState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedSavedStates = new HashMap<>(savedStates);
+    }
+
+    private void renderSaveLoadingStates(Map<String, Boolean> loadingStates) {
+        if (loadingStates == null) {
+            return;
+        }
+        for (Map.Entry<String, Boolean> entry : loadingStates.entrySet()) {
+            if (!entry.getValue().equals(renderedSaveLoadingStates.get(entry.getKey()))) {
+                adapter.updateSaveLoadingState(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedSaveLoadingStates = new HashMap<>(loadingStates);
+    }
+
+    private void renderSaveCounts(Map<String, Long> saveCounts) {
+        if (saveCounts == null) {
+            return;
+        }
+        for (Map.Entry<String, Long> entry : saveCounts.entrySet()) {
+            if (!entry.getValue().equals(renderedSaveCounts.get(entry.getKey()))) {
+                adapter.updateSaveCount(entry.getKey(), entry.getValue());
+            }
+        }
+        renderedSaveCounts = new HashMap<>(saveCounts);
+    }
+
+    private void renderFavoriteState(QuoteState state) {
+        if (state.getStatus() == QuoteState.Status.ERROR) {
+            showStatus(state.getMessage(), true);
+        }
+    }
+
+    private void observeReportState() {
+        reportViewModel.getLoading().observe(this, loading -> {
+            if (Boolean.TRUE.equals(loading)) {
+                showStatus(getString(R.string.operation_in_progress), false);
+            }
+        });
+        reportViewModel.getSuccess().observe(this, success -> {
+            if (Boolean.TRUE.equals(success)) {
+                showStatus(getString(R.string.report_sent), false);
+                reportViewModel.clearResultStates();
+            }
+        });
+        reportViewModel.getAlreadyReported().observe(this, already -> {
+            if (Boolean.TRUE.equals(already)) {
+                showStatus(getString(R.string.report_already_sent), true);
+                reportViewModel.clearResultStates();
+            }
+        });
+        reportViewModel.getDailyLimitReached().observe(this, reached -> {
+            if (Boolean.TRUE.equals(reached)) {
+                showStatus(getString(R.string.report_daily_limit_reached), true);
+                reportViewModel.clearResultStates();
+            }
+        });
+        reportViewModel.getError().observe(this, message -> {
+            if (message != null && !message.trim().isEmpty()) {
+                showStatus(message, true);
+                reportViewModel.clearResultStates();
+            }
+        });
+    }
+
     private void setupAchievementPreview() {
         achievementAdapter = new AchievementPreviewAdapter();
         achievementRecyclerView.setLayoutManager(new LinearLayoutManager(
@@ -528,7 +638,7 @@ public class UserProfileActivity extends AppCompatActivity {
             xpProgressBar.setProgress(100);
             xpText.setText(getString(R.string.xp_total_format, totalXp));
             xpProgressText.setText(R.string.xp_progress_max);
-            nextLevelText.setText(R.string.xp_progress_max);
+            nextLevelText.setVisibility(View.GONE);
             return;
         }
         long currentRequiredXp = Math.max(0, currentLevel.getRequiredTotalXp());
@@ -539,7 +649,7 @@ public class UserProfileActivity extends AppCompatActivity {
         xpText.setText(getString(R.string.xp_progress_format, totalXp, nextRequiredXp));
         xpProgressText.setText(getString(R.string.xp_remaining_format,
                 Math.max(0, nextRequiredXp - totalXp)));
-        nextLevelText.setText(getString(R.string.next_level_format, nextLevel.getLevel()));
+        nextLevelText.setVisibility(View.GONE);
     }
 
     private void renderFallbackXpProgress(long totalXp) {
@@ -550,7 +660,7 @@ public class UserProfileActivity extends AppCompatActivity {
                 Math.min(safeXp, fallbackTarget), fallbackTarget));
         xpProgressText.setText(getString(R.string.xp_remaining_format,
                 Math.max(0, fallbackTarget - safeXp)));
-        nextLevelText.setText(getString(R.string.next_level_format, 2));
+        nextLevelText.setVisibility(View.GONE);
     }
 
     private void renderAchievementPreview() {
@@ -570,13 +680,15 @@ public class UserProfileActivity extends AppCompatActivity {
     }
 
     private void renderLastAchievementCard() {
-        if (lastAchievementTitleText == null || lastAchievementDescriptionText == null) {
+        if (lastAchievementTitleText == null || lastAchievementDescriptionText == null
+                || lastAchievementMetaText == null) {
             return;
         }
         UserAchievement latest = findLatestUnlockedAchievement();
         if (latest == null) {
             lastAchievementTitleText.setText(R.string.profile_no_last_achievement_title);
-            lastAchievementDescriptionText.setText(R.string.user_achievements_empty);
+            lastAchievementDescriptionText.setText(R.string.profile_no_last_achievement_description);
+            lastAchievementMetaText.setVisibility(View.GONE);
             return;
         }
         Achievement achievement = findAchievement(latest.getAchievementId());
@@ -584,6 +696,13 @@ public class UserProfileActivity extends AppCompatActivity {
                 ? getString(R.string.achievement_default_title) : achievement.getTitle());
         lastAchievementDescriptionText.setText(achievement == null || isBlank(achievement.getDescription())
                 ? getString(R.string.achievement_unlocked) : achievement.getDescription());
+        String meta = buildAchievementMeta(achievement, latest.getUnlockedAt());
+        if (isBlank(meta)) {
+            lastAchievementMetaText.setVisibility(View.GONE);
+        } else {
+            lastAchievementMetaText.setText(meta);
+            lastAchievementMetaText.setVisibility(View.VISIBLE);
+        }
     }
 
     private void renderNextAchievementCard() {
@@ -712,6 +831,26 @@ public class UserProfileActivity extends AppCompatActivity {
         return timestamp == null ? 0L : timestamp.toDate().getTime();
     }
 
+    private String buildAchievementMeta(Achievement achievement, Timestamp unlockedAt) {
+        List<String> parts = new ArrayList<>();
+        if (achievement != null && achievement.getXpReward() > 0) {
+            parts.add(getString(R.string.achievement_xp_reward_format, achievement.getXpReward()));
+        }
+        String date = formatAchievementDate(unlockedAt);
+        if (!isBlank(date)) {
+            parts.add(date);
+        }
+        return String.join(" • ", parts);
+    }
+
+    private String formatAchievementDate(Timestamp timestamp) {
+        if (timestamp == null) {
+            return "";
+        }
+        Date date = timestamp.toDate();
+        return new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(date);
+    }
+
     private UserStats defaultStats() {
         UserStats stats = new UserStats();
         stats.setUserId(profileUserId);
@@ -737,6 +876,21 @@ public class UserProfileActivity extends AppCompatActivity {
             return;
         }
         likeViewModel.toggleLike(quote.getQuoteId());
+    }
+
+    private void toggleSave(Quote quote) {
+        if (quote == null || isBlank(quote.getQuoteId())) {
+            return;
+        }
+        favoriteViewModel.toggleSaved(quote);
+    }
+
+    private void showReportSheet(Quote quote) {
+        if (quote == null || isBlank(quote.getQuoteId())) {
+            return;
+        }
+        ReportBottomSheetHelper.show(this,
+                (reason, description) -> reportViewModel.submitReport(quote, reason, description));
     }
 
     private void openUserProfile(String userId) {

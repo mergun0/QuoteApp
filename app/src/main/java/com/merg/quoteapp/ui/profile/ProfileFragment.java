@@ -106,9 +106,9 @@ public class ProfileFragment extends Fragment {
         totalQuotesText = view.findViewById(R.id.textProfileQuotesValue);
         achievementsStatText = view.findViewById(R.id.textProfileAchievementsStatValue);
         savedQuotesText = view.findViewById(R.id.textProfileSavedValue);
-        lastAchievementTitleText = view.findViewById(R.id.textProfileLastAchievementTitle);
-        lastAchievementDescriptionText = view.findViewById(R.id.textProfileLastAchievementDescription);
-        lastAchievementMetaText = view.findViewById(R.id.textProfileLastAchievementMeta);
+        lastAchievementTitleText = view.findViewById(R.id.textLastAchievementTitle);
+        lastAchievementDescriptionText = view.findViewById(R.id.textLastAchievementDescription);
+        lastAchievementMetaText = view.findViewById(R.id.textLastAchievementMeta);
         nextAchievementTitleText = view.findViewById(R.id.textProfileNextAchievementTitle);
         nextAchievementDescriptionText = view.findViewById(R.id.textProfileNextAchievementDescription);
         nextAchievementProgressText = view.findViewById(R.id.textProfileNextAchievementProgress);

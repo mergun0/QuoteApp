@@ -1,5 +1,8 @@
 package com.merg.quoteapp.ui.quote;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.Intent;
 import android.graphics.Color;
@@ -21,6 +24,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.merg.quoteapp.MainActivity;
@@ -351,20 +355,9 @@ public class QuoteDetailActivity extends AppCompatActivity {
         container.addView(title, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        addSheetAction(container,
-                currentSaved ? R.string.quote_detail_action_unsave : R.string.quote_detail_action_save,
-                false,
-                view -> {
-                    dialog.dismiss();
-                    toggleSave();
-                });
-        addSheetAction(container, R.string.quote_detail_action_share, false, view -> {
+        addSheetAction(container, R.string.copy_quote, false, view -> {
             dialog.dismiss();
-            shareQuote();
-        });
-        addSheetAction(container, R.string.quote_detail_action_report, true, view -> {
-            dialog.dismiss();
-            showReportSheet();
+            copyQuote();
         });
         if (currentUserCanManage) {
             addSheetAction(container, R.string.quote_detail_action_edit, false, view -> {
@@ -374,6 +367,11 @@ public class QuoteDetailActivity extends AppCompatActivity {
             addSheetAction(container, R.string.quote_detail_action_delete, true, view -> {
                 dialog.dismiss();
                 confirmDelete();
+            });
+        } else if (canReportCurrentQuote()) {
+            addSheetAction(container, R.string.quote_detail_action_report, true, view -> {
+                dialog.dismiss();
+                showReportSheet();
             });
         }
         dialog.setContentView(container);
@@ -449,6 +447,20 @@ public class QuoteDetailActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(intent, getString(R.string.share)));
     }
 
+    private void copyQuote() {
+        if (currentQuote == null) {
+            return;
+        }
+        ClipboardManager clipboardManager =
+                (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboardManager == null) {
+            return;
+        }
+        clipboardManager.setPrimaryClip(ClipData.newPlainText(
+                getString(R.string.copy_quote), safe(currentQuote.getText())));
+        Snackbar.make(contentScroll, R.string.quote_copied, Snackbar.LENGTH_SHORT).show();
+    }
+
     private void toggleLike() {
         if (currentQuote == null || currentQuote.getQuoteId() == null
                 || currentQuote.getQuoteId().trim().isEmpty()) {
@@ -471,6 +483,15 @@ public class QuoteDetailActivity extends AppCompatActivity {
         ReportBottomSheetHelper.show(this,
                 (reason, description) ->
                         reportViewModel.submitReport(currentQuote, reason, description));
+    }
+
+    private boolean canReportCurrentQuote() {
+        if (currentQuote == null || isBlank(currentQuote.getUserId())) {
+            return false;
+        }
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null
+                ? null : FirebaseAuth.getInstance().getCurrentUser().getUid();
+        return !isBlank(currentUserId) && !currentUserId.equals(currentQuote.getUserId());
     }
 
     private void scrollToComments() {
@@ -526,6 +547,10 @@ public class QuoteDetailActivity extends AppCompatActivity {
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private String displayUsername(String username) {

@@ -108,7 +108,7 @@
                             android:textColor="@color/home_v2_text_primary"
                             android:textSize="20sp"
                             android:textStyle="bold"
-                            tools:text="⭐ Seviye 12" />
+                            tools:text="â­ Seviye 12" />
 
                         <TextView
                             android:id="@+id/textProfileNextLevel"
@@ -133,7 +133,7 @@
                         android:textColor="@color/home_v2_primary"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        tools:text="🏆 18 Başarım" />
+                        tools:text="ğŸ† 18 BaÅŸarÄ±m" />
                 </LinearLayout>
 
                 <ProgressBar
@@ -171,7 +171,7 @@
                         android:textColor="@color/home_v2_accent"
                         android:textSize="13sp"
                         android:textStyle="bold"
-                        tools:text="560 XP kaldı" />
+                        tools:text="560 XP kaldÄ±" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -377,88 +377,14 @@
             </com.google.android.material.card.MaterialCardView>
         </GridLayout>
 
-        <com.google.android.material.card.MaterialCardView
+        <include
             android:id="@+id/cardProfileLastAchievement"
+            layout="@layout/layout_last_achievement_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackground"
-            app:cardBackgroundColor="@color/home_v2_card"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="4dp"
-            app:strokeColor="@color/home_v2_divider"
-            app:strokeWidth="1dp">
+            android:layout_marginTop="16dp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/profile_last_achievement_title"
-                    android:textColor="@color/home_v2_text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/textProfileLastAchievementIcon"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:background="@drawable/bg_home_v2_avatar"
-                        android:gravity="center"
-                        android:text="@string/profile_achievement_icon_placeholder"
-                        android:textSize="24sp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/textProfileLastAchievementTitle"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/home_v2_text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            tools:text="İlk Satır" />
-
-                        <TextView
-                            android:id="@+id/textProfileLastAchievementDescription"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:textColor="@color/home_v2_text_secondary"
-                            android:textSize="13sp"
-                            tools:text="İlk alıntını paylaşarak koleksiyonunu başlattın." />
-
-                        <TextView
-                            android:id="@+id/textProfileLastAchievementMeta"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:textColor="@color/home_v2_accent"
-                            android:textSize="12sp"
-                            android:textStyle="bold"
-                            tools:text="+25 XP • 09.07.2026" />
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardProfileNextAchievement"
@@ -518,7 +444,7 @@
                             android:textColor="@color/home_v2_text_primary"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            tools:text="Düzenli Paylaşımcı" />
+                            tools:text="DÃ¼zenli PaylaÅŸÄ±mcÄ±" />
 
                         <TextView
                             android:id="@+id/textProfileNextAchievementDescription"
@@ -527,7 +453,7 @@
                             android:layout_marginTop="4dp"
                             android:textColor="@color/home_v2_text_secondary"
                             android:textSize="13sp"
-                            tools:text="10 alıntı paylaş." />
+                            tools:text="10 alÄ±ntÄ± paylaÅŸ." />
 
                         <ProgressBar
                             android:id="@+id/progressProfileNextAchievement"
@@ -632,7 +558,7 @@
             android:textColor="@color/home_v2_error"
             android:textSize="14sp"
             android:visibility="gone"
-            tools:text="Profil bilgileri yüklenemedi."
+            tools:text="Profil bilgileri yÃ¼klenemedi."
             tools:visibility="visible" />
 
         <com.google.android.material.card.MaterialCardView
