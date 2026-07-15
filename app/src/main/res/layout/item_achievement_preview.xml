@@ -51,9 +51,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
+            android:ellipsize="end"
             android:gravity="center"
+            android:maxLines="1"
             android:textColor="@color/home_v2_text_secondary"
             android:textSize="11sp"
-            tools:text="Kilitli" />
+            tools:text="Henüz kazanılmadı" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

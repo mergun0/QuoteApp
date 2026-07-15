@@ -79,6 +79,9 @@ public class ProfileFragment extends Fragment {
     private List<UserAchievement> currentUserAchievements = new ArrayList<>();
     private String currentUserId;
     private boolean profileAchievementDataLoaded;
+    private boolean activeAchievementsLoaded;
+    private boolean userAchievementsLoaded;
+    private boolean savedQuotesRequested;
 
     public ProfileFragment() {
         super(R.layout.fragment_profile);
@@ -117,6 +120,7 @@ public class ProfileFragment extends Fragment {
         levelViewModel = new ViewModelProvider(this).get(LevelViewModel.class);
         favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
         setupAchievementPreview();
+        renderLoadingPlaceholders();
         setupDashboardClicks(view);
 
         ProfileViewModel viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
@@ -196,7 +200,8 @@ public class ProfileFragment extends Fragment {
         achievementRecyclerView.setLayoutManager(new LinearLayoutManager(
                 requireContext(), LinearLayoutManager.HORIZONTAL, false));
         achievementRecyclerView.setAdapter(achievementAdapter);
-        renderDefaultAchievementState();
+        achievementRecyclerView.setVisibility(View.GONE);
+        achievementEmptyText.setVisibility(View.VISIBLE);
     }
 
     private void observeAchievementState() {
@@ -212,7 +217,7 @@ public class ProfileFragment extends Fragment {
             }
         });
         userStatsViewModel.getError().observe(getViewLifecycleOwner(), message -> {
-            if (message != null) {
+            if (message != null && currentStats == null) {
                 renderDefaultAchievementState();
             }
         });
@@ -227,11 +232,19 @@ public class ProfileFragment extends Fragment {
             levelViewModel.getNextLevel().observe(getViewLifecycleOwner(), level -> renderUserStats());
         }
         achievementViewModel.getActiveAchievements().observe(getViewLifecycleOwner(), achievements -> {
+            if (!profileAchievementDataLoaded && (achievements == null || achievements.isEmpty())) {
+                return;
+            }
+            activeAchievementsLoaded = true;
             currentAchievements = achievements == null ? new ArrayList<>() : achievements;
             renderAchievementPreview();
             renderAchievementFocusCards();
         });
         achievementViewModel.getUserAchievements().observe(getViewLifecycleOwner(), achievements -> {
+            if (!profileAchievementDataLoaded && (achievements == null || achievements.isEmpty())) {
+                return;
+            }
+            userAchievementsLoaded = true;
             currentUserAchievements = achievements == null ? new ArrayList<>() : achievements;
             renderAchievementPreview();
             renderUserStats();
@@ -249,6 +262,9 @@ public class ProfileFragment extends Fragment {
             return;
         }
         favoriteViewModel.getSavedQuotes().observe(getViewLifecycleOwner(), quotes -> {
+            if (!savedQuotesRequested) {
+                return;
+            }
             int count = quotes == null ? 0 : quotes.size();
             savedQuotesText.setText(String.valueOf(count));
         });
@@ -266,11 +282,14 @@ public class ProfileFragment extends Fragment {
         }
         currentUserId = user.getUid();
         profileAchievementDataLoaded = false;
-        userStatsViewModel.reconcileExistingStatsAndAchievements(currentUserId);
+        loadProfileAchievementData(currentUserId);
+        userStatsViewModel.reconcileExistingStatsAndAchievements(currentUserId, false);
     }
 
     private void loadProfileAchievementData(String userId) {
         profileAchievementDataLoaded = true;
+        activeAchievementsLoaded = false;
+        userAchievementsLoaded = false;
         userStatsViewModel.loadUserStats(userId);
         achievementViewModel.loadActiveAchievements();
         achievementViewModel.loadUserAchievements(userId);
@@ -284,6 +303,7 @@ public class ProfileFragment extends Fragment {
             }
             return;
         }
+        savedQuotesRequested = true;
         favoriteViewModel.loadSavedQuotes();
     }
 
@@ -292,6 +312,64 @@ public class ProfileFragment extends Fragment {
         renderUserStats();
         renderAchievementPreview();
         renderAchievementFocusCards();
+    }
+
+    private void renderLoadingPlaceholders() {
+        if (levelText != null) {
+            levelText.setText(R.string.profile_loading_placeholder);
+        }
+        if (achievementCountText != null) {
+            achievementCountText.setText(R.string.profile_loading_placeholder);
+        }
+        if (xpText != null) {
+            xpText.setText(R.string.profile_loading_placeholder);
+        }
+        if (xpProgressText != null) {
+            xpProgressText.setText(R.string.profile_loading_placeholder);
+        }
+        if (xpProgressBar != null) {
+            xpProgressBar.setProgress(0);
+        }
+        if (totalLikesText != null) {
+            totalLikesText.setText(R.string.profile_loading_placeholder);
+        }
+        if (totalQuotesText != null) {
+            totalQuotesText.setText(R.string.profile_loading_placeholder);
+        }
+        if (achievementsStatText != null) {
+            achievementsStatText.setText(R.string.profile_loading_placeholder);
+        }
+        if (savedQuotesText != null) {
+            savedQuotesText.setText(R.string.profile_loading_placeholder);
+        }
+        if (lastAchievementTitleText != null) {
+            lastAchievementTitleText.setText(R.string.profile_loading_placeholder);
+        }
+        if (lastAchievementDescriptionText != null) {
+            lastAchievementDescriptionText.setText(R.string.profile_loading_placeholder);
+        }
+        if (lastAchievementMetaText != null) {
+            lastAchievementMetaText.setVisibility(View.GONE);
+        }
+        if (nextAchievementTitleText != null) {
+            nextAchievementTitleText.setText(R.string.profile_loading_placeholder);
+        }
+        if (nextAchievementDescriptionText != null) {
+            nextAchievementDescriptionText.setText(R.string.profile_loading_placeholder);
+        }
+        if (nextAchievementProgressText != null) {
+            nextAchievementProgressText.setText(R.string.profile_loading_placeholder);
+        }
+        if (nextAchievementProgressBar != null) {
+            nextAchievementProgressBar.setProgress(0);
+        }
+        if (achievementRecyclerView != null) {
+            achievementRecyclerView.setVisibility(View.GONE);
+        }
+        if (achievementEmptyText != null) {
+            achievementEmptyText.setText(R.string.profile_loading_placeholder);
+            achievementEmptyText.setVisibility(View.VISIBLE);
+        }
     }
 
     private void renderUserStats() {
@@ -329,9 +407,9 @@ public class ProfileFragment extends Fragment {
             xpProgressBar.setProgress(100);
             xpText.setText(getString(R.string.xp_total_format, totalXp));
             xpProgressText.setText(R.string.xp_progress_max);
-            if (nextLevelText != null) {
-                nextLevelText.setText(R.string.xp_progress_max);
-            }
+        if (nextLevelText != null) {
+            nextLevelText.setVisibility(View.GONE);
+        }
             return;
         }
         long nextRequiredXp = Math.max(currentRequiredXp + 1, nextLevel.getRequiredTotalXp());
@@ -342,7 +420,7 @@ public class ProfileFragment extends Fragment {
         xpProgressText.setText(getString(R.string.xp_remaining_format,
                 Math.max(0, nextRequiredXp - totalXp)));
         if (nextLevelText != null) {
-            nextLevelText.setText(getString(R.string.next_level_format, nextLevel.getLevel()));
+            nextLevelText.setVisibility(View.GONE);
         }
     }
 
@@ -352,7 +430,7 @@ public class ProfileFragment extends Fragment {
         xpText.setText(getString(R.string.xp_total_format, safeXp));
         xpProgressText.setText(getString(R.string.xp_total_format, safeXp));
         if (nextLevelText != null) {
-            nextLevelText.setText(getString(R.string.next_level_format, 2));
+            nextLevelText.setVisibility(View.GONE);
         }
     }
 
@@ -364,6 +442,7 @@ public class ProfileFragment extends Fragment {
         achievementAdapter.submitData(currentAchievements, currentUserAchievements);
         boolean empty = currentAchievements == null || currentAchievements.isEmpty();
         achievementRecyclerView.setVisibility(empty ? View.GONE : View.VISIBLE);
+        achievementEmptyText.setText(R.string.achievement_empty);
         achievementEmptyText.setVisibility(empty ? View.VISIBLE : View.GONE);
     }
 

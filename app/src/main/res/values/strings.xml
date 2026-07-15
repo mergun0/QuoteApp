@@ -77,7 +77,7 @@
     <string name="favorites_count_zero">🔖 0</string>
     <string name="favorites_count_format">🔖 %1$d</string>
     <string name="favorites_count_label">Kaydedilen alıntı</string>
-    <string name="search_favorites">Kaydedilenlerde ara...</string>
+    <string name="search_favorites">Favorilerinde ara</string>
     <string name="favorites_empty">Henüz kaydedilen alıntı yok.</string>
     <string name="favorites_empty_detail">Beğendiğin alıntıları daha sonra görmek için kaydedebilirsin.</string>
     <string name="profile_title">Profil</string>
@@ -105,6 +105,7 @@
     <string name="profile_next_achievement_fallback_detail">Alıntı paylaşmaya, keşfetmeye ve toplulukla etkileşime devam et.</string>
     <string name="profile_achievement_progress_format">%1$d / %2$d</string>
     <string name="profile_progress_unknown">İlerleme yakında hesaplanacak.</string>
+    <string name="profile_loading_placeholder">—</string>
     <string name="profile_menu_favorites">Favoriler</string>
     <string name="profile_menu_achievements">Başarımlar</string>
     <string name="profile_menu_settings">Ayarlar</string>
@@ -161,7 +162,7 @@
     <string name="all_my_achievements">Tüm Başarımlarım</string>
     <string name="achievements_screen_subtitle">İlerlemeni takip et ve yeni rozetlerin kilidini aç.</string>
     <string name="achievement_default_title">Başarım</string>
-    <string name="achievement_locked">Kilitli</string>
+    <string name="achievement_locked">Henüz kazanılmadı</string>
     <string name="achievement_unlocked">Kazanıldı</string>
     <string name="achievement_empty">Henüz başarı kazanılmadı.</string>
     <string name="achievement_empty_subtitle">İlk başarım için ilerlemeye devam et.</string>

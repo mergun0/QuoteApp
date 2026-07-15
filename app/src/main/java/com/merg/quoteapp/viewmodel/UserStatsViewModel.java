@@ -129,10 +129,14 @@ public class UserStatsViewModel extends ViewModel {
     }
 
     public void reconcileExistingStatsAndAchievements(String userId) {
-        loading.setValue(true);
+        reconcileExistingStatsAndAchievements(userId, true);
+    }
+
+    public void reconcileExistingStatsAndAchievements(String userId, boolean force) {
+        loading.setValue(userStats.getValue() == null);
         error.setValue(null);
         reconciliationComplete.setValue(false);
-        repository.syncUserStatsFromExistingData(userId, true, new UserStatsRepository.UserStatsCallback() {
+        repository.syncUserStatsFromExistingData(userId, force, new UserStatsRepository.UserStatsCallback() {
             @Override
             public void onSuccess(UserStats stats) {
                 userStats.setValue(stats);

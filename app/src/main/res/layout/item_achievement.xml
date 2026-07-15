@@ -66,6 +66,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:background="@drawable/bg_chip_soft"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:paddingStart="10dp"
                     android:paddingTop="5dp"
                     android:paddingEnd="10dp"
@@ -73,7 +75,7 @@
                     android:textColor="@color/home_v2_text_secondary"
                     android:textSize="11sp"
                     android:textStyle="bold"
-                    tools:text="Kilitli" />
+                    tools:text="Henüz kazanılmadı" />
             </LinearLayout>
 
             <TextView
