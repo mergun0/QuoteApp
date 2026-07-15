@@ -89,6 +89,30 @@ Show:
 
 ---
 
+## Content Tracking Hub
+
+Status:
+Future
+
+Idea:
+The current "Alıntı Ekle" action may later become a generic "Ekle" action.
+
+Possible actions:
+
+- Alıntı ekle
+- Okuduğun kitabı ekle
+- İzlediğin filmi ekle
+- Bitirdiğin diziyi ekle
+
+Future scope:
+
+- Home dashboard
+- Profile statistics
+- Content models
+- Firestore structure
+- Book, movie and series tracking
+
+---
 ## Follow System
 
 Status:

@@ -25,6 +25,8 @@ import com.merg.quoteapp.model.ProfileStats;
 import com.merg.quoteapp.model.QuoteState;
 import com.merg.quoteapp.model.UserAchievement;
 import com.merg.quoteapp.model.UserStats;
+import com.merg.quoteapp.repository.LikeRepository;
+import com.merg.quoteapp.repository.UserStatsRepository;
 import com.merg.quoteapp.ui.auth.LoginActivity;
 import com.merg.quoteapp.viewmodel.AchievementViewModel;
 import com.merg.quoteapp.viewmodel.FavoriteViewModel;
@@ -345,13 +347,10 @@ public class ProfileFragment extends Fragment {
     }
 
     private void renderFallbackXpProgress(long totalXp) {
-        long fallbackTarget = 100;
         long safeXp = Math.max(0, totalXp);
-        xpProgressBar.setProgress((int) Math.min(100, (safeXp * 100) / fallbackTarget));
-        xpText.setText(getString(R.string.xp_progress_format,
-                Math.min(safeXp, fallbackTarget), fallbackTarget));
-        xpProgressText.setText(getString(R.string.xp_remaining_format,
-                Math.max(0, fallbackTarget - safeXp)));
+        xpProgressBar.setProgress(0);
+        xpText.setText(getString(R.string.xp_total_format, safeXp));
+        xpProgressText.setText(getString(R.string.xp_total_format, safeXp));
         if (nextLevelText != null) {
             nextLevelText.setText(getString(R.string.next_level_format, 2));
         }
@@ -600,6 +599,8 @@ public class ProfileFragment extends Fragment {
 
     private void logout() {
         FirebaseAuth.getInstance().signOut();
+        LikeRepository.clearMemoryCache();
+        UserStatsRepository.clearMemoryCache();
         Intent intent = new Intent(requireContext(), LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

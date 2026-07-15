@@ -41,8 +41,24 @@ public class UserStatsViewModel extends ViewModel {
             statsListener.remove();
             statsListener = null;
         }
-        loading.setValue(true);
+        boolean hasStats = userStats.getValue() != null;
+        loading.setValue(!hasStats);
         error.setValue(null);
+        repository.getUserStats(userId, false, new UserStatsRepository.UserStatsCallback() {
+            @Override
+            public void onSuccess(UserStats stats) {
+                userStats.setValue(stats);
+                loading.setValue(false);
+            }
+
+            @Override
+            public void onError(String message) {
+                if (!hasStats) {
+                    error.setValue(message);
+                    loading.setValue(false);
+                }
+            }
+        });
         statsListener = repository.observeUserStats(userId, new UserStatsRepository.UserStatsListenerCallback() {
             @Override
             public void onStatsChanged(UserStats stats) {
@@ -59,7 +75,7 @@ public class UserStatsViewModel extends ViewModel {
     }
 
     public void createDefaultUserStatsIfMissing(String userId) {
-        loading.setValue(true);
+        loading.setValue(userStats.getValue() == null);
         error.setValue(null);
         repository.createDefaultUserStatsIfMissing(userId, new UserStatsRepository.OperationCallback() {
             @Override
@@ -77,7 +93,7 @@ public class UserStatsViewModel extends ViewModel {
     }
 
     public void updateUserStats(String userId, UserStats stats) {
-        loading.setValue(true);
+        loading.setValue(userStats.getValue() == null);
         error.setValue(null);
         repository.updateUserStats(userId, stats, new UserStatsRepository.OperationCallback() {
             @Override
@@ -95,7 +111,7 @@ public class UserStatsViewModel extends ViewModel {
     }
 
     public void addXp(String userId, long amount) {
-        loading.setValue(true);
+        loading.setValue(userStats.getValue() == null);
         error.setValue(null);
         repository.addXp(userId, amount, new UserStatsRepository.OperationCallback() {
             @Override

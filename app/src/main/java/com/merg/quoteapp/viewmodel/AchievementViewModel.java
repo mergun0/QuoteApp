@@ -38,7 +38,8 @@ public class AchievementViewModel extends ViewModel {
     }
 
     public void loadActiveAchievements() {
-        loading.setValue(true);
+        loading.setValue(activeAchievements.getValue() == null
+                || activeAchievements.getValue().isEmpty());
         error.setValue(null);
         repository.getActiveAchievements(new AchievementRepository.AchievementsCallback() {
             @Override
@@ -56,7 +57,8 @@ public class AchievementViewModel extends ViewModel {
     }
 
     public void loadAchievementsByCategory(String category) {
-        loading.setValue(true);
+        loading.setValue(activeAchievements.getValue() == null
+                || activeAchievements.getValue().isEmpty());
         error.setValue(null);
         repository.getAchievementsByCategory(category, new AchievementRepository.AchievementsCallback() {
             @Override
@@ -74,7 +76,8 @@ public class AchievementViewModel extends ViewModel {
     }
 
     public void loadUserAchievements(String userId) {
-        loading.setValue(true);
+        loading.setValue(userAchievements.getValue() == null
+                || userAchievements.getValue().isEmpty());
         error.setValue(null);
         repository.getUserAchievements(userId, new AchievementRepository.UserAchievementsCallback() {
             @Override
@@ -92,7 +95,11 @@ public class AchievementViewModel extends ViewModel {
     }
 
     public void loadLockedAndUnlockedAchievements(String userId) {
-        loading.setValue(true);
+        boolean hasAchievements = activeAchievements.getValue() != null
+                && !activeAchievements.getValue().isEmpty();
+        boolean hasUserAchievements = userAchievements.getValue() != null
+                && !userAchievements.getValue().isEmpty();
+        loading.setValue(!hasAchievements && !hasUserAchievements);
         error.setValue(null);
         repository.getLockedAndUnlockedAchievements(userId,
                 new AchievementRepository.AchievementStatusCallback() {

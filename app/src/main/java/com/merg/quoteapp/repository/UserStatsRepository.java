@@ -12,6 +12,7 @@ import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.UserStats;
 import com.merg.quoteapp.utils.FriendlyErrorMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +40,11 @@ public class UserStatsRepository {
     private static final String USER_STATS_COLLECTION = "userStats";
     private static final String QUOTES_COLLECTION = "quotes";
     private static final String LIKES_COLLECTION = "likes";
+    private static final long USER_STATS_CACHE_STALE_MILLIS = 60L * 1000L;
     private static final long STATS_SYNC_INTERVAL_MILLIS = 6L * 60L * 60L * 1000L;
+    private static final Object CACHE_LOCK = new Object();
+    private static final Map<String, CacheEntry> STATS_CACHE = new HashMap<>();
+    private static final Map<String, List<UserStatsCallback>> PENDING_LOADS = new HashMap<>();
     private static volatile UserStatsRepository instance;
 
     private final FirebaseFirestore firestore;
@@ -71,23 +76,65 @@ public class UserStatsRepository {
      * @param callback stats callback
      */
     public void getUserStats(String userId, UserStatsCallback callback) {
+        getUserStats(userId, false, callback);
+    }
+
+    /**
+     * Loads a user's stats document with a short in-memory cache.
+     *
+     * @param userId user id whose stats will be loaded
+     * @param forceRefresh true to bypass the in-memory cache
+     * @param callback stats callback
+     */
+    public void getUserStats(String userId, boolean forceRefresh, UserStatsCallback callback) {
         if (isBlank(userId)) {
             callback.onError("Kullanıcı bilgisi bulunamadı.");
             return;
+        }
+
+        UserStats cachedStats = cachedStats(userId);
+        if (!forceRefresh && cachedStats != null) {
+            callback.onSuccess(cachedStats);
+            if (isCacheFresh(userId)) {
+                return;
+            }
+            fetchUserStats(userId, false);
+            return;
+        }
+
+        synchronized (CACHE_LOCK) {
+            List<UserStatsCallback> callbacks = PENDING_LOADS.get(userId);
+            if (callbacks != null) {
+                callbacks.add(callback);
+                return;
+            }
+            callbacks = new ArrayList<>();
+            callbacks.add(callback);
+            PENDING_LOADS.put(userId, callbacks);
+        }
+        fetchUserStats(userId, true);
+    }
+
+    private void fetchUserStats(String userId, boolean notifyCallbacks) {
+        if (!notifyCallbacks) {
+            synchronized (CACHE_LOCK) {
+                if (PENDING_LOADS.containsKey(userId)) {
+                    return;
+                }
+                PENDING_LOADS.put(userId, new ArrayList<>());
+            }
         }
 
         firestore.collection(USER_STATS_COLLECTION)
                 .document(userId)
                 .get()
                 .addOnSuccessListener(document -> {
-                    if (!document.exists()) {
-                        callback.onSuccess(defaultStats(userId));
-                        return;
-                    }
-                    UserStats stats = document.toObject(UserStats.class);
-                    callback.onSuccess(stats == null ? defaultStats(userId) : stats);
+                    UserStats stats = statsFromDocument(userId, document);
+                    putCachedStats(userId, stats);
+                    completePendingLoads(userId, stats, null);
                 })
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+                .addOnFailureListener(error -> completePendingLoads(
+                        userId, null, readableError(error)));
     }
 
     /**
@@ -112,11 +159,15 @@ public class UserStatsRepository {
                         return;
                     }
                     if (document == null || !document.exists()) {
-                        callback.onStatsChanged(defaultStats(userId));
+                        UserStats stats = defaultStats(userId);
+                        putCachedStats(userId, stats);
+                        callback.onStatsChanged(stats);
                         return;
                     }
                     UserStats stats = document.toObject(UserStats.class);
-                    callback.onStatsChanged(stats == null ? defaultStats(userId) : stats);
+                    UserStats safeStats = stats == null ? defaultStats(userId) : stats;
+                    putCachedStats(userId, safeStats);
+                    callback.onStatsChanged(safeStats);
                 });
     }
 
@@ -137,12 +188,16 @@ public class UserStatsRepository {
                 .get()
                 .addOnSuccessListener(document -> {
                     if (document.exists()) {
+                        putCachedStats(userId, statsFromDocument(userId, document));
                         callback.onSuccess();
                     } else {
                         firestore.collection(USER_STATS_COLLECTION)
                                 .document(userId)
                                 .set(defaultStatsMap(userId), SetOptions.merge())
-                                .addOnSuccessListener(unused -> callback.onSuccess())
+                                .addOnSuccessListener(unused -> {
+                                    putCachedStats(userId, defaultStats(userId));
+                                    callback.onSuccess();
+                                })
                                 .addOnFailureListener(error -> callback.onError(readableError(error)));
                     }
                 })
@@ -165,7 +220,10 @@ public class UserStatsRepository {
         firestore.collection(USER_STATS_COLLECTION)
                 .document(userId)
                 .set(statsMap(userId, stats), SetOptions.merge())
-                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnSuccessListener(unused -> {
+                    putCachedStats(userId, stats);
+                    callback.onSuccess();
+                })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 
@@ -194,7 +252,10 @@ public class UserStatsRepository {
         firestore.collection(USER_STATS_COLLECTION)
                 .document(userId)
                 .set(updates, SetOptions.merge())
-                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnSuccessListener(unused -> {
+                    invalidateUserStatsCache(userId);
+                    callback.onSuccess();
+                })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 
@@ -221,6 +282,7 @@ public class UserStatsRepository {
                 .get()
                 .addOnSuccessListener(document -> {
                     UserStats existingStats = statsFromDocument(userId, document);
+                    putCachedStats(userId, existingStats);
                     if (!force && isSyncFresh(existingStats)) {
                         callback.onSuccess(existingStats);
                         return;
@@ -313,8 +375,76 @@ public class UserStatsRepository {
         firestore.collection(USER_STATS_COLLECTION)
                 .document(userId)
                 .set(data, SetOptions.merge())
-                .addOnSuccessListener(unused -> callback.onSuccess(syncedStats))
+                .addOnSuccessListener(unused -> {
+                    putCachedStats(userId, syncedStats);
+                    callback.onSuccess(syncedStats);
+                })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
+
+    /**
+     * Invalidates a single user's in-memory stats cache.
+     *
+     * @param userId user id whose cached stats should be removed
+     */
+    public static void invalidateUserStatsCache(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return;
+        }
+        synchronized (CACHE_LOCK) {
+            STATS_CACHE.remove(userId);
+        }
+    }
+
+    /**
+     * Clears all in-memory user stats cache entries.
+     */
+    public static void clearMemoryCache() {
+        synchronized (CACHE_LOCK) {
+            STATS_CACHE.clear();
+            PENDING_LOADS.clear();
+        }
+    }
+
+    private UserStats cachedStats(String userId) {
+        synchronized (CACHE_LOCK) {
+            CacheEntry entry = STATS_CACHE.get(userId);
+            return entry == null ? null : entry.stats;
+        }
+    }
+
+    private boolean isCacheFresh(String userId) {
+        synchronized (CACHE_LOCK) {
+            CacheEntry entry = STATS_CACHE.get(userId);
+            return entry != null
+                    && System.currentTimeMillis() - entry.fetchedAtMillis < USER_STATS_CACHE_STALE_MILLIS;
+        }
+    }
+
+    private static void putCachedStats(String userId, UserStats stats) {
+        if (userId == null || userId.trim().isEmpty() || stats == null) {
+            return;
+        }
+        synchronized (CACHE_LOCK) {
+            STATS_CACHE.put(userId, new CacheEntry(stats, System.currentTimeMillis()));
+        }
+    }
+
+    private void completePendingLoads(String userId, UserStats stats, String errorMessage) {
+        List<UserStatsCallback> callbacks;
+        synchronized (CACHE_LOCK) {
+            callbacks = PENDING_LOADS.remove(userId);
+        }
+        if (callbacks == null || callbacks.isEmpty()) {
+            return;
+        }
+        for (UserStatsCallback callback : callbacks) {
+            if (stats != null) {
+                callback.onSuccess(stats);
+            } else {
+                callback.onError(errorMessage);
+            }
+        }
     }
 
     private UserStats defaultStats(String userId) {
@@ -406,6 +536,16 @@ public class UserStatsRepository {
         private long totalMovieQuotes;
         private long totalSeriesQuotes;
         private long totalBookQuotes;
+    }
+
+    private static class CacheEntry {
+        private final UserStats stats;
+        private final long fetchedAtMillis;
+
+        private CacheEntry(UserStats stats, long fetchedAtMillis) {
+            this.stats = stats;
+            this.fetchedAtMillis = fetchedAtMillis;
+        }
     }
 
     private boolean isBlank(String value) {

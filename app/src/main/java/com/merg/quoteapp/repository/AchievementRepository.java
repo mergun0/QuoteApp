@@ -34,6 +34,9 @@ public class AchievementRepository {
 
     private static final String ACHIEVEMENTS_COLLECTION = "achievements";
     private static final String USER_ACHIEVEMENTS_COLLECTION = "userAchievements";
+    private static final Object CACHE_LOCK = new Object();
+    private static List<Achievement> cachedActiveAchievements;
+    private static final List<AchievementsCallback> PENDING_ACTIVE_LOADS = new ArrayList<>();
     private static volatile AchievementRepository instance;
 
     private final FirebaseFirestore firestore;
@@ -64,12 +67,49 @@ public class AchievementRepository {
      * @param callback active achievements callback
      */
     public void getActiveAchievements(AchievementsCallback callback) {
+        getActiveAchievements(false, callback);
+    }
+
+    /**
+     * Loads active achievement definitions ordered for display.
+     *
+     * @param forceRefresh true to bypass the process memory cache
+     * @param callback active achievements callback
+     */
+    public void getActiveAchievements(boolean forceRefresh, AchievementsCallback callback) {
+        List<Achievement> cached = activeAchievementsFromCache();
+        if (!forceRefresh && cached != null) {
+            callback.onSuccess(cached);
+            return;
+        }
+
+        synchronized (CACHE_LOCK) {
+            if (!PENDING_ACTIVE_LOADS.isEmpty()) {
+                PENDING_ACTIVE_LOADS.add(callback);
+                return;
+            }
+            PENDING_ACTIVE_LOADS.add(callback);
+        }
+
         firestore.collection(ACHIEVEMENTS_COLLECTION)
                 .whereEqualTo("isActive", true)
                 .orderBy("sortOrder", Query.Direction.ASCENDING)
                 .get()
-                .addOnSuccessListener(snapshot -> callback.onSuccess(snapshot.toObjects(Achievement.class)))
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+                .addOnSuccessListener(snapshot -> {
+                    List<Achievement> achievements = snapshot.toObjects(Achievement.class);
+                    synchronized (CACHE_LOCK) {
+                        cachedActiveAchievements = new ArrayList<>(achievements);
+                    }
+                    completePendingActiveLoads(achievements, null);
+                })
+                .addOnFailureListener(error -> {
+                    List<Achievement> fallback = cached != null ? cached : new ArrayList<>();
+                    if (!fallback.isEmpty()) {
+                        completePendingActiveLoads(fallback, null);
+                    } else {
+                        completePendingActiveLoads(null, readableError(error));
+                    }
+                });
     }
 
     /**
@@ -84,13 +124,23 @@ public class AchievementRepository {
             return;
         }
 
-        firestore.collection(ACHIEVEMENTS_COLLECTION)
-                .whereEqualTo("isActive", true)
-                .whereEqualTo("category", category)
-                .orderBy("sortOrder", Query.Direction.ASCENDING)
-                .get()
-                .addOnSuccessListener(snapshot -> callback.onSuccess(snapshot.toObjects(Achievement.class)))
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+        getActiveAchievements(new AchievementsCallback() {
+            @Override
+            public void onSuccess(List<Achievement> achievements) {
+                List<Achievement> filtered = new ArrayList<>();
+                for (Achievement achievement : achievements) {
+                    if (achievement != null && category.equals(achievement.getCategory())) {
+                        filtered.add(achievement);
+                    }
+                }
+                callback.onSuccess(filtered);
+            }
+
+            @Override
+            public void onError(String message) {
+                callback.onError(message);
+            }
+        });
     }
 
     /**
@@ -141,6 +191,28 @@ public class AchievementRepository {
                 callback.onError(message);
             }
         });
+    }
+
+    private List<Achievement> activeAchievementsFromCache() {
+        synchronized (CACHE_LOCK) {
+            return cachedActiveAchievements == null
+                    ? null : new ArrayList<>(cachedActiveAchievements);
+        }
+    }
+
+    private void completePendingActiveLoads(List<Achievement> achievements, String errorMessage) {
+        List<AchievementsCallback> callbacks;
+        synchronized (CACHE_LOCK) {
+            callbacks = new ArrayList<>(PENDING_ACTIVE_LOADS);
+            PENDING_ACTIVE_LOADS.clear();
+        }
+        for (AchievementsCallback callback : callbacks) {
+            if (achievements != null) {
+                callback.onSuccess(new ArrayList<>(achievements));
+            } else {
+                callback.onError(errorMessage);
+            }
+        }
     }
 
     private List<Achievement> filterLocked(List<Achievement> achievements,

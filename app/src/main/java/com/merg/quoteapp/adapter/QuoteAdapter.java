@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.Quote;
 
@@ -28,6 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHolder> {
+
+    private static final String PAYLOAD_INTERACTION_STATE = "payload_interaction_state";
 
     public interface QuoteActionListener {
         void onEdit(Quote quote);
@@ -147,7 +150,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         } else {
             likedQuoteIds.remove(quoteId);
         }
-        notifyQuoteChanged(quoteId);
+        notifyQuoteInteractionChanged(quoteId);
     }
 
     /**
@@ -165,7 +168,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         } else {
             likeLoadingQuoteIds.remove(quoteId);
         }
-        notifyQuoteChanged(quoteId);
+        notifyQuoteInteractionChanged(quoteId);
     }
 
     /**
@@ -179,7 +182,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             return;
         }
         likeCounts.put(quoteId, count);
-        notifyQuoteChanged(quoteId);
+        notifyQuoteInteractionChanged(quoteId);
     }
 
     /**
@@ -197,7 +200,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         } else {
             savedQuoteIds.remove(quoteId);
         }
-        notifyQuoteChanged(quoteId);
+        notifyQuoteInteractionChanged(quoteId);
     }
 
     /**
@@ -215,7 +218,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
         } else {
             saveLoadingQuoteIds.remove(quoteId);
         }
-        notifyQuoteChanged(quoteId);
+        notifyQuoteInteractionChanged(quoteId);
     }
 
     /**
@@ -229,7 +232,7 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             return;
         }
         saveCounts.put(quoteId, Math.max(0L, count));
-        notifyQuoteChanged(quoteId);
+        notifyQuoteInteractionChanged(quoteId);
     }
 
     @NonNull
@@ -263,6 +266,25 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                 () -> revealSpoiler(holder, quote));
     }
 
+    @Override
+    public void onBindViewHolder(@NonNull QuoteViewHolder holder, int position,
+                                 @NonNull List<Object> payloads) {
+        if (payloads.contains(PAYLOAD_INTERACTION_STATE)) {
+            Quote quote = quotes.get(position);
+            holder.renderInteractionState(
+                    isLiked(quote),
+                    isLikeLoading(quote),
+                    likeCount(quote),
+                    likeActionsEnabled,
+                    isSaved(quote),
+                    isSaveLoading(quote),
+                    saveCount(quote),
+                    saveActionsEnabled);
+            return;
+        }
+        super.onBindViewHolder(holder, position, payloads);
+    }
+
     private void notifyQuoteChanged(String quoteId) {
         for (int index = 0; index < quotes.size(); index++) {
             Quote quote = quotes.get(index);
@@ -271,6 +293,42 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
                 return;
             }
         }
+    }
+
+    private void notifyQuoteInteractionChanged(String quoteId) {
+        for (int index = 0; index < quotes.size(); index++) {
+            Quote quote = quotes.get(index);
+            if (quoteId.equals(quote.getQuoteId())) {
+                notifyItemChanged(index, PAYLOAD_INTERACTION_STATE);
+                return;
+            }
+        }
+    }
+
+    private boolean isLiked(Quote quote) {
+        return quote.getQuoteId() != null && likedQuoteIds.contains(quote.getQuoteId());
+    }
+
+    private boolean isLikeLoading(Quote quote) {
+        return quote.getQuoteId() != null && likeLoadingQuoteIds.contains(quote.getQuoteId());
+    }
+
+    private long likeCount(Quote quote) {
+        return quote.getQuoteId() == null || likeCounts.get(quote.getQuoteId()) == null
+                ? 0L : likeCounts.get(quote.getQuoteId());
+    }
+
+    private boolean isSaved(Quote quote) {
+        return quote.getQuoteId() != null && savedQuoteIds.contains(quote.getQuoteId());
+    }
+
+    private boolean isSaveLoading(Quote quote) {
+        return quote.getQuoteId() != null && saveLoadingQuoteIds.contains(quote.getQuoteId());
+    }
+
+    private long saveCount(Quote quote) {
+        return quote.getQuoteId() == null || saveCounts.get(quote.getQuoteId()) == null
+                ? Math.max(0L, quote.getFavoriteCount()) : saveCounts.get(quote.getQuoteId());
     }
 
     private void revealSpoiler(QuoteViewHolder holder, Quote quote) {
@@ -293,7 +351,6 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
         private static final int MENU_COPY = 1;
         private static final int MENU_REPORT = 2;
-        private static final int MENU_BLOCK_USER = 4;
         private static final int MENU_EDIT = 5;
         private static final int MENU_DELETE = 6;
 
@@ -383,11 +440,11 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             }
 
             shareButton.setOnClickListener(view -> listener.onShare(quote));
-            renderSecondaryActions(saved, saveLoading, saveCount, saveActionsEnabled);
+            renderInteractionState(liked, likeLoading, likeCount, likeActionsEnabled,
+                    saved, saveLoading, saveCount, saveActionsEnabled);
             saveButton.setOnClickListener(saveActionsEnabled && !saveLoading
                     ? view -> listener.onSave(quote)
                     : null);
-            renderFavoriteButton(liked, likeLoading, likeCount, likeActionsEnabled);
             favoriteButton.setOnClickListener(likeActionsEnabled
                     ? view -> animateLikeClick(view, () -> listener.onFavorite(quote))
                     : null);
@@ -405,12 +462,8 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             PopupMenu popupMenu = new PopupMenu(itemView.getContext(), moreButton);
             Menu menu = popupMenu.getMenu();
             menu.add(Menu.NONE, MENU_COPY, Menu.NONE, R.string.copy_quote);
-            if (reportActionsEnabled) {
+            if (!canManage && reportActionsEnabled) {
                 menu.add(Menu.NONE, MENU_REPORT, Menu.NONE, R.string.report_quote_menu);
-            }
-            if (showUsername) {
-                menu.add(Menu.NONE, MENU_BLOCK_USER, Menu.NONE, R.string.block_user_coming_soon)
-                        .setEnabled(false);
             }
             if (canManage) {
                 menu.add(Menu.NONE, MENU_EDIT, Menu.NONE, R.string.edit);
@@ -441,10 +494,10 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
             if (clipboardManager == null) {
                 return;
             }
-            String copyText = "“" + safe(quote.getText()) + "”\n"
-                    + safe(quote.getTitle()) + " — " + safe(quote.getAuthor());
+            String copyText = safe(quote.getText());
             clipboardManager.setPrimaryClip(ClipData.newPlainText(
                     itemView.getContext().getString(R.string.copy_quote), copyText));
+            Snackbar.make(itemView, R.string.quote_copied, Snackbar.LENGTH_SHORT).show();
         }
 
         private void animateLikeClick(View view, Runnable action) {
@@ -463,18 +516,28 @@ public class QuoteAdapter extends RecyclerView.Adapter<QuoteAdapter.QuoteViewHol
 
         private void animateOverflowClick(View view, Runnable action) {
             view.animate()
-                    .rotationBy(90f)
+                    .scaleX(0.92f)
+                    .scaleY(0.92f)
                     .alpha(0.72f)
                     .setDuration(90L)
                     .withEndAction(() -> {
                         action.run();
                         view.animate()
-                                .rotationBy(-90f)
+                                .scaleX(1f)
+                                .scaleY(1f)
                                 .alpha(1f)
                                 .setDuration(120L)
                                 .start();
                     })
                     .start();
+        }
+
+        private void renderInteractionState(boolean liked, boolean likeLoading,
+                                            long likeCount, boolean likeActionsEnabled,
+                                            boolean saved, boolean saveLoading,
+                                            long saveCount, boolean saveActionsEnabled) {
+            renderSecondaryActions(saved, saveLoading, saveCount, saveActionsEnabled);
+            renderFavoriteButton(liked, likeLoading, likeCount, likeActionsEnabled);
         }
 
         private void renderFavoriteButton(boolean liked, boolean likeLoading,

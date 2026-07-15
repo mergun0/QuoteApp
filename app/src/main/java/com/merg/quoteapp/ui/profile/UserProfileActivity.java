@@ -29,6 +29,8 @@ import com.merg.quoteapp.model.UserAchievement;
 import com.merg.quoteapp.model.UserProfileData;
 import com.merg.quoteapp.model.UserStats;
 import com.merg.quoteapp.model.Level;
+import com.merg.quoteapp.repository.LikeRepository;
+import com.merg.quoteapp.repository.UserStatsRepository;
 import com.merg.quoteapp.ui.auth.LoginActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
@@ -793,6 +795,8 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private void logout() {
         FirebaseAuth.getInstance().signOut();
+        LikeRepository.clearMemoryCache();
+        UserStatsRepository.clearMemoryCache();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

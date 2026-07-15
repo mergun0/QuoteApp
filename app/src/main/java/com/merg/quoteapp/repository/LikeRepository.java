@@ -88,6 +88,8 @@ public class LikeRepository {
     }
 
     private static final String LIKES_COLLECTION = "likes";
+    private static final Object CACHE_LOCK = new Object();
+    private static final Map<String, Boolean> LIKED_STATE_CACHE = new HashMap<>();
     private static volatile LikeRepository instance;
 
     private final FirebaseAuth auth;
@@ -149,6 +151,7 @@ public class LikeRepository {
                     return true;
                 })
                 .addOnSuccessListener(created -> {
+                    putLikedState(user.getUid(), quoteId, true);
                     if (Boolean.TRUE.equals(created)) {
                         achievementEngineRepository.onQuoteLiked(quoteId, user.getUid());
                     }
@@ -181,6 +184,7 @@ public class LikeRepository {
                 .document(likeDocumentId(quoteId, user.getUid()))
                 .delete()
                 .addOnSuccessListener(unused -> {
+                    putLikedState(user.getUid(), quoteId, false);
                     achievementEngineRepository.onQuoteUnliked(quoteId);
                     callback.onSuccess();
                 })
@@ -207,10 +211,19 @@ public class LikeRepository {
             return;
         }
 
+        Boolean cached = cachedLikedState(user.getUid(), quoteId);
+        if (cached != null) {
+            callback.onSuccess(cached);
+        }
+
         firestore.collection(LIKES_COLLECTION)
                 .document(likeDocumentId(quoteId, user.getUid()))
                 .get()
-                .addOnSuccessListener(document -> callback.onSuccess(document.exists()))
+                .addOnSuccessListener(document -> {
+                    boolean liked = document.exists();
+                    putLikedState(user.getUid(), quoteId, liked);
+                    callback.onSuccess(liked);
+                })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 
@@ -288,6 +301,31 @@ public class LikeRepository {
 
     private String likeDocumentId(String quoteId, String userId) {
         return quoteId + "_" + userId;
+    }
+
+    /**
+     * Clears the in-memory liked-state cache for the active process.
+     */
+    public static void clearMemoryCache() {
+        synchronized (CACHE_LOCK) {
+            LIKED_STATE_CACHE.clear();
+        }
+    }
+
+    private Boolean cachedLikedState(String userId, String quoteId) {
+        synchronized (CACHE_LOCK) {
+            return LIKED_STATE_CACHE.get(cacheKey(userId, quoteId));
+        }
+    }
+
+    private static void putLikedState(String userId, String quoteId, boolean liked) {
+        synchronized (CACHE_LOCK) {
+            LIKED_STATE_CACHE.put(cacheKey(userId, quoteId), liked);
+        }
+    }
+
+    private static String cacheKey(String userId, String quoteId) {
+        return userId + ":" + quoteId;
     }
 
     private boolean isBlank(String value) {

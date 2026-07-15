@@ -366,7 +366,10 @@ public class AchievementEngineRepository {
                 .document(stats.getUserId()), updates, SetOptions.merge());
 
         batch.commit()
-                .addOnSuccessListener(unused -> callback.onComplete(true))
+                .addOnSuccessListener(unused -> {
+                    UserStatsRepository.invalidateUserStatsCache(stats.getUserId());
+                    callback.onComplete(true);
+                })
                 .addOnFailureListener(error -> callback.onComplete(false));
     }
 
@@ -407,6 +410,7 @@ public class AchievementEngineRepository {
                     .document(stats.getUserId())
                     .set(data, SetOptions.merge())
                     .addOnCompleteListener(task -> {
+                        UserStatsRepository.invalidateUserStatsCache(stats.getUserId());
                         if (afterSave != null) {
                             afterSave.onSaved(level);
                         }

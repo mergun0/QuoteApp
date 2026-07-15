@@ -40,7 +40,7 @@ public class LevelViewModel extends ViewModel {
     }
 
     public void loadAllLevels() {
-        loading.setValue(true);
+        loading.setValue(levels.getValue() == null || levels.getValue().isEmpty());
         error.setValue(null);
         repository.getAllLevels(new LevelRepository.LevelsCallback() {
             @Override
@@ -58,7 +58,7 @@ public class LevelViewModel extends ViewModel {
     }
 
     public void loadCurrentLevel(long totalXp) {
-        loading.setValue(true);
+        loading.setValue(currentLevel.getValue() == null);
         error.setValue(null);
         repository.getCurrentLevel(totalXp, new LevelRepository.LevelCallback() {
             @Override
@@ -76,7 +76,7 @@ public class LevelViewModel extends ViewModel {
     }
 
     public void loadNextLevel(long totalXp) {
-        loading.setValue(true);
+        loading.setValue(nextLevel.getValue() == null);
         error.setValue(null);
         repository.getNextLevel(totalXp, new LevelRepository.LevelCallback() {
             @Override
@@ -94,7 +94,7 @@ public class LevelViewModel extends ViewModel {
     }
 
     public void loadLevelProgress(long totalXp) {
-        loading.setValue(true);
+        loading.setValue(currentLevel.getValue() == null);
         error.setValue(null);
         repository.getCurrentLevel(totalXp, new LevelRepository.LevelCallback() {
             @Override
