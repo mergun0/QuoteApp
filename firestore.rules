@@ -48,6 +48,14 @@ service cloud.firestore {
       return /databases/$(database)/documents/quotes/$(quoteId);
     }
 
+    function userPath(userId) {
+      return /databases/$(database)/documents/users/$(userId);
+    }
+
+    function usernamePath(usernameId) {
+      return /databases/$(database)/documents/usernames/$(usernameId);
+    }
+
     function favoritePath(quoteId) {
       return /databases/$(database)/documents/favorites/$(request.auth.uid + "_" + quoteId);
     }
@@ -71,18 +79,20 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time
         && request.resource.data.validReports == 0
         && request.resource.data.invalidReports == 0
-        && request.resource.data.reportRestrictionUntil == null;
+        && request.resource.data.reportRestrictionUntil == null
+        && existsAfter(usernamePath(request.resource.data.usernameLowercase))
+        && getAfter(usernamePath(request.resource.data.usernameLowercase)).data.uid == userId;
     }
 
-    function validUserUpdate(userId) {
-      return isSelf(userId)
-        && changedOnly(["username", "usernameLowercase"])
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.role == resource.data.role
-        && request.resource.data.createdAt == resource.data.createdAt
-        && !("email" in request.resource.data)
-        && nonEmptyString(request.resource.data.username, 40)
-        && nonEmptyString(request.resource.data.usernameLowercase, 40);
+    function validUsernameCreate(usernameId) {
+      return signedIn()
+        && !exists(usernamePath(usernameId))
+        && keysOnly(["uid", "createdAt"])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && existsAfter(userPath(request.auth.uid))
+        && getAfter(userPath(request.auth.uid)).data.uid == request.auth.uid
+        && getAfter(userPath(request.auth.uid)).data.usernameLowercase == usernameId;
     }
 
     function validQuoteCreate(quoteId) {
@@ -290,28 +300,14 @@ service cloud.firestore {
       allow get: if signedIn();
       allow list: if false;
       allow create: if validUserCreate(userId);
-      allow update: if validUserUpdate(userId) || isAdmin();
+      allow update: if isAdmin();
       allow delete: if false;
     }
 
     match /usernames/{usernameId} {
       allow get: if signedIn();
       allow list: if false;
-      allow create: if signedIn()
-        && keysOnly(["uid", "createdAt"])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
-    }
-
-    match /usernameLogins/{usernameId} {
-      allow get: if true;
-      allow list: if false;
-      allow create: if signedIn()
-        && keysOnly(["uid", "email", "createdAt"])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.email == request.auth.token.email
-        && request.resource.data.createdAt == request.time;
+      allow create: if validUsernameCreate(usernameId);
       allow update, delete: if false;
     }
 

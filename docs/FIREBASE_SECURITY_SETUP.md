@@ -40,13 +40,12 @@ Registration now writes:
 
 ```text
 usernames/{normalizedUsername}
-usernameLogins/{normalizedUsername}
 users/{uid}
 ```
 
-`users/{uid}` must not contain email. Username login still requires an exact username-to-email mapping because Firebase Auth email/password sign-in needs an email. The `usernameLogins` collection is not listable; it supports only exact document lookups for login.
+`users/{uid}` must not contain email. v1.0 uses email/password login only; username remains the public in-app identity and is reserved only through `usernames/{normalizedUsername}`.
 
-For existing users, create username reservation/login documents with an Admin SDK migration before removing legacy `users.email` data or deploying strict rules.
+For existing users, create username reservation documents with an Admin SDK migration before removing legacy `users.email` data or deploying strict rules.
 
 Review dry-run output first:
 
@@ -55,14 +54,16 @@ node scripts/backfillUsernameReservations.js
 node scripts/removePublicUserPrivateFields.js
 ```
 
-Apply only after confirming there are no username collisions or missing Auth emails:
+Apply only after confirming there are no username collisions:
 
 ```bash
 node scripts/backfillUsernameReservations.js --apply
 node scripts/removePublicUserPrivateFields.js --apply
 ```
 
-Run the username reservation backfill before deleting public `users.email`, because legacy username login may need the email value to create `usernameLogins/{normalizedUsername}`.
+Run the username reservation backfill before deleting public `users.email`.
+
+Username editing is disabled for v1.0. Replacing username reservations safely requires a backend-owned rename flow and should not be re-enabled with direct client writes.
 
 ## Like and favorite migration
 

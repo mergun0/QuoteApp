@@ -79,11 +79,6 @@ async function main() {
       uid: "userA",
       createdAt: new Date(),
     });
-    await setDoc(doc(db, "usernameLogins/alice"), {
-      uid: "userA",
-      email: "a@example.com",
-      createdAt: new Date(),
-    });
     await setDoc(doc(db, "quotes/quoteA"), validQuote("quoteA", "userA", 0));
     await setDoc(doc(db, "quotes/quoteB"), validQuote("quoteB", "userB", 0));
     await setDoc(doc(db, "achievements/first_quote"), {
@@ -109,7 +104,7 @@ async function main() {
 
   await assertFails(getDocs(collection(unauth, "users")));
   await assertSucceeds(getDoc(doc(user, "users/userB")));
-  await assertSucceeds(setDoc(doc(newUser, "users/userC"), {
+  await assertFails(setDoc(doc(newUser, "users/userC"), {
     uid: "userC",
     username: "Charlie",
     usernameLowercase: "charlie",
@@ -119,6 +114,22 @@ async function main() {
     reportRestrictionUntil: null,
     createdAt: serverTimestamp(),
   }));
+  const registrationBatch = writeBatch(newUser);
+  registrationBatch.set(doc(newUser, "users/userC"), {
+    uid: "userC",
+    username: "Charlie",
+    usernameLowercase: "charlie",
+    role: "user",
+    validReports: 0,
+    invalidReports: 0,
+    reportRestrictionUntil: null,
+    createdAt: serverTimestamp(),
+  });
+  registrationBatch.set(doc(newUser, "usernames/charlie"), {
+    uid: "userC",
+    createdAt: serverTimestamp(),
+  });
+  await assertSucceeds(registrationBatch.commit());
   await assertFails(setDoc(doc(user, "users/userD"), {
     uid: "userD",
     username: "Mallory",
@@ -133,24 +144,35 @@ async function main() {
   await assertFails(updateDoc(doc(user, "users/userB"), { username: "Eve" }));
   await assertFails(deleteDoc(doc(user, "users/userA")));
   await assertSucceeds(updateDoc(doc(admin, "users/userA"), { role: "moderator" }));
-  await assertSucceeds(getDoc(doc(unauth, "usernameLogins/alice")));
+  await assertFails(getDoc(doc(unauth, "usernameLogins/alice")));
   await assertFails(getDocs(collection(unauth, "usernameLogins")));
-  await assertSucceeds(setDoc(doc(newUser, "usernames/charlie"), {
+  await assertFails(getDoc(doc(user, "usernameLogins/alice")));
+  await assertFails(setDoc(doc(newUser, "usernames/charlie2"), {
     uid: "userC",
     createdAt: serverTimestamp(),
   }));
-  await assertSucceeds(setDoc(doc(newUser, "usernameLogins/charlie"), {
-    uid: "userC",
-    email: "c@example.com",
+  const userD = testEnv.authenticatedContext("userD", {
+    email: "d@example.com",
+    role: "user",
+  }).firestore();
+  const mismatchedRegistrationBatch = writeBatch(userD);
+  mismatchedRegistrationBatch.set(doc(userD, "users/userD"), {
+    uid: "userD",
+    username: "Delta",
+    usernameLowercase: "delta",
+    role: "user",
+    validReports: 0,
+    invalidReports: 0,
+    reportRestrictionUntil: null,
     createdAt: serverTimestamp(),
-  }));
+  });
+  mismatchedRegistrationBatch.set(doc(userD, "usernames/not-delta"), {
+    uid: "userD",
+    createdAt: serverTimestamp(),
+  });
+  await assertFails(mismatchedRegistrationBatch.commit());
   await assertFails(setDoc(doc(other, "usernames/alice"), {
     uid: "userB",
-    createdAt: serverTimestamp(),
-  }));
-  await assertFails(setDoc(doc(other, "usernameLogins/bob"), {
-    uid: "userB",
-    email: "not-auth-email@example.com",
     createdAt: serverTimestamp(),
   }));
 

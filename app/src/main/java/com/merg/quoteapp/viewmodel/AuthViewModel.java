@@ -40,8 +40,13 @@ public class AuthViewModel extends ViewModel {
     }
 
     public void login(String identity, String password) {
-        if (identity == null || identity.trim().isEmpty()) {
-            loginState.setValue(AuthState.error("E-posta veya kullanıcı adı girin."));
+        String email = identity == null ? "" : identity.trim();
+        if (email.isEmpty()) {
+            loginState.setValue(AuthState.error("E-posta adresinizi girin."));
+            return;
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            loginState.setValue(AuthState.error("Geçerli bir e-posta adresi girin."));
             return;
         }
         if (password == null || password.isEmpty()) {
@@ -50,7 +55,7 @@ public class AuthViewModel extends ViewModel {
         }
 
         loginState.setValue(AuthState.loading());
-        repository.login(identity, password, callbackFor(loginState));
+        repository.login(email, password, callbackFor(loginState));
     }
 
     public void resetPassword(String email) {

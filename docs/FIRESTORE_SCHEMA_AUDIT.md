@@ -6,7 +6,6 @@ This audit is based on the current Java models, repositories, transaction writes
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `users` | `{uid}` | `uid`, `username`, `usernameLowercase`, `role`, `validReports`, `invalidReports`, `reportRestrictionUntil`, `createdAt` | Authenticated app screens read profiles by uid. | Current user during registration. | Owner can edit only username fields; Admin SDK can set `role`. | Client deletion denied. | Public profile; must not contain email. | Old documents may contain `email`; remove/backfill before rollout. `role` is display/cache only. |
 | `usernames` | `{normalizedUsername}` | `uid`, `createdAt` | Authenticated registration transaction checks exact doc. | Current user during registration. | Denied. | Denied. | Low sensitivity. | Prevents duplicate usernames without full users list access. |
-| `usernameLogins` | `{normalizedUsername}` | `uid`, `email`, `createdAt` | Exact unauthenticated `get` for username login only. No list. | Current user during registration. | Denied. | Denied. | Contains login email. | Exists because Firebase Auth email/password needs email to sign in by username. Do not expose list queries. |
 | `quotes` | auto id / `quoteId` | `quoteId`, `userId`, `username`, `type`, `text`, `title`, `author`, `characterName`, `season`, `episode`, `tags`, `spoiler`, `favoriteCount`, `createdAt`, `updatedAt` | Authenticated Home/Discover/Favorites/Detail/Profile. | Authenticated owner only. | Owner content fields, or atomic favorite counter transaction. | Owner only. | Public content. | Owner cannot change `userId`, counters or moderation fields. |
 | `likes` | `{userId}_{quoteId}` | `likeId`, `quoteId`, `userId`, `createdAt` | Authenticated screens count likes and read own state. | Current user only. | Denied. | Current user only. | Public social interaction. | Old documents use `{quoteId}_{userId}` and need migration. |
 | `favorites` | `{userId}_{quoteId}` | `favoriteId`, `quoteId`, `userId`, `createdAt` | Owner only. Favorite count uses `quotes.favoriteCount`. | Current user only with quote counter increment. | Denied. | Current user only with quote counter decrement. | Private saved collection. | Old documents use `{quoteId}_{userId}` and need migration + count backfill. |
@@ -22,7 +21,8 @@ This audit is based on the current Java models, repositories, transaction writes
 - Existing `users/{uid}` documents include no `role`; dry-run found 6 missing roles.
 - Previous registration wrote email to public `users/{uid}`.
 - Existing username uniqueness used a users query instead of deterministic reservation docs.
-- Existing users require a one-time `usernames` / `usernameLogins` backfill before public `users.email` cleanup.
+- Existing users require a one-time `usernames` backfill before public `users.email` cleanup.
+- The previous `usernameLogins` username-to-email mapping exposed authentication emails through username guessing and is removed for v1.0.
 - Existing like/favorite documents are legacy `{quoteId}_{userId}`; new rules require `{userId}_{quoteId}`.
 - Existing favorite counts may be inconsistent with legacy favorite docs and must be backfilled/migrated before strict rules are deployed.
 - Achievement XP/stats are still client-calculated and should be treated as non-authoritative.

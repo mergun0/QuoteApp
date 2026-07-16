@@ -23,7 +23,6 @@ public class AuthRepository {
 
     private static final String USERS_COLLECTION = "users";
     private static final String USERNAMES_COLLECTION = "usernames";
-    private static final String USERNAME_LOGINS_COLLECTION = "usernameLogins";
     private static volatile AuthRepository instance;
 
     private final FirebaseAuth auth;
@@ -66,7 +65,6 @@ public class AuthRepository {
                             result.getUser().getUid(),
                             username,
                             normalizedUsername,
-                            email,
                             result.getUser(),
                             callback);
                 })
@@ -74,13 +72,10 @@ public class AuthRepository {
     }
 
     private void reserveUsernameAndCreateProfile(String uid, String username,
-                                                 String normalizedUsername, String email,
-                                                 FirebaseUser authUser,
+                                                 String normalizedUsername, FirebaseUser authUser,
                                                  AuthCallback callback) {
         DocumentReference userRef = firestore.collection(USERS_COLLECTION).document(uid);
         DocumentReference usernameRef = firestore.collection(USERNAMES_COLLECTION)
-                .document(normalizedUsername);
-        DocumentReference usernameLoginRef = firestore.collection(USERNAME_LOGINS_COLLECTION)
                 .document(normalizedUsername);
 
         firestore.runTransaction(transaction -> {
@@ -104,13 +99,7 @@ public class AuthRepository {
                     usernameData.put("uid", uid);
                     usernameData.put("createdAt", FieldValue.serverTimestamp());
 
-                    Map<String, Object> loginData = new HashMap<>();
-                    loginData.put("uid", uid);
-                    loginData.put("email", email);
-                    loginData.put("createdAt", FieldValue.serverTimestamp());
-
                     transaction.set(usernameRef, usernameData);
-                    transaction.set(usernameLoginRef, loginData);
                     transaction.set(userRef, userData);
                     return null;
                 })
@@ -127,29 +116,8 @@ public class AuthRepository {
                         }));
     }
 
-    public void login(String emailOrUsername, String password, AuthCallback callback) {
-        String identity = emailOrUsername.trim();
-        if (identity.contains("@")) {
-            signInWithEmail(identity, password, callback);
-            return;
-        }
-
-        firestore.collection(USERNAME_LOGINS_COLLECTION)
-                .document(normalizeUsername(identity))
-                .get()
-                .addOnSuccessListener(document -> {
-                    if (!document.exists()) {
-                        callback.onError("Bu kullanıcı adına ait bir hesap bulunamadı.");
-                        return;
-                    }
-                    String email = document.getString("email");
-                    if (email == null || email.trim().isEmpty()) {
-                        callback.onError("Hesap bilgileri eksik. Lütfen e-posta ile giriş yapın.");
-                        return;
-                    }
-                    signInWithEmail(email, password, callback);
-                })
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    public void login(String email, String password, AuthCallback callback) {
+        signInWithEmail(email, password, callback);
     }
 
     private void signInWithEmail(String email, String password, AuthCallback callback) {
@@ -233,7 +201,7 @@ public class AuthRepository {
                     return "Şifre daha güçlü olmalı.";
                 case "ERROR_WRONG_PASSWORD":
                 case "ERROR_INVALID_CREDENTIAL":
-                    return "E-posta/kullanıcı adı veya şifre hatalı.";
+                    return "E-posta veya şifre hatalı.";
                 case "ERROR_USER_NOT_FOUND":
                     return "Bu bilgilere ait bir hesap bulunamadı.";
                 case "ERROR_TOO_MANY_REQUESTS":

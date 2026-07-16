@@ -107,7 +107,7 @@
             android:textSize="14sp"
             android:visibility="gone"
             android:accessibilityLiveRegion="polite"
-            tools:text="E-posta veya kullanıcı adı hatalı."
+            tools:text="E-posta veya şifre hatalı."
             tools:visibility="visible" />
 
         <com.google.android.material.button.MaterialButton
