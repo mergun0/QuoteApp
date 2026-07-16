@@ -1,0 +1,29 @@
+# Firestore Schema Audit
+
+This audit is based on the current Java models, repositories, transaction writes and Admin SDK scripts.
+
+| Collection | Document ID | Fields written/read | Reads | Creates | Updates | Deletes | Private / sensitive | Security notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `users` | `{uid}` | `uid`, `username`, `usernameLowercase`, `role`, `validReports`, `invalidReports`, `reportRestrictionUntil`, `createdAt` | Authenticated app screens read profiles by uid. | Current user during registration. | Owner can edit only username fields; Admin SDK can set `role`. | Client deletion denied. | Public profile; must not contain email. | Old documents may contain `email`; remove/backfill before rollout. `role` is display/cache only. |
+| `usernames` | `{normalizedUsername}` | `uid`, `createdAt` | Authenticated registration transaction checks exact doc. | Current user during registration. | Denied. | Denied. | Low sensitivity. | Prevents duplicate usernames without full users list access. |
+| `usernameLogins` | `{normalizedUsername}` | `uid`, `email`, `createdAt` | Exact unauthenticated `get` for username login only. No list. | Current user during registration. | Denied. | Denied. | Contains login email. | Exists because Firebase Auth email/password needs email to sign in by username. Do not expose list queries. |
+| `quotes` | auto id / `quoteId` | `quoteId`, `userId`, `username`, `type`, `text`, `title`, `author`, `characterName`, `season`, `episode`, `tags`, `spoiler`, `favoriteCount`, `createdAt`, `updatedAt` | Authenticated Home/Discover/Favorites/Detail/Profile. | Authenticated owner only. | Owner content fields, or atomic favorite counter transaction. | Owner only. | Public content. | Owner cannot change `userId`, counters or moderation fields. |
+| `likes` | `{userId}_{quoteId}` | `likeId`, `quoteId`, `userId`, `createdAt` | Authenticated screens count likes and read own state. | Current user only. | Denied. | Current user only. | Public social interaction. | Old documents use `{quoteId}_{userId}` and need migration. |
+| `favorites` | `{userId}_{quoteId}` | `favoriteId`, `quoteId`, `userId`, `createdAt` | Owner only. Favorite count uses `quotes.favoriteCount`. | Current user only with quote counter increment. | Denied. | Current user only with quote counter decrement. | Private saved collection. | Old documents use `{quoteId}_{userId}` and need migration + count backfill. |
+| `reports` | `{quoteId}_{reporterUserId}` | `reportId`, `quoteId`, `reportedUserId`, `reporterUserId`, `reason`, `description`, `status`, `createdAt`, `reviewedAt`, `reviewedBy`, `isValidReport` | Moderator/admin; reporter can read own reports for duplicate/daily UX. | Authenticated non-owner reporter only. | Moderator/admin review fields only. | Denied. | Moderation-sensitive. | Firestore Rules validate target quote owner and block self-report. |
+| `achievements` | `{achievementId}` | `achievementId`, `title`, `description`, `category`, `ruleType`, `targetScope`, `metric`, `operator`, `targetValue`, `achievementGroup`, `tier`, `xpReward`, `iconName`, `level`, `isActive`, `sortOrder`, `createdAt` | Authenticated app. | Admin SDK/admin only. | Admin SDK/admin only. | Admin SDK/admin only. | System config. | Client must not seed or modify definitions. |
+| `levels` | `level_{level}` | `level`, `requiredTotalXp`, `title`, `badgeName`, `unlockedFeatures`, `createdAt` | Authenticated app. | Admin SDK/admin only. | Admin SDK/admin only. | Admin SDK/admin only. | System config. | Seed via Admin SDK only. |
+| `userAchievements` | `{userId}_{achievementId}` | `userAchievementId`, `userId`, `achievementId`, `achievementGroup`, `tier`, `unlockedAt`, `progressAtUnlock`, `xpRewardGranted` | Authenticated app. | Current client achievement engine. | Denied. | Denied. | Progress data; not security-authoritative. | Client-written, so not tamper-proof until moved to trusted backend. |
+| `userStats` | `{userId}` | `userId`, `totalXp`, `level`, `totalQuotes`, `totalLikesReceived`, `maxSingleQuoteLikes`, `totalMovieQuotes`, `totalSeriesQuotes`, `totalBookQuotes`, `validReports`, `invalidReports`, `unlockedAchievementCount`, `lastUpdatedAt`, `statsSyncedAt` | Authenticated profile/achievement screens. | Current user/client engine. | Current user/client engine. | Denied. | Progress data; not security-authoritative. | Bounded by Rules but still client-controlled. Must not grant paid/security privileges. |
+| `appConfig/xpRewards` | `xpRewards` | `createQuote`, `receiveLike`, `validReport` | Authenticated achievement engine. | Admin only. | Admin only. | Admin only. | System config. | Safe defaults exist in app if missing. |
+
+## Current vulnerabilities found
+
+- Existing `users/{uid}` documents include no `role`; dry-run found 6 missing roles.
+- Previous registration wrote email to public `users/{uid}`.
+- Existing username uniqueness used a users query instead of deterministic reservation docs.
+- Existing users require a one-time `usernames` / `usernameLogins` backfill before public `users.email` cleanup.
+- Existing like/favorite documents are legacy `{quoteId}_{userId}`; new rules require `{userId}_{quoteId}`.
+- Existing favorite counts may be inconsistent with legacy favorite docs and must be backfilled/migrated before strict rules are deployed.
+- Achievement XP/stats are still client-calculated and should be treated as non-authoritative.
+- No prior `firestore.rules` file existed in the repository.

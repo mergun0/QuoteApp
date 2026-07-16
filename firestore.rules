@@ -1,0 +1,384 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function authRole() {
+      return signedIn() && request.auth.token.role is string
+        ? request.auth.token.role
+        : "user";
+    }
+
+    function isModerator() {
+      return authRole() == "moderator" || authRole() == "admin";
+    }
+
+    function isAdmin() {
+      return authRole() == "admin";
+    }
+
+    function keysOnly(keys) {
+      return request.resource.data.keys().hasOnly(keys);
+    }
+
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function nonEmptyString(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
+    function optionalString(value, maxLength) {
+      return value == null || (value is string && value.size() <= maxLength);
+    }
+
+    function nonNegativeInt(value) {
+      return value is int && value >= 0;
+    }
+
+    function quotePath(quoteId) {
+      return /databases/$(database)/documents/quotes/$(quoteId);
+    }
+
+    function favoritePath(quoteId) {
+      return /databases/$(database)/documents/favorites/$(request.auth.uid + "_" + quoteId);
+    }
+
+    function validUserCreate(userId) {
+      return isSelf(userId)
+        && keysOnly([
+          "uid",
+          "username",
+          "usernameLowercase",
+          "role",
+          "validReports",
+          "invalidReports",
+          "reportRestrictionUntil",
+          "createdAt"
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.role == "user"
+        && nonEmptyString(request.resource.data.username, 40)
+        && nonEmptyString(request.resource.data.usernameLowercase, 40)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.validReports == 0
+        && request.resource.data.invalidReports == 0
+        && request.resource.data.reportRestrictionUntil == null;
+    }
+
+    function validUserUpdate(userId) {
+      return isSelf(userId)
+        && changedOnly(["username", "usernameLowercase"])
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.createdAt == resource.data.createdAt
+        && !("email" in request.resource.data)
+        && nonEmptyString(request.resource.data.username, 40)
+        && nonEmptyString(request.resource.data.usernameLowercase, 40);
+    }
+
+    function validQuoteCreate(quoteId) {
+      return signedIn()
+        && keysOnly([
+          "quoteId",
+          "userId",
+          "username",
+          "type",
+          "text",
+          "title",
+          "author",
+          "characterName",
+          "season",
+          "episode",
+          "tags",
+          "spoiler",
+          "favoriteCount",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.quoteId == quoteId
+        && request.resource.data.userId == request.auth.uid
+        && optionalString(request.resource.data.username, 40)
+        && nonEmptyString(request.resource.data.type, 20)
+        && nonEmptyString(request.resource.data.text, 5000)
+        && nonEmptyString(request.resource.data.title, 200)
+        && optionalString(request.resource.data.author, 200)
+        && optionalString(request.resource.data.characterName, 200)
+        && optionalString(request.resource.data.season, 20)
+        && optionalString(request.resource.data.episode, 20)
+        && request.resource.data.tags is list
+        && request.resource.data.tags.size() <= 20
+        && request.resource.data.spoiler is bool
+        && request.resource.data.favoriteCount == 0
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validQuoteOwnerUpdate() {
+      return signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.quoteId == resource.data.quoteId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.favoriteCount == resource.data.favoriteCount
+        && changedOnly([
+          "username",
+          "type",
+          "text",
+          "title",
+          "author",
+          "characterName",
+          "season",
+          "episode",
+          "tags",
+          "spoiler",
+          "updatedAt"
+        ])
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validFavoriteCounterCreate(quoteId) {
+      return signedIn()
+        && changedOnly(["favoriteCount"])
+        && resource.data.favoriteCount is int
+        && request.resource.data.favoriteCount == resource.data.favoriteCount + 1
+        && !exists(favoritePath(quoteId))
+        && existsAfter(favoritePath(quoteId));
+    }
+
+    function validFavoriteCounterDelete(quoteId) {
+      return signedIn()
+        && changedOnly(["favoriteCount"])
+        && resource.data.favoriteCount is int
+        && resource.data.favoriteCount > 0
+        && request.resource.data.favoriteCount == resource.data.favoriteCount - 1
+        && exists(favoritePath(quoteId))
+        && !existsAfter(favoritePath(quoteId));
+    }
+
+    function validLikeCreate(likeId) {
+      return signedIn()
+        && likeId == request.auth.uid + "_" + request.resource.data.quoteId
+        && keysOnly(["likeId", "quoteId", "userId", "createdAt"])
+        && request.resource.data.likeId == likeId
+        && request.resource.data.userId == request.auth.uid
+        && nonEmptyString(request.resource.data.quoteId, 128)
+        && exists(quotePath(request.resource.data.quoteId))
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validFavoriteCreate(favoriteId) {
+      return signedIn()
+        && favoriteId == request.auth.uid + "_" + request.resource.data.quoteId
+        && keysOnly(["favoriteId", "quoteId", "userId", "createdAt"])
+        && request.resource.data.favoriteId == favoriteId
+        && request.resource.data.userId == request.auth.uid
+        && nonEmptyString(request.resource.data.quoteId, 128)
+        && exists(quotePath(request.resource.data.quoteId))
+        && request.resource.data.createdAt == request.time
+        && getAfter(quotePath(request.resource.data.quoteId)).data.favoriteCount
+          == get(quotePath(request.resource.data.quoteId)).data.favoriteCount + 1;
+    }
+
+    function validReportCreate(reportId) {
+      return signedIn()
+        && reportId == request.resource.data.quoteId + "_" + request.auth.uid
+        && keysOnly([
+          "reportId",
+          "quoteId",
+          "reportedUserId",
+          "reporterUserId",
+          "reason",
+          "description",
+          "status",
+          "createdAt",
+          "reviewedAt",
+          "reviewedBy",
+          "isValidReport"
+        ])
+        && request.resource.data.reportId == reportId
+        && request.resource.data.reporterUserId == request.auth.uid
+        && exists(quotePath(request.resource.data.quoteId))
+        && request.resource.data.reportedUserId == get(quotePath(request.resource.data.quoteId)).data.userId
+        && request.resource.data.reportedUserId != request.auth.uid
+        && nonEmptyString(request.resource.data.reason, 60)
+        && optionalString(request.resource.data.description, 1000)
+        && request.resource.data.status == "PENDING"
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.reviewedAt == null
+        && request.resource.data.reviewedBy == null
+        && request.resource.data.isValidReport == null;
+    }
+
+    function validModeratorReportUpdate() {
+      return isModerator()
+        && changedOnly(["status", "reviewedAt", "reviewedBy", "isValidReport"])
+        && request.resource.data.reviewedBy == request.auth.uid
+        && request.resource.data.reviewedAt == request.time
+        && request.resource.data.status in ["APPROVED", "REJECTED"]
+        && request.resource.data.isValidReport is bool;
+    }
+
+    function validUserAchievementCreate(userAchievementId) {
+      return signedIn()
+        && userAchievementId == request.auth.uid + "_" + request.resource.data.achievementId
+        && keysOnly([
+          "userAchievementId",
+          "userId",
+          "achievementId",
+          "achievementGroup",
+          "tier",
+          "unlockedAt",
+          "progressAtUnlock",
+          "xpRewardGranted"
+        ])
+        && request.resource.data.userAchievementId == userAchievementId
+        && request.resource.data.userId == request.auth.uid
+        && exists(/databases/$(database)/documents/achievements/$(request.resource.data.achievementId))
+        && nonNegativeInt(request.resource.data.tier)
+        && request.resource.data.progressAtUnlock is int
+        && request.resource.data.progressAtUnlock >= 0
+        && request.resource.data.xpRewardGranted is bool
+        && request.resource.data.unlockedAt == request.time;
+    }
+
+    function validUserStatsWrite(userId) {
+      return isSelf(userId)
+        && keysOnly([
+          "userId",
+          "totalXp",
+          "level",
+          "totalQuotes",
+          "totalLikesReceived",
+          "maxSingleQuoteLikes",
+          "totalMovieQuotes",
+          "totalSeriesQuotes",
+          "totalBookQuotes",
+          "validReports",
+          "invalidReports",
+          "unlockedAchievementCount",
+          "lastUpdatedAt",
+          "statsSyncedAt"
+        ])
+        && request.resource.data.userId == userId
+        && nonNegativeInt(request.resource.data.totalXp)
+        && request.resource.data.totalXp <= 100000000
+        && request.resource.data.level is int
+        && request.resource.data.level >= 1
+        && request.resource.data.level <= 100
+        && nonNegativeInt(request.resource.data.totalQuotes)
+        && nonNegativeInt(request.resource.data.totalLikesReceived)
+        && nonNegativeInt(request.resource.data.maxSingleQuoteLikes)
+        && nonNegativeInt(request.resource.data.totalMovieQuotes)
+        && nonNegativeInt(request.resource.data.totalSeriesQuotes)
+        && nonNegativeInt(request.resource.data.totalBookQuotes)
+        && nonNegativeInt(request.resource.data.validReports)
+        && nonNegativeInt(request.resource.data.invalidReports)
+        && nonNegativeInt(request.resource.data.unlockedAchievementCount)
+        && request.resource.data.lastUpdatedAt == request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if validUserCreate(userId);
+      allow update: if validUserUpdate(userId) || isAdmin();
+      allow delete: if false;
+    }
+
+    match /usernames/{usernameId} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && keysOnly(["uid", "createdAt"])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /usernameLogins/{usernameId} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn()
+        && keysOnly(["uid", "email", "createdAt"])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /quotes/{quoteId} {
+      allow get, list: if signedIn();
+      allow create: if validQuoteCreate(quoteId);
+      allow update: if validQuoteOwnerUpdate()
+        || validFavoriteCounterCreate(quoteId)
+        || validFavoriteCounterDelete(quoteId);
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /likes/{likeId} {
+      allow get, list: if signedIn();
+      allow create: if validLikeCreate(likeId);
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /favorites/{favoriteId} {
+      allow get, list: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if validFavoriteCreate(favoriteId);
+      allow update: if false;
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && getAfter(quotePath(resource.data.quoteId)).data.favoriteCount
+          == get(quotePath(resource.data.quoteId)).data.favoriteCount - 1;
+    }
+
+    match /reports/{reportId} {
+      allow get, list: if isModerator()
+        || (signedIn() && resource.data.reporterUserId == request.auth.uid);
+      allow create: if validReportCreate(reportId);
+      allow update: if validModeratorReportUpdate();
+      allow delete: if false;
+    }
+
+    match /achievements/{achievementId} {
+      allow get, list: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /levels/{levelId} {
+      allow get, list: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /userAchievements/{userAchievementId} {
+      allow get, list: if signedIn();
+      allow create: if validUserAchievementCreate(userAchievementId);
+      allow update, delete: if false;
+    }
+
+    match /userStats/{userId} {
+      allow get, list: if signedIn();
+      allow create, update: if validUserStatsWrite(userId);
+      allow delete: if false;
+    }
+
+    match /appConfig/{documentId} {
+      allow get, list: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

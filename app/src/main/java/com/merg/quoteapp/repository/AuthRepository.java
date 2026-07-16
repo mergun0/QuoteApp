@@ -2,10 +2,11 @@ package com.merg.quoteapp.repository;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.merg.quoteapp.utils.FriendlyErrorMapper;
 
 import java.util.HashMap;
@@ -21,6 +22,8 @@ public class AuthRepository {
     }
 
     private static final String USERS_COLLECTION = "users";
+    private static final String USERNAMES_COLLECTION = "usernames";
+    private static final String USERNAME_LOGINS_COLLECTION = "usernameLogins";
     private static volatile AuthRepository instance;
 
     private final FirebaseAuth auth;
@@ -44,19 +47,11 @@ public class AuthRepository {
 
     public void register(String username, String email, String password, AuthCallback callback) {
         String normalizedUsername = normalizeUsername(username);
-
-        firestore.collection(USERS_COLLECTION)
-                .whereEqualTo("usernameLowercase", normalizedUsername)
-                .limit(1)
-                .get()
-                .addOnSuccessListener(snapshot -> {
-                    if (!snapshot.isEmpty()) {
-                        callback.onError("Bu kullanıcı adı zaten kullanılıyor.");
-                        return;
-                    }
-                    createAuthUser(username.trim(), normalizedUsername, email.trim(), password, callback);
-                })
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+        if (normalizedUsername.isEmpty()) {
+            callback.onError("Geçerli bir kullanıcı adı girin.");
+            return;
+        }
+        createAuthUser(username.trim(), normalizedUsername, email.trim(), password, callback);
     }
 
     private void createAuthUser(String username, String normalizedUsername, String email,
@@ -67,24 +62,69 @@ public class AuthRepository {
                         callback.onError("Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.");
                         return;
                     }
+                    reserveUsernameAndCreateProfile(
+                            result.getUser().getUid(),
+                            username,
+                            normalizedUsername,
+                            email,
+                            result.getUser(),
+                            callback);
+                })
+                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    }
 
-                    String uid = result.getUser().getUid();
+    private void reserveUsernameAndCreateProfile(String uid, String username,
+                                                 String normalizedUsername, String email,
+                                                 FirebaseUser authUser,
+                                                 AuthCallback callback) {
+        DocumentReference userRef = firestore.collection(USERS_COLLECTION).document(uid);
+        DocumentReference usernameRef = firestore.collection(USERNAMES_COLLECTION)
+                .document(normalizedUsername);
+        DocumentReference usernameLoginRef = firestore.collection(USERNAME_LOGINS_COLLECTION)
+                .document(normalizedUsername);
+
+        firestore.runTransaction(transaction -> {
+                    if (transaction.get(usernameRef).exists()) {
+                        throw new FirebaseFirestoreException(
+                                "Username already reserved.",
+                                FirebaseFirestoreException.Code.ALREADY_EXISTS);
+                    }
+
                     Map<String, Object> userData = new HashMap<>();
                     userData.put("uid", uid);
                     userData.put("username", username);
                     userData.put("usernameLowercase", normalizedUsername);
-                    userData.put("email", email);
+                    userData.put("role", "user");
+                    userData.put("validReports", 0);
+                    userData.put("invalidReports", 0);
+                    userData.put("reportRestrictionUntil", null);
                     userData.put("createdAt", FieldValue.serverTimestamp());
 
-                    firestore.collection(USERS_COLLECTION)
-                            .document(uid)
-                            .set(userData)
-                            .addOnSuccessListener(unused -> callback.onSuccess())
-                            .addOnFailureListener(error -> result.getUser().delete()
-                                    .addOnCompleteListener(task ->
-                                            callback.onError("Profil kaydedilemedi. Lütfen tekrar deneyin.")));
+                    Map<String, Object> usernameData = new HashMap<>();
+                    usernameData.put("uid", uid);
+                    usernameData.put("createdAt", FieldValue.serverTimestamp());
+
+                    Map<String, Object> loginData = new HashMap<>();
+                    loginData.put("uid", uid);
+                    loginData.put("email", email);
+                    loginData.put("createdAt", FieldValue.serverTimestamp());
+
+                    transaction.set(usernameRef, usernameData);
+                    transaction.set(usernameLoginRef, loginData);
+                    transaction.set(userRef, userData);
+                    return null;
                 })
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnFailureListener(error -> authUser.delete()
+                        .addOnCompleteListener(task -> {
+                            if (error instanceof FirebaseFirestoreException
+                                    && ((FirebaseFirestoreException) error).getCode()
+                                    == FirebaseFirestoreException.Code.ALREADY_EXISTS) {
+                                callback.onError("Bu kullanıcı adı zaten kullanılıyor.");
+                                return;
+                            }
+                            callback.onError("Profil kaydedilemedi. Lütfen tekrar deneyin.");
+                        }));
     }
 
     public void login(String emailOrUsername, String password, AuthCallback callback) {
@@ -94,27 +134,22 @@ public class AuthRepository {
             return;
         }
 
-        firestore.collection(USERS_COLLECTION)
-                .whereEqualTo("usernameLowercase", normalizeUsername(identity))
-                .limit(1)
+        firestore.collection(USERNAME_LOGINS_COLLECTION)
+                .document(normalizeUsername(identity))
                 .get()
-                .addOnSuccessListener(snapshot -> loginWithUsernameResult(snapshot, password, callback))
+                .addOnSuccessListener(document -> {
+                    if (!document.exists()) {
+                        callback.onError("Bu kullanıcı adına ait bir hesap bulunamadı.");
+                        return;
+                    }
+                    String email = document.getString("email");
+                    if (email == null || email.trim().isEmpty()) {
+                        callback.onError("Hesap bilgileri eksik. Lütfen e-posta ile giriş yapın.");
+                        return;
+                    }
+                    signInWithEmail(email, password, callback);
+                })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
-    }
-
-    private void loginWithUsernameResult(QuerySnapshot snapshot, String password,
-                                         AuthCallback callback) {
-        if (snapshot.isEmpty()) {
-            callback.onError("Bu kullanıcı adına ait bir hesap bulunamadı.");
-            return;
-        }
-
-        String email = snapshot.getDocuments().get(0).getString("email");
-        if (email == null || email.trim().isEmpty()) {
-            callback.onError("Hesap bilgileri eksik. Lütfen e-posta ile giriş yapın.");
-            return;
-        }
-        signInWithEmail(email, password, callback);
     }
 
     private void signInWithEmail(String email, String password, AuthCallback callback) {
@@ -164,7 +199,7 @@ public class AuthRepository {
     }
 
     private String normalizeUsername(String username) {
-        return username.trim().toLowerCase(Locale.ROOT);
+        return username == null ? "" : username.trim().toLowerCase(Locale.ROOT);
     }
 
     private String readableError(Exception error) {
@@ -178,32 +213,31 @@ public class AuthRepository {
                     || (details != null && details.toLowerCase(Locale.ROOT)
                     .contains("database (default) does not exist"))) {
                 return "Firestore veritabanı henüz oluşturulmamış. "
-                        + "Lütfen Firebase Console üzerinden veritabanını oluşturun.";
+                        + "Lütfen Firebase Console üzerinden Firestore Database oluşturun.";
+            }
+            if (firestoreError.getCode() == FirebaseFirestoreException.Code.ALREADY_EXISTS) {
+                return "Bu kullanıcı adı zaten kullanılıyor.";
             }
             if (firestoreError.getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                return "Firestore erişim izni reddedildi. Güvenlik kurallarını kontrol edin.";
-            }
-            if (firestoreError.getCode() == FirebaseFirestoreException.Code.UNAVAILABLE) {
-                return "Firestore hizmetine ulaşılamıyor. İnternet bağlantınızı kontrol edin.";
+                return "Bu işlem için gerekli izin alınamadı.";
             }
         }
         if (error instanceof FirebaseAuthException) {
             String code = ((FirebaseAuthException) error).getErrorCode();
             switch (code) {
-                case "ERROR_INVALID_EMAIL":
-                    return "Geçerli bir e-posta adresi girin.";
                 case "ERROR_EMAIL_ALREADY_IN_USE":
                     return "Bu e-posta adresi zaten kullanılıyor.";
+                case "ERROR_INVALID_EMAIL":
+                    return "Geçerli bir e-posta adresi girin.";
                 case "ERROR_WEAK_PASSWORD":
-                    return "Şifre yeterince güçlü değil.";
-                case "ERROR_USER_NOT_FOUND":
+                    return "Şifre daha güçlü olmalı.";
                 case "ERROR_WRONG_PASSWORD":
                 case "ERROR_INVALID_CREDENTIAL":
                     return "E-posta/kullanıcı adı veya şifre hatalı.";
+                case "ERROR_USER_NOT_FOUND":
+                    return "Bu bilgilere ait bir hesap bulunamadı.";
                 case "ERROR_TOO_MANY_REQUESTS":
                     return "Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.";
-                case "ERROR_NETWORK_REQUEST_FAILED":
-                    return "İnternet bağlantınızı kontrol edin.";
                 default:
                     break;
             }

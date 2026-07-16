@@ -29,6 +29,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+    buildFeatures {
+        buildConfig true
+    }
 }
 
 dependencies {
@@ -39,6 +42,8 @@ dependencies {
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.auth
     implementation libs.firebase.firestore
+    implementation libs.firebase.appcheck.playintegrity
+    debugImplementation libs.firebase.appcheck.debug
     implementation libs.recyclerview
     implementation libs.cardview
     implementation libs.lifecycle.viewmodel

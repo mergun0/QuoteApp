@@ -4,12 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:rules",
+    "test:rules": "firebase emulators:exec --project demo-quoteapp --only firestore \"node tests/firestore.rules.test.js\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0",
+    "firebase": "^12.0.0",
     "firebase-admin": "^14.1.0"
   }
 }

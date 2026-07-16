@@ -46,7 +46,7 @@ serviceAccountKey.json
 
 This file is intentionally ignored by Git. Do not commit service account files.
 
-The script also supports Application Default Credentials if `serviceAccountKey.json` is not present.
+The Admin SDK scripts in this project read `serviceAccountKey.json` from the project root and fail with a clear message if it is missing.
 
 ## Run the seed script
 
@@ -79,6 +79,38 @@ The script will:
 3. Update every `quotes/{quoteId}.favoriteCount` with the matching favorite count.
 4. Set quotes with no matching favorites to `0`.
 5. Log scanned favorites, updated quotes, missing quote documents and final status.
+
+## Security and role setup scripts
+
+Before deploying strict Firestore Rules for release, review and run the security scripts from a trusted machine:
+
+```bash
+node scripts/backfillUsernameReservations.js
+node scripts/removePublicUserPrivateFields.js
+node scripts/backfillUserRoles.js
+node scripts/migrateDeterministicLikes.js
+node scripts/migrateDeterministicFavorites.js
+```
+
+These commands are dry-run by default. To apply after reviewing output:
+
+```bash
+node scripts/backfillUsernameReservations.js --apply
+node scripts/removePublicUserPrivateFields.js --apply
+node scripts/backfillUserRoles.js --apply
+node scripts/migrateDeterministicLikes.js --apply
+node scripts/migrateDeterministicFavorites.js --apply
+```
+
+To set moderator/admin custom claims:
+
+```bash
+node scripts/setUserRole.js <uid> moderator
+node scripts/setUserRole.js <uid> admin
+node scripts/setUserRole.js <uid> user
+```
+
+See `docs/FIREBASE_SECURITY_SETUP.md` for rollout order and App Check notes.
 
 ## Notes
 

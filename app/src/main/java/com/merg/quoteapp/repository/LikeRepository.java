@@ -300,7 +300,7 @@ public class LikeRepository {
     }
 
     private String likeDocumentId(String quoteId, String userId) {
-        return quoteId + "_" + userId;
+        return userId + "_" + quoteId;
     }
 
     /**

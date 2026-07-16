@@ -1,0 +1,364 @@
+const assert = require("assert");
+const fs = require("fs");
+const {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment,
+} = require("@firebase/rules-unit-testing");
+const {
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  query,
+  where,
+  writeBatch,
+  serverTimestamp,
+} = require("firebase/firestore");
+
+const PROJECT_ID = "demo-quoteapp";
+
+async function main() {
+  const testEnv = await initializeTestEnvironment({
+    projectId: PROJECT_ID,
+    firestore: {
+      rules: fs.readFileSync("firestore.rules", "utf8"),
+      host: "127.0.0.1",
+      port: 8090,
+    },
+  });
+
+  const user = testEnv.authenticatedContext("userA", {
+    email: "a@example.com",
+    role: "user",
+  }).firestore();
+  const other = testEnv.authenticatedContext("userB", {
+    email: "b@example.com",
+    role: "user",
+  }).firestore();
+  const moderator = testEnv.authenticatedContext("mod1", {
+    email: "m@example.com",
+    role: "moderator",
+  }).firestore();
+  const admin = testEnv.authenticatedContext("admin1", {
+    email: "admin@example.com",
+    role: "admin",
+  }).firestore();
+  const unauth = testEnv.unauthenticatedContext().firestore();
+  const newUser = testEnv.authenticatedContext("userC", {
+    email: "c@example.com",
+    role: "user",
+  }).firestore();
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, "users/userA"), {
+      uid: "userA",
+      username: "Alice",
+      usernameLowercase: "alice",
+      role: "user",
+      validReports: 0,
+      invalidReports: 0,
+      reportRestrictionUntil: null,
+      createdAt: new Date(),
+    });
+    await setDoc(doc(db, "users/userB"), {
+      uid: "userB",
+      username: "Bob",
+      usernameLowercase: "bob",
+      role: "user",
+      validReports: 0,
+      invalidReports: 0,
+      reportRestrictionUntil: null,
+      createdAt: new Date(),
+    });
+    await setDoc(doc(db, "usernames/alice"), {
+      uid: "userA",
+      createdAt: new Date(),
+    });
+    await setDoc(doc(db, "usernameLogins/alice"), {
+      uid: "userA",
+      email: "a@example.com",
+      createdAt: new Date(),
+    });
+    await setDoc(doc(db, "quotes/quoteA"), validQuote("quoteA", "userA", 0));
+    await setDoc(doc(db, "quotes/quoteB"), validQuote("quoteB", "userB", 0));
+    await setDoc(doc(db, "achievements/first_quote"), {
+      achievementId: "first_quote",
+      title: "İlk Satır",
+      description: "İlk alıntını paylaş.",
+      category: "QUOTE",
+      ruleType: "USER_STAT",
+      targetScope: "USER",
+      metric: "totalQuotes",
+      operator: "GREATER_OR_EQUAL",
+      targetValue: 1,
+      achievementGroup: "quotes_shared",
+      tier: 1,
+      xpReward: 10,
+      iconName: "ic_quote",
+      level: "BRONZE",
+      isActive: true,
+      sortOrder: 1,
+      createdAt: new Date(),
+    });
+  });
+
+  await assertFails(getDocs(collection(unauth, "users")));
+  await assertSucceeds(getDoc(doc(user, "users/userB")));
+  await assertSucceeds(setDoc(doc(newUser, "users/userC"), {
+    uid: "userC",
+    username: "Charlie",
+    usernameLowercase: "charlie",
+    role: "user",
+    validReports: 0,
+    invalidReports: 0,
+    reportRestrictionUntil: null,
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(setDoc(doc(user, "users/userD"), {
+    uid: "userD",
+    username: "Mallory",
+    usernameLowercase: "mallory",
+    role: "moderator",
+    validReports: 0,
+    invalidReports: 0,
+    reportRestrictionUntil: null,
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(updateDoc(doc(user, "users/userA"), { role: "admin" }));
+  await assertFails(updateDoc(doc(user, "users/userB"), { username: "Eve" }));
+  await assertFails(deleteDoc(doc(user, "users/userA")));
+  await assertSucceeds(updateDoc(doc(admin, "users/userA"), { role: "moderator" }));
+  await assertSucceeds(getDoc(doc(unauth, "usernameLogins/alice")));
+  await assertFails(getDocs(collection(unauth, "usernameLogins")));
+  await assertSucceeds(setDoc(doc(newUser, "usernames/charlie"), {
+    uid: "userC",
+    createdAt: serverTimestamp(),
+  }));
+  await assertSucceeds(setDoc(doc(newUser, "usernameLogins/charlie"), {
+    uid: "userC",
+    email: "c@example.com",
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(setDoc(doc(other, "usernames/alice"), {
+    uid: "userB",
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(setDoc(doc(other, "usernameLogins/bob"), {
+    uid: "userB",
+    email: "not-auth-email@example.com",
+    createdAt: serverTimestamp(),
+  }));
+
+  await assertSucceeds(setDoc(doc(user, "quotes/userAQuote"), validQuote("userAQuote", "userA", 0)));
+  await assertFails(setDoc(doc(user, "quotes/fakeOwner"), validQuote("fakeOwner", "userB", 0)));
+  await assertSucceeds(updateDoc(doc(user, "quotes/quoteA"), {
+    text: "Updated quote",
+    updatedAt: serverTimestamp(),
+  }));
+  await assertFails(updateDoc(doc(user, "quotes/quoteA"), { userId: "userB" }));
+  await assertFails(updateDoc(doc(user, "quotes/quoteA"), { moderationStatus: "hidden" }));
+  await assertFails(updateDoc(doc(other, "quotes/quoteA"), { text: "Nope" }));
+  await assertSucceeds(deleteDoc(doc(user, "quotes/userAQuote")));
+  await assertFails(deleteDoc(doc(other, "quotes/quoteA")));
+
+  await assertSucceeds(setDoc(doc(user, "likes/userA_quoteB"), {
+    likeId: "userA_quoteB",
+    userId: "userA",
+    quoteId: "quoteB",
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(setDoc(doc(user, "likes/random"), {
+    likeId: "random",
+    userId: "userA",
+    quoteId: "quoteB",
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(setDoc(doc(user, "likes/userB_quoteB"), {
+    likeId: "userB_quoteB",
+    userId: "userB",
+    quoteId: "quoteB",
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(setDoc(doc(user, "likes/userA_missing"), {
+    likeId: "userA_missing",
+    userId: "userA",
+    quoteId: "missing",
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(deleteDoc(doc(other, "likes/userA_quoteB")));
+  await assertSucceeds(deleteDoc(doc(user, "likes/userA_quoteB")));
+
+  await assertFails(setDoc(doc(user, "favorites/userA_quoteB"), {
+    favoriteId: "userA_quoteB",
+    userId: "userA",
+    quoteId: "quoteB",
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(updateDoc(doc(user, "quotes/quoteB"), { favoriteCount: 1 }));
+  const favoriteBatch = writeBatch(user);
+  favoriteBatch.set(doc(user, "favorites/userA_quoteB"), {
+    favoriteId: "userA_quoteB",
+    userId: "userA",
+    quoteId: "quoteB",
+    createdAt: serverTimestamp(),
+  });
+  favoriteBatch.update(doc(user, "quotes/quoteB"), { favoriteCount: 1 });
+  await assertSucceeds(favoriteBatch.commit());
+  await assertFails(setDoc(doc(user, "favorites/userA_quoteB"), {
+    favoriteId: "userA_quoteB",
+    userId: "userA",
+    quoteId: "quoteB",
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(deleteDoc(doc(user, "favorites/userA_quoteB")));
+  const unfavoriteBatch = writeBatch(user);
+  unfavoriteBatch.delete(doc(user, "favorites/userA_quoteB"));
+  unfavoriteBatch.update(doc(user, "quotes/quoteB"), { favoriteCount: 0 });
+  await assertSucceeds(unfavoriteBatch.commit());
+  await assertFails(updateDoc(doc(user, "quotes/quoteB"), { favoriteCount: -1 }));
+  await assertFails(deleteDoc(doc(other, "favorites/userA_quoteB")));
+
+  await assertSucceeds(setDoc(doc(user, "reports/quoteB_userA"), {
+    reportId: "quoteB_userA",
+    quoteId: "quoteB",
+    reportedUserId: "userB",
+    reporterUserId: "userA",
+    reason: "Spam",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+  }));
+  await assertFails(setDoc(doc(user, "reports/quoteA_userA"), {
+    reportId: "quoteA_userA",
+    quoteId: "quoteA",
+    reportedUserId: "userA",
+    reporterUserId: "userA",
+    reason: "Spam",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+  }));
+  await assertFails(setDoc(doc(user, "reports/quoteB_userA_fake"), {
+    reportId: "quoteB_userA_fake",
+    quoteId: "quoteB",
+    reportedUserId: "userA",
+    reporterUserId: "userA",
+    reason: "Spam",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+  }));
+  await assertFails(updateDoc(doc(user, "reports/quoteB_userA"), { status: "APPROVED" }));
+  await assertFails(getDocs(collection(user, "reports")));
+  await assertSucceeds(getDocs(collection(moderator, "reports")));
+  await assertSucceeds(updateDoc(doc(moderator, "reports/quoteB_userA"), {
+    status: "APPROVED",
+    reviewedAt: serverTimestamp(),
+    reviewedBy: "mod1",
+    isValidReport: true,
+  }));
+  await assertFails(deleteDoc(doc(user, "reports/quoteB_userA")));
+
+  await assertSucceeds(setDoc(doc(user, "userAchievements/userA_first_quote"), {
+    userAchievementId: "userA_first_quote",
+    userId: "userA",
+    achievementId: "first_quote",
+    achievementGroup: "quotes_shared",
+    tier: 1,
+    unlockedAt: serverTimestamp(),
+    progressAtUnlock: 1,
+    xpRewardGranted: true,
+  }));
+  await assertFails(setDoc(doc(user, "userAchievements/random"), {
+    userAchievementId: "random",
+    userId: "userA",
+    achievementId: "first_quote",
+    achievementGroup: "quotes_shared",
+    tier: 1,
+    unlockedAt: serverTimestamp(),
+    progressAtUnlock: 1,
+    xpRewardGranted: true,
+  }));
+  await assertFails(setDoc(doc(user, "userAchievements/userA_first_quote_negative"), {
+    userAchievementId: "userA_first_quote_negative",
+    userId: "userA",
+    achievementId: "first_quote",
+    achievementGroup: "quotes_shared",
+    tier: -1,
+    unlockedAt: serverTimestamp(),
+    progressAtUnlock: -1,
+    xpRewardGranted: true,
+  }));
+  await assertSucceeds(setDoc(doc(user, "userStats/userA"), {
+    userId: "userA",
+    totalXp: 0,
+    level: 1,
+    totalQuotes: 0,
+    totalLikesReceived: 0,
+    maxSingleQuoteLikes: 0,
+    totalMovieQuotes: 0,
+    totalSeriesQuotes: 0,
+    totalBookQuotes: 0,
+    validReports: 0,
+    invalidReports: 0,
+    unlockedAchievementCount: 0,
+    lastUpdatedAt: serverTimestamp(),
+  }));
+  await assertFails(setDoc(doc(user, "userStats/userA_bad"), {
+    userId: "userA",
+    totalXp: -1,
+    level: 1,
+    totalQuotes: 0,
+    totalLikesReceived: 0,
+    maxSingleQuoteLikes: 0,
+    totalMovieQuotes: 0,
+    totalSeriesQuotes: 0,
+    totalBookQuotes: 0,
+    validReports: 0,
+    invalidReports: 0,
+    unlockedAchievementCount: 0,
+    lastUpdatedAt: serverTimestamp(),
+  }));
+
+  await testEnv.cleanup();
+  console.log("Firestore rules tests passed.");
+}
+
+function validQuote(quoteId, userId, favoriteCount) {
+  return {
+    quoteId,
+    userId,
+    username: userId,
+    type: "Kitap",
+    text: "Quote text",
+    title: "Book",
+    author: "Author",
+    characterName: "",
+    season: "",
+    episode: "",
+    tags: [],
+    spoiler: false,
+    favoriteCount,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

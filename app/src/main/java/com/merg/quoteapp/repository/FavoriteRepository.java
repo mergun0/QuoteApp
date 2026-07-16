@@ -4,7 +4,6 @@ import android.util.Log;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.AggregateSource;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -226,11 +225,16 @@ public class FavoriteRepository {
             return;
         }
 
-        firestore.collection(FAVORITES_COLLECTION)
-                .whereEqualTo("quoteId", quoteId)
-                .count()
-                .get(AggregateSource.SERVER)
-                .addOnSuccessListener(snapshot -> callback.onSuccess(snapshot.getCount()))
+        firestore.collection(QUOTES_COLLECTION)
+                .document(quoteId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (!document.exists()) {
+                        callback.onError("Alıntı artık mevcut değil.");
+                        return;
+                    }
+                    callback.onSuccess(favoriteCountFrom(document));
+                })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 
@@ -363,7 +367,7 @@ public class FavoriteRepository {
     }
 
     private String favoriteDocumentId(String quoteId, String userId) {
-        return quoteId + "_" + userId;
+        return userId + "_" + quoteId;
     }
 
     private long favoriteCountFrom(DocumentSnapshot quoteSnapshot) {
