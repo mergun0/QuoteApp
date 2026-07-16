@@ -221,6 +221,8 @@ async function main() {
     quoteId: "quoteB",
     createdAt: serverTimestamp(),
   }));
+  await assertSucceeds(getDoc(doc(user, "favorites/userA_quoteB")));
+  await assertFails(getDoc(doc(other, "favorites/userA_quoteB")));
   await assertFails(updateDoc(doc(user, "quotes/quoteB"), { favoriteCount: 1 }));
   const favoriteBatch = writeBatch(user);
   favoriteBatch.set(doc(user, "favorites/userA_quoteB"), {
@@ -304,6 +306,9 @@ async function main() {
     unlockedAt: serverTimestamp(),
     progressAtUnlock: 1,
     xpRewardGranted: true,
+  }));
+  await assertFails(updateDoc(doc(user, "userAchievements/userA_first_quote"), {
+    xpRewardGranted: false,
   }));
   await assertFails(setDoc(doc(user, "userAchievements/random"), {
     userAchievementId: "random",

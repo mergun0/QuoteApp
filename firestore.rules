@@ -60,6 +60,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/favorites/$(request.auth.uid + "_" + quoteId);
     }
 
+    function isOwnFavoriteDocumentId(favoriteId) {
+      return signedIn() && favoriteId.matches(request.auth.uid + "_.*");
+    }
+
     function validUserCreate(userId) {
       return isSelf(userId)
         && keysOnly([
@@ -328,7 +332,8 @@ service cloud.firestore {
     }
 
     match /favorites/{favoriteId} {
-      allow get, list: if signedIn()
+      allow get: if isOwnFavoriteDocumentId(favoriteId);
+      allow list: if signedIn()
         && resource.data.userId == request.auth.uid;
       allow create: if validFavoriteCreate(favoriteId);
       allow update: if false;

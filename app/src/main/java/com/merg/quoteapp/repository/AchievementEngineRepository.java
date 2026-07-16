@@ -1,11 +1,12 @@
 package com.merg.quoteapp.repository;
 
 import com.google.firebase.firestore.AggregateSource;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
-import com.google.firebase.firestore.WriteBatch;
 import android.util.Log;
 import com.merg.quoteapp.model.Achievement;
 import com.merg.quoteapp.model.AchievementFeedbackEvent;
@@ -343,7 +344,11 @@ public class AchievementEngineRepository {
 
     private void writeUserAchievement(UserStats stats, Achievement achievement,
                                       String userAchievementId, UnlockCallback callback) {
-        WriteBatch batch = firestore.batch();
+        DocumentReference userAchievementRef = firestore.collection(USER_ACHIEVEMENTS_COLLECTION)
+                .document(userAchievementId);
+        DocumentReference statsRef = firestore.collection(USERS_STATS_COLLECTION)
+                .document(stats.getUserId());
+
         Map<String, Object> data = new HashMap<>();
         data.put("userAchievementId", userAchievementId);
         data.put("userId", stats.getUserId());
@@ -354,23 +359,37 @@ public class AchievementEngineRepository {
         data.put("progressAtUnlock", metricValue(achievement.getMetric(), stats));
         data.put("xpRewardGranted", true);
 
-        batch.set(firestore.collection(USER_ACHIEVEMENTS_COLLECTION)
-                .document(userAchievementId), data, SetOptions.merge());
+        firestore.runTransaction(transaction -> {
+                    DocumentSnapshot userAchievementSnapshot = transaction.get(userAchievementRef);
+                    DocumentSnapshot statsSnapshot = transaction.get(statsRef);
+                    if (userAchievementSnapshot.exists()) {
+                        return false;
+                    }
 
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("userId", stats.getUserId());
-        updates.put("totalXp", FieldValue.increment(Math.max(0, achievement.getXpReward())));
-        updates.put("unlockedAchievementCount", FieldValue.increment(1));
-        updates.put("lastUpdatedAt", FieldValue.serverTimestamp());
-        batch.set(firestore.collection(USERS_STATS_COLLECTION)
-                .document(stats.getUserId()), updates, SetOptions.merge());
+                    UserStats latestStats = statsFromDocument(stats.getUserId(), statsSnapshot);
+                    latestStats.setTotalXp(Math.max(0, latestStats.getTotalXp())
+                            + Math.max(0, achievement.getXpReward()));
+                    latestStats.setUnlockedAchievementCount(
+                            Math.max(0, latestStats.getUnlockedAchievementCount()) + 1);
 
-        batch.commit()
-                .addOnSuccessListener(unused -> {
-                    UserStatsRepository.invalidateUserStatsCache(stats.getUserId());
-                    callback.onComplete(true);
+                    transaction.set(userAchievementRef, data);
+                    transaction.set(statsRef, statsMap(latestStats), SetOptions.merge());
+                    return true;
                 })
-                .addOnFailureListener(error -> callback.onComplete(false));
+                .addOnSuccessListener(unlocked -> {
+                    UserStatsRepository.invalidateUserStatsCache(stats.getUserId());
+                    callback.onComplete(Boolean.TRUE.equals(unlocked));
+                })
+                .addOnFailureListener(error -> {
+                    logAchievementWriteFailure(
+                            "create",
+                            userAchievementRef.getPath(),
+                            achievement.getAchievementId(),
+                            stats.getUserId(),
+                            data,
+                            error);
+                    callback.onComplete(false);
+                });
     }
 
     private void recalculateAndPersistLevel(String userId) {
@@ -410,6 +429,15 @@ public class AchievementEngineRepository {
                     .document(stats.getUserId())
                     .set(data, SetOptions.merge())
                     .addOnCompleteListener(task -> {
+                        if (!task.isSuccessful()) {
+                            logAchievementWriteFailure(
+                                    "set",
+                                    USERS_STATS_COLLECTION + "/" + stats.getUserId(),
+                                    null,
+                                    stats.getUserId(),
+                                    data,
+                                    task.getException());
+                        }
                         UserStatsRepository.invalidateUserStatsCache(stats.getUserId());
                         if (afterSave != null) {
                             afterSave.onSaved(level);
@@ -485,6 +513,22 @@ public class AchievementEngineRepository {
         data.put("unlockedAchievementCount", stats.getUnlockedAchievementCount());
         data.put("lastUpdatedAt", FieldValue.serverTimestamp());
         return data;
+    }
+
+    private void logAchievementWriteFailure(String operation, String path, String achievementId,
+                                            String userId, Map<String, Object> payload,
+                                            Exception error) {
+        String code = error instanceof FirebaseFirestoreException
+                ? ((FirebaseFirestoreException) error).getCode().name()
+                : "n/a";
+        Log.e(TAG,
+                "Achievement write failed. operation=" + operation
+                        + ", path=" + path
+                        + ", achievementId=" + achievementId
+                        + ", userId=" + userId
+                        + ", payloadKeys=" + (payload == null ? "[]" : payload.keySet())
+                        + ", firebaseCode=" + code,
+                error);
     }
 
     private void loadXpRewards(XpRewardsCallback callback) {

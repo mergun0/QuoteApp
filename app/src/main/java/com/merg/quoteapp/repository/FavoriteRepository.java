@@ -210,7 +210,12 @@ public class FavoriteRepository {
                 .document(favoriteDocumentId(quoteId, user.getUid()))
                 .get()
                 .addOnSuccessListener(document -> callback.onSuccess(document.exists()))
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+                .addOnFailureListener(error -> {
+                    String favoriteId = favoriteDocumentId(quoteId, user.getUid());
+                    logFavoriteFailure("isSavedByCurrentUser", quoteId, user.getUid(),
+                            "get " + FAVORITES_COLLECTION + "/" + favoriteId, error);
+                    callback.onError(readableError(error));
+                });
     }
 
     /**
