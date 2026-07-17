@@ -27,4 +27,6 @@ serviceAccountKey.json
 *serviceAccount*.json
 
 # Node.js (Firestore seed)
-node_modules/firestore-debug.log
+node_modules/
+**/node_modules/
+*.log

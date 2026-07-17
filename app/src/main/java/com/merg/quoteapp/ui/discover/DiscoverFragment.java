@@ -58,6 +58,7 @@ public class DiscoverFragment extends Fragment {
     private LikeViewModel likeViewModel;
     private FavoriteViewModel favoriteViewModel;
     private ReportViewModel reportViewModel;
+    private ReportBottomSheetHelper.ReportSheetController reportSheetController;
     private QuoteAdapter adapter;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -345,29 +346,36 @@ public class DiscoverFragment extends Fragment {
     private void observeReportState() {
         reportViewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
             if (Boolean.TRUE.equals(loading)) {
+                if (reportSheetController != null) {
+                    reportSheetController.setLoading(true);
+                }
                 showStatus(getString(R.string.operation_in_progress), false);
             }
         });
         reportViewModel.getSuccess().observe(getViewLifecycleOwner(), success -> {
             if (Boolean.TRUE.equals(success)) {
+                dismissReportSheet();
                 showStatus(getString(R.string.report_sent), false);
                 reportViewModel.clearResultStates();
             }
         });
         reportViewModel.getAlreadyReported().observe(getViewLifecycleOwner(), already -> {
             if (Boolean.TRUE.equals(already)) {
+                resetReportSheetLoading();
                 showStatus(getString(R.string.report_already_sent), true);
                 reportViewModel.clearResultStates();
             }
         });
         reportViewModel.getDailyLimitReached().observe(getViewLifecycleOwner(), reached -> {
             if (Boolean.TRUE.equals(reached)) {
+                resetReportSheetLoading();
                 showStatus(getString(R.string.report_daily_limit_reached), true);
                 reportViewModel.clearResultStates();
             }
         });
         reportViewModel.getError().observe(getViewLifecycleOwner(), message -> {
             if (message != null && !message.trim().isEmpty()) {
+                resetReportSheetLoading();
                 showStatus(message, true);
                 reportViewModel.clearResultStates();
             }
@@ -520,8 +528,21 @@ public class DiscoverFragment extends Fragment {
     }
 
     private void showReportSheet(Quote quote) {
-        ReportBottomSheetHelper.show(requireContext(),
+        reportSheetController = ReportBottomSheetHelper.show(requireContext(),
                 (reason, description) -> reportViewModel.submitReport(quote, reason, description));
+    }
+
+    private void dismissReportSheet() {
+        if (reportSheetController != null && reportSheetController.isShowing()) {
+            reportSheetController.dismiss();
+        }
+        reportSheetController = null;
+    }
+
+    private void resetReportSheetLoading() {
+        if (reportSheetController != null && reportSheetController.isShowing()) {
+            reportSheetController.setLoading(false);
+        }
     }
 
     private void showStatus(String message, boolean error) {

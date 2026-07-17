@@ -1,15 +1,15 @@
 package com.merg.quoteapp.repository;
 
-import com.google.firebase.Timestamp;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.merg.quoteapp.model.Report;
-import com.merg.quoteapp.utils.FriendlyErrorMapper;
+import com.google.firebase.functions.FirebaseFunctions;
+import com.google.firebase.functions.FirebaseFunctionsException;
 
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -38,16 +38,17 @@ public class ReportRepository {
         void onError(String message);
     }
 
-    private static final String REPORTS_COLLECTION = "reports";
-    private static final int DAILY_REPORT_LIMIT = 5;
+    public static final String FUNCTIONS_REGION = "europe-west1";
+    private static final String TAG = "ReportRepository";
+    private static final String SUBMIT_REPORT_FUNCTION = "submitReport";
     private static volatile ReportRepository instance;
 
     private final FirebaseAuth auth;
-    private final FirebaseFirestore firestore;
+    private final FirebaseFunctions functions;
 
     private ReportRepository() {
         auth = FirebaseAuth.getInstance();
-        firestore = FirebaseFirestore.getInstance();
+        functions = FirebaseFunctions.getInstance(FUNCTIONS_REGION);
     }
 
     /**
@@ -67,173 +68,190 @@ public class ReportRepository {
     }
 
     /**
-     * Submits a quote report after validating ownership, duplicate report and daily limit.
+     * Submits a quote report through the trusted Cloud Function.
      *
      * @param quoteId id of the reported quote
-     * @param reportedUserId owner id of the reported quote
      * @param reason selected report reason
      * @param description optional report description
      * @param callback result callback
      */
-    public void submitReport(String quoteId, String reportedUserId, String reason,
-                             String description, ReportCallback callback) {
+    public void submitReport(String quoteId, String reason, String description,
+                             ReportCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError("Rapor göndermek için giriş yapmalısınız.");
+            callback.onError(mapCallableErrorCode("unauthenticated"));
             return;
         }
-        if (isBlank(quoteId) || isBlank(reportedUserId)) {
-            callback.onError("Raporlanacak alıntı bilgisi bulunamadı.");
+        if (isBlank(quoteId)) {
+            callback.onError("Raporlanacak alıntı bulunamadı.");
             return;
         }
         if (isBlank(reason)) {
             callback.onError("Lütfen bir rapor nedeni seçin.");
             return;
         }
-        if (user.getUid().equals(reportedUserId)) {
-            callback.onError("Kendi alıntınızı raporlayamazsınız.");
-            return;
-        }
 
-        alreadyReported(quoteId, user.getUid(), new BooleanCallback() {
-            @Override
-            public void onSuccess(boolean value) {
-                if (value) {
-                    callback.onAlreadyReported();
-                    return;
-                }
-                todayReportCount(user.getUid(), new CountCallback() {
-                    @Override
-                    public void onSuccess(long count) {
-                        if (count >= DAILY_REPORT_LIMIT) {
-                            callback.onDailyLimitReached();
-                            return;
-                        }
-                        writeReport(quoteId, reportedUserId, user.getUid(),
-                                reason, description, callback);
-                    }
-
-                    @Override
-                    public void onError(String message) {
-                        callback.onError(message);
-                    }
-                });
-            }
-
-            @Override
-            public void onError(String message) {
-                callback.onError(message);
-            }
-        });
+        Map<String, Object> payload = buildSubmitReportPayload(quoteId, reason, description);
+        functions
+                .getHttpsCallable(SUBMIT_REPORT_FUNCTION)
+                .call(payload)
+                .addOnSuccessListener(result -> {
+                    parseSubmitReportResult(result.getData());
+                    Log.d(TAG, SUBMIT_REPORT_FUNCTION + " success. quoteId=" + safeLogValue(quoteId));
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(error -> handleSubmitFailure(quoteId, error, callback));
     }
 
     /**
-     * Checks whether the reporter already reported the quote.
+     * Duplicate checks are server-authoritative after the callable migration.
      *
      * @param quoteId quote id to check
      * @param reporterUserId reporter user id
      * @param callback duplicate report callback
      */
     public void alreadyReported(String quoteId, String reporterUserId, BooleanCallback callback) {
-        if (isBlank(quoteId) || isBlank(reporterUserId)) {
-            callback.onError("Rapor bilgisi kontrol edilemedi.");
-            return;
-        }
-        firestore.collection(REPORTS_COLLECTION)
-                .document(reportDocumentId(quoteId, reporterUserId))
-                .get()
-                .addOnSuccessListener(document -> callback.onSuccess(document.exists()))
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+        callback.onSuccess(false);
     }
 
     /**
-     * Loads today's report count for the reporter.
+     * Daily limits are server-authoritative after the callable migration.
      *
      * @param reporterUserId reporter user id
      * @param callback report count callback
      */
     public void todayReportCount(String reporterUserId, CountCallback callback) {
-        if (isBlank(reporterUserId)) {
-            callback.onError("Rapor limiti kontrol edilemedi.");
-            return;
+        callback.onSuccess(0L);
+    }
+
+    /**
+     * Builds the callable payload. Only these fields may be sent by Android.
+     *
+     * @param quoteId quote id
+     * @param reason selected reason
+     * @param description optional description
+     * @return callable payload
+     */
+    @NonNull
+    public static Map<String, Object> buildSubmitReportPayload(String quoteId, String reason,
+                                                               @Nullable String description) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("quoteId", quoteId == null ? "" : quoteId.trim());
+        payload.put("reason", reason == null ? "" : reason.trim());
+        String cleanDescription = description == null ? "" : description.trim();
+        if (!cleanDescription.isEmpty()) {
+            payload.put("description", cleanDescription);
         }
-        firestore.collection(REPORTS_COLLECTION)
-                .whereEqualTo("reporterUserId", reporterUserId)
-                .whereGreaterThanOrEqualTo("createdAt", todayStart())
-                .whereLessThan("createdAt", tomorrowStart())
-                .get()
-                .addOnSuccessListener(snapshot -> callback.onSuccess(snapshot.size()))
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+        return payload;
     }
 
-    private void writeReport(String quoteId, String reportedUserId, String reporterUserId,
-                             String reason, String description, ReportCallback callback) {
-        String reportId = reportDocumentId(quoteId, reporterUserId);
-        Map<String, Object> data = new HashMap<>();
-        data.put("reportId", reportId);
-        data.put("quoteId", quoteId);
-        data.put("reportedUserId", reportedUserId);
-        data.put("reporterUserId", reporterUserId);
-        data.put("reason", reason);
-        data.put("description", description == null ? "" : description.trim());
-        data.put("status", Report.STATUS_PENDING);
-        data.put("createdAt", FieldValue.serverTimestamp());
-        data.put("reviewedAt", null);
-        data.put("reviewedBy", null);
-        data.put("isValidReport", null);
-
-        firestore.collection(REPORTS_COLLECTION)
-                .document(reportId)
-                .set(data)
-                .addOnSuccessListener(unused -> callback.onSuccess())
-                .addOnFailureListener(error -> callback.onError(readableError(error)));
+    /**
+     * Maps callable error codes to user-safe Turkish messages.
+     *
+     * @param code Firebase Functions error code name
+     * @return user-safe message
+     */
+    @NonNull
+    public static String mapCallableErrorCode(@Nullable String code) {
+        String normalized = code == null ? "unknown" :
+                code.replace("_", "-").toLowerCase(Locale.ROOT);
+        switch (normalized) {
+            case "unauthenticated":
+                return "Rapor göndermek için giriş yapmalısınız.";
+            case "invalid-argument":
+                return "Rapor bilgileri geçerli değil.";
+            case "not-found":
+                return "Raporlamak istediğiniz alıntı artık mevcut değil.";
+            case "permission-denied":
+                return "Bu alıntıyı raporlayamazsınız.";
+            case "already-exists":
+                return "Bu alıntıyı daha önce raporladınız.";
+            case "resource-exhausted":
+                return "Şu anda daha fazla rapor gönderemezsiniz. Lütfen daha sonra tekrar deneyin.";
+            case "failed-precondition":
+                return "Bu rapor şu anda gönderilemez. Lütfen daha sonra tekrar deneyin.";
+            case "unavailable":
+            case "deadline-exceeded":
+                return "Bağlantı kurulamadı. Lütfen tekrar deneyin.";
+            default:
+                return "Rapor gönderilemedi. Lütfen tekrar deneyin.";
+        }
     }
 
-    private String reportDocumentId(String quoteId, String reporterUserId) {
-        return quoteId + "_" + reporterUserId;
+    /**
+     * Parses the callable result in a null-safe way.
+     *
+     * @param rawResult callable raw result
+     * @return parsed result
+     */
+    @NonNull
+    public static ReportResult parseSubmitReportResult(@Nullable Object rawResult) {
+        if (!(rawResult instanceof Map)) {
+            return new ReportResult("", "", null);
+        }
+        Map<?, ?> result = (Map<?, ?>) rawResult;
+        Object reportId = result.get("reportId");
+        Object status = result.get("status");
+        Object remainingDailyReports = result.get("remainingDailyReports");
+        Long remaining = remainingDailyReports instanceof Number
+                ? ((Number) remainingDailyReports).longValue()
+                : null;
+        return new ReportResult(
+                reportId instanceof String ? (String) reportId : "",
+                status instanceof String ? (String) status : "",
+                remaining
+        );
     }
 
-    private Timestamp todayStart() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return new Timestamp(calendar.getTime());
-    }
+    private void handleSubmitFailure(String quoteId, Exception error, ReportCallback callback) {
+        String code = "unknown";
+        if (error instanceof FirebaseFunctionsException) {
+            FirebaseFunctionsException functionsError = (FirebaseFunctionsException) error;
+            code = functionsError.getCode().name();
+        }
+        Log.e(TAG, SUBMIT_REPORT_FUNCTION + " failed. code=" + code
+                + ", quoteId=" + safeLogValue(quoteId), error);
 
-    private Timestamp tomorrowStart() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        calendar.add(Calendar.DAY_OF_MONTH, 1);
-        return new Timestamp(calendar.getTime());
+        String message = mapCallableErrorCode(code);
+        String normalized = code.replace("_", "-").toLowerCase(Locale.ROOT);
+        if ("already-exists".equals(normalized)) {
+            callback.onAlreadyReported();
+        } else if ("resource-exhausted".equals(normalized)) {
+            callback.onDailyLimitReached();
+        } else {
+            callback.onError(message);
+        }
     }
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
 
-    private String readableError(Exception error) {
-        if (FriendlyErrorMapper.isNetworkError(error)) {
-            return FriendlyErrorMapper.NETWORK_MESSAGE;
+    private String safeLogValue(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    public static class ReportResult {
+        private final String reportId;
+        private final String status;
+        private final Long remainingDailyReports;
+
+        public ReportResult(String reportId, String status, Long remainingDailyReports) {
+            this.reportId = reportId;
+            this.status = status;
+            this.remainingDailyReports = remainingDailyReports;
         }
-        if (error instanceof FirebaseFirestoreException) {
-            FirebaseFirestoreException firestoreError = (FirebaseFirestoreException) error;
-            String details = firestoreError.getMessage();
-            if (firestoreError.getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                return "Rapor göndermek için Firestore kurallarını kontrol edin.";
-            }
-            if (firestoreError.getCode() == FirebaseFirestoreException.Code.FAILED_PRECONDITION
-                    && details != null && details.toLowerCase(Locale.ROOT).contains("index")) {
-                return "Rapor limiti için gerekli Firestore indeksi eksik.";
-            }
-            if (firestoreError.getCode() == FirebaseFirestoreException.Code.UNAVAILABLE) {
-                return "Rapor gönderilemedi. İnternet bağlantınızı kontrol edin.";
-            }
+
+        public String getReportId() {
+            return reportId;
         }
-        return "Rapor gönderilemedi. Lütfen tekrar deneyin.";
+
+        public String getStatus() {
+            return status;
+        }
+
+        public Long getRemainingDailyReports() {
+            return remainingDailyReports;
+        }
     }
 }

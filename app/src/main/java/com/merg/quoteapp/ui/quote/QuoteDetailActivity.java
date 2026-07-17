@@ -51,6 +51,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
     private LikeViewModel likeViewModel;
     private FavoriteViewModel favoriteViewModel;
     private ReportViewModel reportViewModel;
+    private ReportBottomSheetHelper.ReportSheetController reportSheetController;
     private Quote currentQuote;
     private ScrollView contentScroll;
     private ProgressBar progressBar;
@@ -268,29 +269,36 @@ public class QuoteDetailActivity extends AppCompatActivity {
     private void observeReportState() {
         reportViewModel.getLoading().observe(this, loading -> {
             if (Boolean.TRUE.equals(loading)) {
+                if (reportSheetController != null) {
+                    reportSheetController.setLoading(true);
+                }
                 showStatus(getString(R.string.operation_in_progress), false);
             }
         });
         reportViewModel.getSuccess().observe(this, success -> {
             if (Boolean.TRUE.equals(success)) {
+                dismissReportSheet();
                 showStatus(getString(R.string.report_sent), false);
                 reportViewModel.clearResultStates();
             }
         });
         reportViewModel.getAlreadyReported().observe(this, already -> {
             if (Boolean.TRUE.equals(already)) {
+                resetReportSheetLoading();
                 showStatus(getString(R.string.report_already_sent), true);
                 reportViewModel.clearResultStates();
             }
         });
         reportViewModel.getDailyLimitReached().observe(this, reached -> {
             if (Boolean.TRUE.equals(reached)) {
+                resetReportSheetLoading();
                 showStatus(getString(R.string.report_daily_limit_reached), true);
                 reportViewModel.clearResultStates();
             }
         });
         reportViewModel.getError().observe(this, message -> {
             if (message != null && !message.trim().isEmpty()) {
+                resetReportSheetLoading();
                 showStatus(message, true);
                 reportViewModel.clearResultStates();
             }
@@ -480,9 +488,22 @@ public class QuoteDetailActivity extends AppCompatActivity {
         if (currentQuote == null) {
             return;
         }
-        ReportBottomSheetHelper.show(this,
+        reportSheetController = ReportBottomSheetHelper.show(this,
                 (reason, description) ->
                         reportViewModel.submitReport(currentQuote, reason, description));
+    }
+
+    private void dismissReportSheet() {
+        if (reportSheetController != null && reportSheetController.isShowing()) {
+            reportSheetController.dismiss();
+        }
+        reportSheetController = null;
+    }
+
+    private void resetReportSheetLoading() {
+        if (reportSheetController != null && reportSheetController.isShowing()) {
+            reportSheetController.setLoading(false);
+        }
     }
 
     private boolean canReportCurrentQuote() {

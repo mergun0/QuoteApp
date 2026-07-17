@@ -224,10 +224,10 @@
     <string name="report_quote_title">Report Quote</string>
     <string name="report_quote_subtitle">Tell us why this quote should be reviewed.</string>
     <string name="report_description_hint">Optional description</string>
-    <string name="submit_report">Submit Report</string>
-    <string name="report_sent">Report sent. Thank you for helping keep QuoteApp safe.</string>
-    <string name="report_already_sent">You have already reported this quote.</string>
-    <string name="report_daily_limit_reached">You have reached today\'s report limit.</string>
+    <string name="submit_report">Rapor Gönder</string>
+    <string name="report_sent">Raporunuz inceleme için iletildi.</string>
+    <string name="report_already_sent">Bu alıntıyı daha önce raporladınız.</string>
+    <string name="report_daily_limit_reached">Şu anda daha fazla rapor gönderemezsiniz. Lütfen daha sonra tekrar deneyin.</string>
     <string name="report_reason_other">Other</string>
     <string name="discover_subtitle">Film, dizi ve kitaplardan paylaşılan en yeni alıntıları keşfet.</string>
     <string name="search_discover">Toplulukta ara...</string>

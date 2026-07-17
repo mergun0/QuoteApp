@@ -111,6 +111,52 @@ firebase deploy --project <real-firebase-project-id> --only firestore:rules
 This task intentionally does not deploy rules.
 The checked-in `.firebaserc` uses `demo-quoteapp` for local emulator tests only.
 
+## Trusted moderation backend
+
+Reports and moderation writes are moving behind Cloud Functions. The target architecture is:
+
+```text
+Android client -> callable Cloud Function -> Admin SDK transaction -> Firestore
+```
+
+Normal clients must not write these collections directly:
+
+```text
+reports
+moderationActions
+moderationStats
+moderatorStats
+reporterStats
+reportRateLimits
+userRestrictions
+```
+
+Moderator/admin authorization uses Firebase Auth custom claims:
+
+```text
+role == "moderator"
+role == "admin"
+```
+
+The public `users/{uid}.role` field is only a display/cache field and must not be treated as privileged authorization.
+
+Local Functions checks:
+
+```bash
+npm --prefix functions run lint
+npm --prefix functions run build
+npm --prefix functions run emulators:test
+```
+
+Important rollout order:
+
+1. Deploy callable functions after review.
+2. Migrate Android report submission to `submitReport`.
+3. Run `npm run test:rules`.
+4. Deploy Firestore Rules only after Android no longer writes `reports` directly.
+
+See `docs/MODERATION_BACKEND.md` for callable contracts and collection details.
+
 ## App Check rollout
 
 Android is prepared for:

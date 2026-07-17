@@ -69,6 +69,9 @@ public class ReportViewModel extends ViewModel {
      * @param description optional report description
      */
     public void submitReport(Quote quote, String reason, String description) {
+        if (Boolean.TRUE.equals(loading.getValue())) {
+            return;
+        }
         if (quote == null) {
             error.setValue("Raporlanacak alıntı bulunamadı.");
             return;
@@ -77,7 +80,6 @@ public class ReportViewModel extends ViewModel {
         loading.setValue(true);
         repository.submitReport(
                 quote.getQuoteId(),
-                quote.getUserId(),
                 reason,
                 description,
                 new ReportRepository.ReportCallback() {

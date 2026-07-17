@@ -81,6 +81,19 @@ async function main() {
     });
     await setDoc(doc(db, "quotes/quoteA"), validQuote("quoteA", "userA", 0));
     await setDoc(doc(db, "quotes/quoteB"), validQuote("quoteB", "userB", 0));
+    await setDoc(doc(db, "reports/quoteB_userA"), {
+      reportId: "quoteB_userA",
+      quoteId: "quoteB",
+      reportedUserId: "userB",
+      reporterUserId: "userA",
+      reason: "Spam",
+      description: "",
+      status: "PENDING",
+      createdAt: new Date(),
+      reviewedAt: null,
+      reviewedBy: null,
+      isValidReport: null,
+    });
     await setDoc(doc(db, "achievements/first_quote"), {
       achievementId: "first_quote",
       title: "İlk Satır",
@@ -247,7 +260,7 @@ async function main() {
   await assertFails(updateDoc(doc(user, "quotes/quoteB"), { favoriteCount: -1 }));
   await assertFails(deleteDoc(doc(other, "favorites/userA_quoteB")));
 
-  await assertSucceeds(setDoc(doc(user, "reports/quoteB_userA"), {
+  await assertFails(setDoc(doc(user, "reports/quoteB_userA_new"), {
     reportId: "quoteB_userA",
     quoteId: "quoteB",
     reportedUserId: "userB",
@@ -289,13 +302,17 @@ async function main() {
   await assertFails(updateDoc(doc(user, "reports/quoteB_userA"), { status: "APPROVED" }));
   await assertFails(getDocs(collection(user, "reports")));
   await assertSucceeds(getDocs(collection(moderator, "reports")));
-  await assertSucceeds(updateDoc(doc(moderator, "reports/quoteB_userA"), {
+  await assertFails(updateDoc(doc(moderator, "reports/quoteB_userA"), {
     status: "APPROVED",
     reviewedAt: serverTimestamp(),
     reviewedBy: "mod1",
     isValidReport: true,
   }));
   await assertFails(deleteDoc(doc(user, "reports/quoteB_userA")));
+  await assertFails(setDoc(doc(user, "moderationStats/userB"), { userId: "userB" }));
+  await assertFails(setDoc(doc(moderator, "moderationActions/action1"), { actionId: "action1" }));
+  await assertSucceeds(getDocs(collection(moderator, "moderationStats")));
+  await assertSucceeds(getDocs(collection(admin, "moderationActions")));
 
   await assertSucceeds(setDoc(doc(user, "userAchievements/userA_first_quote"), {
     userAchievementId: "userA_first_quote",

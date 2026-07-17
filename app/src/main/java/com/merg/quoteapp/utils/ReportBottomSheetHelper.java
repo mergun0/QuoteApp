@@ -21,6 +21,36 @@ public final class ReportBottomSheetHelper {
         void onSubmit(String reason, String description);
     }
 
+    public static class ReportSheetController {
+        private final BottomSheetDialog dialog;
+        private final MaterialButton submitButton;
+        private final String submitText;
+
+        ReportSheetController(BottomSheetDialog dialog, MaterialButton submitButton, String submitText) {
+            this.dialog = dialog;
+            this.submitButton = submitButton;
+            this.submitText = submitText;
+        }
+
+        public void setLoading(boolean loading) {
+            submitButton.setEnabled(!loading);
+            submitButton.setText(loading ? R.string.operation_in_progress : R.string.submit_report);
+        }
+
+        public void dismiss() {
+            dialog.dismiss();
+        }
+
+        public boolean isShowing() {
+            return dialog.isShowing();
+        }
+
+        void reset() {
+            submitButton.setEnabled(true);
+            submitButton.setText(submitText);
+        }
+    }
+
     private ReportBottomSheetHelper() {
     }
 
@@ -30,7 +60,7 @@ public final class ReportBottomSheetHelper {
      * @param context Android context
      * @param listener selected report values callback
      */
-    public static void show(Context context, ReportSubmitListener listener) {
+    public static ReportSheetController show(Context context, ReportSubmitListener listener) {
         BottomSheetDialog dialog = new BottomSheetDialog(context);
         LinearLayout container = new LinearLayout(context);
         container.setOrientation(LinearLayout.VERTICAL);
@@ -78,6 +108,7 @@ public final class ReportBottomSheetHelper {
 
         MaterialButton submitButton = new MaterialButton(context);
         submitButton.setText(R.string.submit_report);
+        String submitText = context.getString(R.string.submit_report);
         LinearLayout.LayoutParams submitParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(context, 52));
@@ -93,17 +124,23 @@ public final class ReportBottomSheetHelper {
                             ? View.VISIBLE : View.GONE);
         });
 
+        ReportSheetController controller = new ReportSheetController(dialog, submitButton, submitText);
+
         submitButton.setOnClickListener(view -> {
+            if (!submitButton.isEnabled()) {
+                return;
+            }
             View checked = reasonGroup.findViewById(reasonGroup.getCheckedRadioButtonId());
             String reason = checked == null ? "" : String.valueOf(checked.getTag());
             String description = descriptionInput.getText() == null
                     ? "" : descriptionInput.getText().toString();
+            controller.setLoading(true);
             listener.onSubmit(reason, description);
-            dialog.dismiss();
         });
 
         dialog.setContentView(container);
         dialog.show();
+        return controller;
     }
 
     private static int dp(Context context, int value) {

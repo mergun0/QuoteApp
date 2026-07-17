@@ -75,12 +75,23 @@ Planned:
 
 Planned:
 
+* Trusted Cloud Functions moderation backend
+* Callable report submission
+* Callable moderator report review
+* Moderation action audit log
+* Reporter/moderator/moderation stats
+* Reporting restrictions
 * Admin web panel
 * Review reports
 * Approve / reject reports
 * User restrictions
 * Content removal
 * Detective badge integration
+
+Note:
+
+* Backend foundation exists before moderator UI/admin panel.
+* Android report UI must call Cloud Functions before strict report Rules are deployed.
 
 ---
 
