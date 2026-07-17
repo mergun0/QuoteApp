@@ -25,6 +25,7 @@ local.properties
 # Firebase Admin SDK
 serviceAccountKey.json
 *serviceAccount*.json
+admin-panel/.env
 
 # Node.js (Firestore seed)
 node_modules/

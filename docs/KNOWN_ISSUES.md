@@ -38,7 +38,10 @@ Low
 
 ## Security Rollout
 
-- Android report submission still needs to be migrated from direct Firestore writes to the new `submitReport` callable before report-denying Firestore Rules are deployed.
+- Temporary no-billing v1.0 uses direct Firestore pending report creation instead of deployed Cloud Functions.
+- Reliable daily report limits, same-target daily limits, invalid-report streak restrictions and moderation counters require the trusted Functions backend and are deferred.
+- Soft-hidden quotes require Android feed/query filtering before content removal is fully production-safe.
+- Before switching back to callable-only moderation, deploy Functions first, migrate Android report submission to `submitReport`, then deploy stricter report-denying Rules.
 - Functions emulator tests use local Node 22 while the deploy runtime target is Node 18; this is acceptable for local validation but production deploy should use a compatible Firebase CLI/runtime setup.
 
 Priority:

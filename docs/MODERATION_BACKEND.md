@@ -1,6 +1,8 @@
 # Moderation Backend
 
-QuoteApp moderation is moving to trusted Cloud Functions so normal Android clients no longer create or review reports directly in Firestore.
+QuoteApp moderation has a trusted Cloud Functions backend prepared for future activation.
+
+For the temporary no-billing v1.0 architecture, these functions remain checked in but inactive/not deployed. Android submits narrowly scoped pending reports directly to Firestore, and review happens only through the local Node.js admin panel described in `docs/LOCAL_ADMIN_PANEL.md`.
 
 ## Runtime
 
@@ -155,7 +157,21 @@ Before production enforcement:
 
 ## Android migration note
 
-The current Android report UI may still use direct Firestore writes. Do not deploy the new report-denying Firestore Rules until Android is migrated to call `submitReport`.
+Temporary v1.0 behavior:
+
+```text
+Android -> reports/{quoteId}_{reporterUid}
+```
+
+Android may create only pending report documents with a strict field allowlist. It cannot update/delete reports or review content.
+
+Future backend behavior:
+
+```text
+Android -> callable submitReport -> Admin SDK transaction -> Firestore
+```
+
+Do not deploy the callable-only report-denying Firestore Rules until Android is migrated back to `submitReport` and the Functions backend is deployed.
 
 ## Audit and privacy notes
 

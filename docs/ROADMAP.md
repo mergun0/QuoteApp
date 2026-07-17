@@ -75,23 +75,26 @@ Planned:
 
 Planned:
 
-* Trusted Cloud Functions moderation backend
-* Callable report submission
-* Callable moderator report review
+* Temporary no-billing v1.0 direct pending report submission
+* Local Node.js Admin SDK moderation panel
+* Trusted Cloud Functions moderation backend preserved for future activation
+* Callable report submission deferred until billing/backend deployment
+* Callable moderator report review deferred until backend deployment
 * Moderation action audit log
-* Reporter/moderator/moderation stats
-* Reporting restrictions
-* Admin web panel
+* Reporter/moderator/moderation stats deferred
+* Reporting restrictions deferred
+* Hosted admin web panel deferred
 * Review reports
 * Approve / reject reports
-* User restrictions
-* Content removal
+* User restrictions deferred
+* Soft-hide reported quote after approved report
 * Detective badge integration
 
 Note:
 
 * Backend foundation exists before moderator UI/admin panel.
-* Android report UI must call Cloud Functions before strict report Rules are deployed.
+* For no-billing v1.0, Android writes only validated pending report documents.
+* Cloud Functions must be deployed before switching to stricter callable-only report Rules.
 
 ---
 

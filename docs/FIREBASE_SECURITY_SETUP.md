@@ -111,18 +111,34 @@ firebase deploy --project <real-firebase-project-id> --only firestore:rules
 This task intentionally does not deploy rules.
 The checked-in `.firebaserc` uses `demo-quoteapp` for local emulator tests only.
 
-## Trusted moderation backend
+## Moderation rollout
 
-Reports and moderation writes are moving behind Cloud Functions. The target architecture is:
+The long-term target architecture remains:
 
 ```text
 Android client -> callable Cloud Function -> Admin SDK transaction -> Firestore
 ```
 
-Normal clients must not write these collections directly:
+For the temporary no-billing v1.0 release, Cloud Functions are not deployed. Android can create only a narrow pending report document:
 
 ```text
-reports
+reports/{quoteId}_{reporterUid}
+```
+
+Firestore Rules validate:
+
+- signed-in user
+- deterministic report id
+- reporter uid equals `request.auth.uid`
+- reported user matches the quote owner
+- no self-report
+- `status == "PENDING"`
+- review fields are null
+- exact field allowlist
+
+Normal clients still must not write these moderation collections directly:
+
+```text
 moderationActions
 moderationStats
 moderatorStats
@@ -131,7 +147,7 @@ reportRateLimits
 userRestrictions
 ```
 
-Moderator/admin authorization uses Firebase Auth custom claims:
+Moderator/admin authorization for the future Cloud Functions backend uses Firebase Auth custom claims:
 
 ```text
 role == "moderator"
@@ -139,6 +155,8 @@ role == "admin"
 ```
 
 The public `users/{uid}.role` field is only a display/cache field and must not be treated as privileged authorization.
+
+During the temporary local-admin v1.0 architecture, moderation collections are not exposed to normal, moderator or admin clients through Firestore Rules. The local panel uses Firebase Admin SDK instead.
 
 Local Functions checks:
 
@@ -150,12 +168,22 @@ npm --prefix functions run emulators:test
 
 Important rollout order:
 
+Temporary v1.0 no-billing order:
+
+1. Run Android build and Firestore Rules tests.
+2. Deploy Firestore Rules that allow only valid pending report creates.
+3. Keep Cloud Functions undeployed.
+4. Run `admin-panel/` locally with Firebase Admin SDK for review.
+
+Future callable order:
+
 1. Deploy callable functions after review.
 2. Migrate Android report submission to `submitReport`.
 3. Run `npm run test:rules`.
-4. Deploy Firestore Rules only after Android no longer writes `reports` directly.
+4. Deploy stricter Firestore Rules that deny normal client report creates.
 
 See `docs/MODERATION_BACKEND.md` for callable contracts and collection details.
+See `docs/LOCAL_ADMIN_PANEL.md` for the temporary local review panel.
 
 ## App Check rollout
 

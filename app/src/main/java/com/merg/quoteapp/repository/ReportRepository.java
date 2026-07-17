@@ -7,8 +7,10 @@ import androidx.annotation.Nullable;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.functions.FirebaseFunctions;
-import com.google.firebase.functions.FirebaseFunctionsException;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.merg.quoteapp.model.Report;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -38,17 +40,16 @@ public class ReportRepository {
         void onError(String message);
     }
 
-    public static final String FUNCTIONS_REGION = "europe-west1";
     private static final String TAG = "ReportRepository";
-    private static final String SUBMIT_REPORT_FUNCTION = "submitReport";
+    private static final String REPORTS_COLLECTION = "reports";
     private static volatile ReportRepository instance;
 
     private final FirebaseAuth auth;
-    private final FirebaseFunctions functions;
+    private final FirebaseFirestore firestore;
 
     private ReportRepository() {
         auth = FirebaseAuth.getInstance();
-        functions = FirebaseFunctions.getInstance(FUNCTIONS_REGION);
+        firestore = FirebaseFirestore.getInstance();
     }
 
     /**
@@ -68,22 +69,28 @@ public class ReportRepository {
     }
 
     /**
-     * Submits a quote report through the trusted Cloud Function.
+     * Submits a quote report with a deterministic create-only Firestore document.
      *
      * @param quoteId id of the reported quote
+     * @param reportedUserId owner id of the reported quote
      * @param reason selected report reason
      * @param description optional report description
      * @param callback result callback
      */
-    public void submitReport(String quoteId, String reason, String description,
-                             ReportCallback callback) {
+    public void submitReport(String quoteId, String reportedUserId, String reason,
+                             String description, ReportCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError(mapCallableErrorCode("unauthenticated"));
+            callback.onError("Rapor göndermek için giriş yapmalısınız.");
             return;
         }
-        if (isBlank(quoteId)) {
+        String reporterUserId = user.getUid();
+        if (isBlank(quoteId) || isBlank(reportedUserId)) {
             callback.onError("Raporlanacak alıntı bulunamadı.");
+            return;
+        }
+        if (reporterUserId.equals(reportedUserId)) {
+            callback.onError("Kendi alıntınızı raporlayamazsınız.");
             return;
         }
         if (isBlank(reason)) {
@@ -91,31 +98,58 @@ public class ReportRepository {
             return;
         }
 
-        Map<String, Object> payload = buildSubmitReportPayload(quoteId, reason, description);
-        functions
-                .getHttpsCallable(SUBMIT_REPORT_FUNCTION)
-                .call(payload)
-                .addOnSuccessListener(result -> {
-                    parseSubmitReportResult(result.getData());
-                    Log.d(TAG, SUBMIT_REPORT_FUNCTION + " success. quoteId=" + safeLogValue(quoteId));
-                    callback.onSuccess();
+        String cleanQuoteId = quoteId.trim();
+        String reportId = reportDocumentId(cleanQuoteId, reporterUserId);
+        Map<String, Object> data = buildDirectReportData(
+                cleanQuoteId,
+                reportedUserId.trim(),
+                reporterUserId,
+                reason,
+                description,
+                FieldValue.serverTimestamp()
+        );
+
+        firestore.collection(REPORTS_COLLECTION)
+                .document(reportId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.exists()) {
+                        callback.onAlreadyReported();
+                        return;
+                    }
+                    firestore.collection(REPORTS_COLLECTION)
+                            .document(reportId)
+                            .set(data)
+                            .addOnSuccessListener(unused -> {
+                                Log.d(TAG, "direct report create success. reportId=" + reportId);
+                                callback.onSuccess();
+                            })
+                            .addOnFailureListener(error -> handleCreateFailure(reportId, error, callback));
                 })
-                .addOnFailureListener(error -> handleSubmitFailure(quoteId, error, callback));
+                .addOnFailureListener(error -> handleCreateFailure(reportId, error, callback));
     }
 
     /**
-     * Duplicate checks are server-authoritative after the callable migration.
+     * Checks the deterministic report document for lightweight duplicate UX only.
      *
      * @param quoteId quote id to check
      * @param reporterUserId reporter user id
      * @param callback duplicate report callback
      */
     public void alreadyReported(String quoteId, String reporterUserId, BooleanCallback callback) {
-        callback.onSuccess(false);
+        if (isBlank(quoteId) || isBlank(reporterUserId)) {
+            callback.onError("Rapor bilgisi kontrol edilemedi.");
+            return;
+        }
+        firestore.collection(REPORTS_COLLECTION)
+                .document(reportDocumentId(quoteId.trim(), reporterUserId.trim()))
+                .get()
+                .addOnSuccessListener(document -> callback.onSuccess(document.exists()))
+                .addOnFailureListener(error -> callback.onError(mapFirestoreError(error)));
     }
 
     /**
-     * Daily limits are server-authoritative after the callable migration.
+     * Daily limits require trusted backend support and are deferred in no-billing v1.0.
      *
      * @param reporterUserId reporter user id
      * @param callback report count callback
@@ -125,133 +159,91 @@ public class ReportRepository {
     }
 
     /**
-     * Builds the callable payload. Only these fields may be sent by Android.
+     * Builds the report document id used by Android and Firestore Rules.
      *
      * @param quoteId quote id
-     * @param reason selected reason
-     * @param description optional description
-     * @return callable payload
+     * @param reporterUserId reporter uid
+     * @return deterministic report id
      */
     @NonNull
-    public static Map<String, Object> buildSubmitReportPayload(String quoteId, String reason,
-                                                               @Nullable String description) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("quoteId", quoteId == null ? "" : quoteId.trim());
-        payload.put("reason", reason == null ? "" : reason.trim());
-        String cleanDescription = description == null ? "" : description.trim();
-        if (!cleanDescription.isEmpty()) {
-            payload.put("description", cleanDescription);
-        }
-        return payload;
+    public static String reportDocumentId(String quoteId, String reporterUserId) {
+        return (quoteId == null ? "" : quoteId.trim()) + "_"
+                + (reporterUserId == null ? "" : reporterUserId.trim());
     }
 
     /**
-     * Maps callable error codes to user-safe Turkish messages.
+     * Builds the direct Firestore report payload. Caller supplies the timestamp sentinel.
      *
-     * @param code Firebase Functions error code name
-     * @return user-safe message
+     * @param quoteId quote id
+     * @param reportedUserId quote owner uid
+     * @param reporterUserId current user uid
+     * @param reason selected reason
+     * @param description optional description
+     * @param createdAt server timestamp sentinel for production, test value for unit tests
+     * @return report payload
      */
     @NonNull
-    public static String mapCallableErrorCode(@Nullable String code) {
-        String normalized = code == null ? "unknown" :
-                code.replace("_", "-").toLowerCase(Locale.ROOT);
-        switch (normalized) {
-            case "unauthenticated":
-                return "Rapor göndermek için giriş yapmalısınız.";
-            case "invalid-argument":
-                return "Rapor bilgileri geçerli değil.";
-            case "not-found":
-                return "Raporlamak istediğiniz alıntı artık mevcut değil.";
+    public static Map<String, Object> buildDirectReportData(String quoteId,
+                                                            String reportedUserId,
+                                                            String reporterUserId,
+                                                            String reason,
+                                                            @Nullable String description,
+                                                            Object createdAt) {
+        String cleanQuoteId = quoteId == null ? "" : quoteId.trim();
+        String cleanReporterUserId = reporterUserId == null ? "" : reporterUserId.trim();
+        String reportId = reportDocumentId(cleanQuoteId, cleanReporterUserId);
+        Map<String, Object> data = new HashMap<>();
+        data.put("reportId", reportId);
+        data.put("quoteId", cleanQuoteId);
+        data.put("reportedUserId", reportedUserId == null ? "" : reportedUserId.trim());
+        data.put("reporterUserId", cleanReporterUserId);
+        data.put("reason", reason == null ? "" : reason.trim());
+        data.put("description", description == null ? "" : description.trim());
+        data.put("status", Report.STATUS_PENDING);
+        data.put("createdAt", createdAt);
+        data.put("reviewedAt", null);
+        data.put("reviewedBy", null);
+        data.put("isValidReport", null);
+        return data;
+    }
+
+    private void handleCreateFailure(String reportId, Exception error, ReportCallback callback) {
+        Log.e(TAG, "direct report create failed. reportId=" + reportId
+                + ", code=" + firestoreCode(error), error);
+        String code = firestoreCode(error);
+        if ("already-exists".equals(code) || "permission-denied".equals(code)) {
+            callback.onError("Rapor gönderilemedi. Lütfen tekrar deneyin.");
+            return;
+        }
+        callback.onError(mapFirestoreError(error));
+    }
+
+    private String mapFirestoreError(Exception error) {
+        String code = firestoreCode(error);
+        switch (code) {
             case "permission-denied":
                 return "Bu alıntıyı raporlayamazsınız.";
-            case "already-exists":
-                return "Bu alıntıyı daha önce raporladınız.";
-            case "resource-exhausted":
-                return "Şu anda daha fazla rapor gönderemezsiniz. Lütfen daha sonra tekrar deneyin.";
-            case "failed-precondition":
-                return "Bu rapor şu anda gönderilemez. Lütfen daha sonra tekrar deneyin.";
+            case "not-found":
+                return "Raporlamak istediğiniz alıntı artık mevcut değil.";
             case "unavailable":
             case "deadline-exceeded":
                 return "Bağlantı kurulamadı. Lütfen tekrar deneyin.";
+            case "aborted":
+                return "İşlem tamamlanamadı. Lütfen tekrar deneyin.";
             default:
                 return "Rapor gönderilemedi. Lütfen tekrar deneyin.";
         }
     }
 
-    /**
-     * Parses the callable result in a null-safe way.
-     *
-     * @param rawResult callable raw result
-     * @return parsed result
-     */
-    @NonNull
-    public static ReportResult parseSubmitReportResult(@Nullable Object rawResult) {
-        if (!(rawResult instanceof Map)) {
-            return new ReportResult("", "", null);
+    private String firestoreCode(Exception error) {
+        if (error instanceof FirebaseFirestoreException) {
+            FirebaseFirestoreException firestoreError = (FirebaseFirestoreException) error;
+            return firestoreError.getCode().name().replace("_", "-").toLowerCase(Locale.ROOT);
         }
-        Map<?, ?> result = (Map<?, ?>) rawResult;
-        Object reportId = result.get("reportId");
-        Object status = result.get("status");
-        Object remainingDailyReports = result.get("remainingDailyReports");
-        Long remaining = remainingDailyReports instanceof Number
-                ? ((Number) remainingDailyReports).longValue()
-                : null;
-        return new ReportResult(
-                reportId instanceof String ? (String) reportId : "",
-                status instanceof String ? (String) status : "",
-                remaining
-        );
-    }
-
-    private void handleSubmitFailure(String quoteId, Exception error, ReportCallback callback) {
-        String code = "unknown";
-        if (error instanceof FirebaseFunctionsException) {
-            FirebaseFunctionsException functionsError = (FirebaseFunctionsException) error;
-            code = functionsError.getCode().name();
-        }
-        Log.e(TAG, SUBMIT_REPORT_FUNCTION + " failed. code=" + code
-                + ", quoteId=" + safeLogValue(quoteId), error);
-
-        String message = mapCallableErrorCode(code);
-        String normalized = code.replace("_", "-").toLowerCase(Locale.ROOT);
-        if ("already-exists".equals(normalized)) {
-            callback.onAlreadyReported();
-        } else if ("resource-exhausted".equals(normalized)) {
-            callback.onDailyLimitReached();
-        } else {
-            callback.onError(message);
-        }
+        return "unknown";
     }
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
-    }
-
-    private String safeLogValue(String value) {
-        return value == null ? "" : value.trim();
-    }
-
-    public static class ReportResult {
-        private final String reportId;
-        private final String status;
-        private final Long remainingDailyReports;
-
-        public ReportResult(String reportId, String status, Long remainingDailyReports) {
-            this.reportId = reportId;
-            this.status = status;
-            this.remainingDailyReports = remainingDailyReports;
-        }
-
-        public String getReportId() {
-            return reportId;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public Long getRemainingDailyReports() {
-            return remainingDailyReports;
-        }
     }
 }

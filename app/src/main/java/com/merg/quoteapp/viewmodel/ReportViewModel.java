@@ -80,6 +80,7 @@ public class ReportViewModel extends ViewModel {
         loading.setValue(true);
         repository.submitReport(
                 quote.getQuoteId(),
+                quote.getUserId(),
                 reason,
                 description,
                 new ReportRepository.ReportCallback() {

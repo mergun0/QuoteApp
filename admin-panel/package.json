@@ -1,0 +1,15 @@
+{
+  "name": "quoteapp-admin-panel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-only moderation admin panel for QuoteApp v1.0 no-billing architecture.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node test/security.test.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "firebase-admin": "^12.7.0"
+  }
+}

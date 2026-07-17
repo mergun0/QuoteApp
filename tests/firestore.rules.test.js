@@ -81,6 +81,10 @@ async function main() {
     });
     await setDoc(doc(db, "quotes/quoteA"), validQuote("quoteA", "userA", 0));
     await setDoc(doc(db, "quotes/quoteB"), validQuote("quoteB", "userB", 0));
+    await setDoc(doc(db, "quotes/quoteC"), validQuote("quoteC", "userB", 0));
+    await setDoc(doc(db, "quotes/quoteD"), validQuote("quoteD", "userB", 0));
+    await setDoc(doc(db, "quotes/quoteE"), validQuote("quoteE", "userB", 0));
+    await setDoc(doc(db, "quotes/quoteF"), validQuote("quoteF", "userB", 0));
     await setDoc(doc(db, "reports/quoteB_userA"), {
       reportId: "quoteB_userA",
       quoteId: "quoteB",
@@ -260,8 +264,34 @@ async function main() {
   await assertFails(updateDoc(doc(user, "quotes/quoteB"), { favoriteCount: -1 }));
   await assertFails(deleteDoc(doc(other, "favorites/userA_quoteB")));
 
+  await assertSucceeds(setDoc(doc(user, "reports/quoteC_userA"), {
+    reportId: "quoteC_userA",
+    quoteId: "quoteC",
+    reportedUserId: "userB",
+    reporterUserId: "userA",
+    reason: "Spam",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+  }));
+  await assertFails(setDoc(doc(user, "reports/quoteC_userA"), {
+    reportId: "quoteC_userA",
+    quoteId: "quoteC",
+    reportedUserId: "userB",
+    reporterUserId: "userA",
+    reason: "Spam",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+  }));
   await assertFails(setDoc(doc(user, "reports/quoteB_userA_new"), {
-    reportId: "quoteB_userA",
+    reportId: "quoteB_userA_new",
     quoteId: "quoteB",
     reportedUserId: "userB",
     reporterUserId: "userA",
@@ -286,9 +316,9 @@ async function main() {
     reviewedBy: null,
     isValidReport: null,
   }));
-  await assertFails(setDoc(doc(user, "reports/quoteB_userA_fake"), {
-    reportId: "quoteB_userA_fake",
-    quoteId: "quoteB",
+  await assertFails(setDoc(doc(user, "reports/quoteF_userA"), {
+    reportId: "quoteF_userA",
+    quoteId: "quoteF",
     reportedUserId: "userA",
     reporterUserId: "userA",
     reason: "Spam",
@@ -299,9 +329,37 @@ async function main() {
     reviewedBy: null,
     isValidReport: null,
   }));
+  await assertFails(setDoc(doc(user, "reports/quoteD_userA"), {
+    reportId: "quoteD_userA",
+    quoteId: "quoteD",
+    reportedUserId: "userB",
+    reporterUserId: "userA",
+    reason: "Spam",
+    description: "",
+    status: "APPROVED",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+  }));
+  await assertFails(setDoc(doc(user, "reports/quoteE_userA"), {
+    reportId: "quoteE_userA",
+    quoteId: "quoteE",
+    reportedUserId: "userB",
+    reporterUserId: "userA",
+    reason: "Spam",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: "userA",
+    isValidReport: null,
+  }));
   await assertFails(updateDoc(doc(user, "reports/quoteB_userA"), { status: "APPROVED" }));
   await assertFails(getDocs(collection(user, "reports")));
-  await assertSucceeds(getDocs(collection(moderator, "reports")));
+  await assertSucceeds(getDoc(doc(user, "reports/quoteB_userA")));
+  await assertFails(getDoc(doc(other, "reports/quoteB_userA")));
+  await assertFails(getDocs(collection(moderator, "reports")));
   await assertFails(updateDoc(doc(moderator, "reports/quoteB_userA"), {
     status: "APPROVED",
     reviewedAt: serverTimestamp(),
@@ -311,8 +369,8 @@ async function main() {
   await assertFails(deleteDoc(doc(user, "reports/quoteB_userA")));
   await assertFails(setDoc(doc(user, "moderationStats/userB"), { userId: "userB" }));
   await assertFails(setDoc(doc(moderator, "moderationActions/action1"), { actionId: "action1" }));
-  await assertSucceeds(getDocs(collection(moderator, "moderationStats")));
-  await assertSucceeds(getDocs(collection(admin, "moderationActions")));
+  await assertFails(getDocs(collection(moderator, "moderationStats")));
+  await assertFails(getDocs(collection(admin, "moderationActions")));
 
   await assertSucceeds(setDoc(doc(user, "userAchievements/userA_first_quote"), {
     userAchievementId: "userA_first_quote",
