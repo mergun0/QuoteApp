@@ -1,6 +1,6 @@
 # Local Admin Panel
 
-QuoteApp v1.0 uses a temporary no-billing moderation architecture.
+Satır Arası / QuoteApp v1.0 uses a temporary no-billing moderation architecture.
 
 ## Architecture
 
@@ -38,6 +38,27 @@ FIREBASE_SERVICE_ACCOUNT_PATH=C:\secure\serviceAccountKey.json
 
 Default bind host is `127.0.0.1`. Do not expose this panel publicly.
 
+## Navigation structure
+
+The redesigned server-rendered panel uses a SaaS-style admin layout:
+
+- left dark navy sidebar
+- compact top bar
+- light content background
+- white rounded cards
+- responsive tables and filters
+
+Sidebar pages:
+
+- Dashboard
+- Bekleyen Raporlar
+- Onaylanan Raporlar
+- Reddedilen Raporlar
+- İşlem Geçmişi
+- Çıkış
+
+On mobile, the sidebar collapses behind a touch-friendly menu button.
+
 ## Service account handling
 
 - Never commit service account files.
@@ -56,6 +77,28 @@ Pages:
 - approved reports
 - rejected reports
 - report detail
+- moderation action history
+
+Dashboard shows:
+
+- Bekleyen Raporlar
+- Onaylanan Raporlar
+- Reddedilen Raporlar
+- Gizlenen Alıntılar
+- Bugünkü İşlemler
+- latest pending reports
+- latest moderation actions
+- quick actions
+- system status
+
+Report list pages include:
+
+- search by quote text, username or UID
+- reason filter
+- date sorting
+- pagination
+- empty state
+- status/reason badges
 
 Report detail shows:
 
@@ -108,6 +151,46 @@ note
 
 Normal clients cannot read or write this collection. The local panel uses Firebase Admin SDK, which bypasses Firestore Rules.
 
+## Required Firestore indexes
+
+Defined in `firestore.indexes.json`:
+
+```text
+reports:
+  status ASC
+  createdAt DESC
+
+moderationActions:
+  actionType ASC
+  createdAt DESC
+```
+
+Deploy indexes manually only after review:
+
+```bash
+firebase deploy --project <real-project-id> --only firestore:indexes
+```
+
+Do not deploy indexes automatically from Codex tasks.
+
+## Panel security
+
+The panel preserves and adds:
+
+- Firebase Admin SDK server-side only
+- no service account values in HTML, JS or logs
+- `LOCAL_ADMIN_PASSWORD` from environment
+- minimum 16-character local admin password
+- login attempt throttling
+- 8-hour in-memory session timeout
+- HttpOnly session cookie
+- SameSite=Strict cookies
+- CSRF validation on POST actions
+- POST-only moderation actions
+- confirmation dialogs for destructive actions
+- local security headers / CSP
+- localhost bind by default
+
 ## Current anti-abuse protections
 
 Firestore Rules enforce:
@@ -128,6 +211,8 @@ Deferred until trusted backend activation:
 - invalid-report streak restrictions
 - reporter/moderator/moderation counters
 - automatic reporting restrictions
+- hosted multi-user admin UI
+- production-grade audit analytics
 
 ## Future migration to Cloud Functions
 
