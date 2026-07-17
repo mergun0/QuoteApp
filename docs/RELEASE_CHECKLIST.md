@@ -46,11 +46,14 @@ Do not mark an item complete unless repository evidence, emulator tests, manual 
 - [ ] Approve flow works.
 - [ ] Reject flow works.
 - [x] Hidden quote flow works.
+- [ ] Production quote visibility backfill completed and verified.
+- [ ] Quote visibility Firestore indexes deployed and enabled.
+- [ ] Tightened quote visibility Rules deployed after Android visible-only query release.
 - [ ] Moderation audit logs work.
-- [x] Hidden quotes do not appear in Home.
-- [x] Hidden quotes do not appear in Discover.
-- [x] Hidden quotes do not appear in Favorites.
-- [x] Hidden quotes do not appear in UserProfile quote lists.
+- [ ] Hidden quotes do not appear in Home after production visibility migration.
+- [ ] Hidden quotes do not appear in Discover after production visibility migration.
+- [ ] Hidden quotes do not appear in Favorites after production visibility migration.
+- [ ] Hidden quotes do not appear in UserProfile quote lists after production visibility migration.
 - [x] Hidden quote detail behavior is reviewed.
 - [ ] Local admin panel credentials and localhost assumptions are documented.
 

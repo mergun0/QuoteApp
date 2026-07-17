@@ -12,6 +12,7 @@ const { loginPage, page } = require("../src/views/layout");
 const { dashboardView } = require("../src/views/dashboard");
 const { reportsView, detailView } = require("../src/views/reports");
 const { actionsView } = require("../src/views/actions");
+const { runBackfillQuoteVisibility } = require("../scripts/backfillQuoteVisibility");
 
 function req(cookie = "", ip = "127.0.0.1") {
   return { headers: { cookie }, ip, socket: { remoteAddress: ip } };
@@ -124,4 +125,111 @@ assert.ok(actionsHtml.includes("REPORT_APPROVED"));
 assert.ok(!actionsHtml.includes("<private>"));
 assert.ok(actionsHtml.includes("&lt;private&gt;"));
 
-console.log("admin-panel tests passed.");
+function createFakeQuoteDb(seedQuotes) {
+  const quotes = new Map(Object.entries(seedQuotes).map(([id, data]) => [id, { ...data }]));
+  const updates = [];
+  return {
+    quotes,
+    updates,
+    batch() {
+      const operations = [];
+      return {
+        update(ref, data) {
+          operations.push({ ref, data });
+        },
+        async commit() {
+          for (const operation of operations) {
+            const existing = quotes.get(operation.ref.id);
+            quotes.set(operation.ref.id, { ...existing, ...operation.data });
+            updates.push({ id: operation.ref.id, data: operation.data });
+          }
+        },
+      };
+    },
+    collection(name) {
+      assert.strictEqual(name, "quotes");
+      return {
+        orderBy() {
+          return this;
+        },
+        limit() {
+          return this;
+        },
+        startAfter() {
+          return this;
+        },
+        async get() {
+          return {
+            docs: Array.from(quotes.entries()).map(([id, data]) => ({
+              id,
+              data: () => ({ ...data }),
+              ref: { id },
+            })),
+          };
+        },
+      };
+    },
+  };
+}
+
+function silentLogger() {
+  return {
+    log() {},
+    warn() {},
+    error() {},
+  };
+}
+
+(async () => {
+  const dryRunDb = createFakeQuoteDb({
+    missing: { text: "legacy" },
+    visible: { text: "visible", isHidden: false },
+    hidden: { text: "hidden", isHidden: true },
+  });
+  const dryRunTotals = await runBackfillQuoteVisibility({
+    db: dryRunDb,
+    logger: silentLogger(),
+  });
+  assert.strictEqual(dryRunTotals.scanned, 3);
+  assert.strictEqual(dryRunTotals.missingField, 1);
+  assert.strictEqual(dryRunTotals.alreadyVisible, 1);
+  assert.strictEqual(dryRunTotals.alreadyHidden, 1);
+  assert.strictEqual(dryRunTotals.updated, 0);
+  assert.strictEqual(dryRunDb.quotes.get("missing").isHidden, undefined);
+
+  const applyDb = createFakeQuoteDb({
+    missing: { text: "legacy" },
+    visible: { text: "visible", isHidden: false },
+    hidden: { text: "hidden", isHidden: true },
+  });
+  const applyTotals = await runBackfillQuoteVisibility({
+    db: applyDb,
+    apply: true,
+    logger: silentLogger(),
+  });
+  assert.strictEqual(applyTotals.updated, 1);
+  assert.strictEqual(applyDb.quotes.get("missing").isHidden, false);
+  assert.strictEqual(applyDb.quotes.get("visible").isHidden, false);
+  assert.strictEqual(applyDb.quotes.get("hidden").isHidden, true);
+
+  const secondApplyTotals = await runBackfillQuoteVisibility({
+    db: applyDb,
+    apply: true,
+    logger: silentLogger(),
+  });
+  assert.strictEqual(secondApplyTotals.missingField, 0);
+  assert.strictEqual(secondApplyTotals.updated, 0);
+
+  const verifyDb = createFakeQuoteDb({
+    missing: { text: "legacy" },
+  });
+  await assert.rejects(
+    runBackfillQuoteVisibility({ db: verifyDb, verify: true, logger: silentLogger() }),
+    /Verification failed/
+  );
+
+  console.log("admin-panel tests passed.");
+})().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

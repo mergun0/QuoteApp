@@ -259,6 +259,7 @@ Security concerns:
 
 - Introduce new systems behind feature flags or versioned rollout paths.
 - Backfill scripts should be idempotent and documented.
+- Quote visibility uses explicit `isHidden` values; future quote readers should query visible content with `isHidden == false` instead of relying on client-side suppression.
 - Avoid replacing existing documents with broad `set()` calls when field-level updates are safer.
 - Keep deterministic document IDs for like, favorite, report and future idempotent reward records.
 - Keep old clients in mind when changing public profile or quote document fields.

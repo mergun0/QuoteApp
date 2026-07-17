@@ -125,7 +125,7 @@ quotes/{quoteId}.hiddenBy = LOCAL_ADMIN
 quotes/{quoteId}.hiddenReason = approved report id
 ```
 
-Android treats only `isHidden == true` as hidden. Missing `isHidden` is treated as legacy visible content so old quote documents do not silently disappear.
+The v1.0 visibility migration requires every visible quote to have `isHidden = false`. Missing `isHidden` is no longer accepted by tightened Rules after the production backfill.
 
 Current Android behavior:
 
@@ -134,11 +134,21 @@ Current Android behavior:
 - Like and save actions reject hidden quote documents.
 - Existing favorite/like documents may remain, but they must not expose hidden quote content.
 
-Current Rules behavior:
+Prepared Rules behavior after the visibility migration:
 
-- direct normal-user `get` reads for `quotes/{quoteId}` are denied when `isHidden == true`
-- normal-user list queries remain compatible with legacy documents and Android performs client-side suppression
-- a future production hardening pass should backfill legacy visible quotes with `isHidden = false`, then require visible-quote constraints in all quote list queries
+- direct normal-user `get` reads for `quotes/{quoteId}` are allowed only when `isHidden == false`
+- normal-user list queries must include a visible-quote constraint compatible with `isHidden == false`
+- hidden or legacy-unbackfilled quotes are not readable by normal users
+
+Visibility migration commands:
+
+```bash
+npm --prefix admin-panel run backfill:quote-visibility
+npm --prefix admin-panel run backfill:quote-visibility -- --apply
+npm --prefix admin-panel run backfill:quote-visibility -- --verify
+```
+
+See `docs/QUOTE_VISIBILITY_MIGRATION.md` for the exact rollout order. Do not deploy tightened Rules before production backfill and index readiness.
 
 ## Audit log
 
@@ -171,6 +181,15 @@ Defined in `firestore.indexes.json`:
 ```text
 reports:
   status ASC
+  createdAt DESC
+
+quotes:
+  isHidden ASC
+  createdAt DESC
+
+quotes:
+  userId ASC
+  isHidden ASC
   createdAt DESC
 
 moderationActions:

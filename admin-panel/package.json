@@ -6,6 +6,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "backfill:quote-visibility": "node scripts/backfillQuoteVisibility.js",
     "test": "node test/security.test.js"
   },
   "dependencies": {

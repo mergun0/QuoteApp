@@ -32,6 +32,7 @@ public class DiscoverRepository {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String currentUserId = currentUser == null ? null : currentUser.getUid();
         return firestore.collection("quotes")
+                .whereEqualTo("isHidden", false)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {

@@ -111,6 +111,42 @@ firebase deploy --project <real-firebase-project-id> --only firestore:rules
 This task intentionally does not deploy rules.
 The checked-in `.firebaserc` uses `demo-quoteapp` for local emulator tests only.
 
+## Quote visibility migration
+
+Before deploying tightened quote visibility Rules, run the local Admin SDK backfill described in `docs/QUOTE_VISIBILITY_MIGRATION.md`.
+
+Dry-run:
+
+```bash
+npm --prefix admin-panel run backfill:quote-visibility
+```
+
+Apply:
+
+```bash
+npm --prefix admin-panel run backfill:quote-visibility -- --apply
+```
+
+Verify:
+
+```bash
+npm --prefix admin-panel run backfill:quote-visibility -- --verify
+```
+
+Then deploy and wait for required indexes:
+
+```bash
+firebase deploy --project <real-firebase-project-id> --only firestore:indexes
+```
+
+Only after the updated Android build uses `whereEqualTo("isHidden", false)` and production data is verified should tightened Rules be deployed:
+
+```bash
+firebase deploy --project <real-firebase-project-id> --only firestore:rules
+```
+
+Older Android versions that still issue broad quote list queries can receive permission-denied errors after the tightened Rules deployment.
+
 ## Moderation rollout
 
 The long-term target architecture remains:

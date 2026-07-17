@@ -93,6 +93,7 @@ public class UserProfileRepository {
     private void loadAggregateCounts(String userId, UserProfileCallback callback) {
         firestore.collection("quotes")
                 .whereEqualTo("userId", userId)
+                .whereEqualTo("isHidden", false)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     totalCount = 0;
@@ -124,6 +125,7 @@ public class UserProfileRepository {
     private void loadTotalLikeCount(String userId, UserProfileCallback callback) {
         firestore.collection("quotes")
                 .whereEqualTo("userId", userId)
+                .whereEqualTo("isHidden", false)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     List<String> quoteIds = new ArrayList<>();
@@ -161,6 +163,7 @@ public class UserProfileRepository {
     private void loadQuotePage(String userId, UserProfileCallback callback) {
         Query query = firestore.collection("quotes")
                 .whereEqualTo("userId", userId)
+                .whereEqualTo("isHidden", false)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .limit(PAGE_SIZE);
         if (lastDocument != null) {

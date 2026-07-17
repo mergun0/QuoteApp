@@ -41,7 +41,7 @@ Low
 
 - Temporary no-billing v1.0 uses direct Firestore pending report creation instead of deployed Cloud Functions.
 - Reliable daily report limits, same-target daily limits, invalid-report streak restrictions and moderation counters require the trusted Functions backend and are deferred.
-- Soft-hidden quotes are filtered in Android repositories and direct hidden quote `get` reads are denied for normal users. Full Firestore `list` denial for hidden quotes still requires a production backfill that writes `isHidden = false` to legacy visible quote documents, then client queries can safely require `whereEqualTo("isHidden", false)`.
+- Hidden quote v1.0 migration is prepared in code, tests and documentation, but production is not complete until `docs/QUOTE_VISIBILITY_MIGRATION.md` is executed: dry-run backfill, apply backfill, verification, index deployment, Rules deployment and Android release verification.
 - Local admin panel is single-password and localhost-only; it is not a hosted multi-moderator product.
 - Firestore indexes in `firestore.indexes.json` must be reviewed and deployed manually before production-scale panel use.
 - Before switching back to callable-only moderation, deploy Functions first, migrate Android report submission to `submitReport`, then deploy stricter report-denying Rules.

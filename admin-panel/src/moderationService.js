@@ -237,14 +237,17 @@ async function deleteReportedQuote(db, FieldValue, reportId, actor = "LOCAL_ADMI
     if (!quoteSnap.exists) {
       throw new Error("Quote not found.");
     }
+    const quote = quoteSnap.data() || {};
 
-    transaction.update(quoteRef, {
-      isHidden: true,
-      hiddenAt: FieldValue.serverTimestamp(),
-      hiddenBy: actor,
-      hiddenReason: `Approved report ${reportId}`,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    if (quote.isHidden !== true) {
+      transaction.update(quoteRef, {
+        isHidden: true,
+        hiddenAt: FieldValue.serverTimestamp(),
+        hiddenBy: actor,
+        hiddenReason: `Approved report ${reportId}`,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
     transaction.create(actionRef, {
       actionType: ACTION_TYPES.quoteDeleted,
       reportId,

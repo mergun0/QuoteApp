@@ -104,6 +104,7 @@ public class AchievementEngineRepository {
                     }
                     firestore.collection(QUOTES_COLLECTION)
                             .whereEqualTo("quoteId", quoteId)
+                            .whereEqualTo("isHidden", false)
                             .limit(1)
                             .get()
                             .addOnSuccessListener(snapshot -> {
@@ -201,6 +202,7 @@ public class AchievementEngineRepository {
     private void recalculateLikeStatsAndAchievements(String userId, long xpAmount) {
         firestore.collection(QUOTES_COLLECTION)
                 .whereEqualTo("userId", userId)
+                .whereEqualTo("isHidden", false)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     List<DocumentSnapshot> quoteDocuments = snapshot.getDocuments();

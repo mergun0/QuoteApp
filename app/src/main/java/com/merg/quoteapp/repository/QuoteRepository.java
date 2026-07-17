@@ -92,6 +92,7 @@ public class QuoteRepository {
                                OperationCallback callback) {
         Map<String, Object> data = quoteData(quote);
         data.put("favoriteCount", 0L);
+        data.put("isHidden", false);
         data.put("createdAt", FieldValue.serverTimestamp());
         data.put("updatedAt", FieldValue.serverTimestamp());
 
@@ -112,6 +113,7 @@ public class QuoteRepository {
 
         return firestore.collection(QUOTES_COLLECTION)
                 .whereEqualTo("userId", user.getUid())
+                .whereEqualTo("isHidden", false)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {

@@ -88,7 +88,9 @@ async function main() {
     await setDoc(doc(db, "quotes/quoteG"), validQuote("quoteG", "userB", 0));
     await setDoc(doc(db, "quotes/quoteH"), validQuote("quoteH", "userB", 0));
     await setDoc(doc(db, "quotes/quoteI"), validQuote("quoteI", "userB", 0));
-    await setDoc(doc(db, "quotes/legacyVisibleQuote"), validQuote("legacyVisibleQuote", "userB", 0));
+    const legacyVisibleQuote = validQuote("legacyVisibleQuote", "userB", 0);
+    delete legacyVisibleQuote.isHidden;
+    await setDoc(doc(db, "quotes/legacyVisibleQuote"), legacyVisibleQuote);
     await setDoc(doc(db, "quotes/explicitVisibleQuote"), {
       ...validQuote("explicitVisibleQuote", "userB", 0),
       isHidden: false,
@@ -209,6 +211,10 @@ async function main() {
   }));
 
   await assertSucceeds(setDoc(doc(user, "quotes/userAQuote"), validQuote("userAQuote", "userA", 0)));
+  await assertFails(setDoc(doc(user, "quotes/userAHiddenCreate"), {
+    ...validQuote("userAHiddenCreate", "userA", 0),
+    isHidden: true,
+  }));
   await assertFails(setDoc(doc(user, "quotes/fakeOwner"), validQuote("fakeOwner", "userB", 0)));
   await assertSucceeds(updateDoc(doc(user, "quotes/quoteA"), {
     text: "Updated quote",
@@ -216,12 +222,16 @@ async function main() {
   }));
   await assertFails(updateDoc(doc(user, "quotes/quoteA"), { userId: "userB" }));
   await assertFails(updateDoc(doc(user, "quotes/quoteA"), { moderationStatus: "hidden" }));
+  await assertFails(updateDoc(doc(user, "quotes/quoteA"), { isHidden: true }));
   await assertFails(updateDoc(doc(other, "quotes/quoteA"), { text: "Nope" }));
   await assertSucceeds(deleteDoc(doc(user, "quotes/userAQuote")));
   await assertFails(deleteDoc(doc(other, "quotes/quoteA")));
-  await assertSucceeds(getDoc(doc(user, "quotes/legacyVisibleQuote")));
+  await assertFails(getDoc(doc(user, "quotes/legacyVisibleQuote")));
   await assertSucceeds(getDoc(doc(user, "quotes/explicitVisibleQuote")));
   await assertFails(getDoc(doc(user, "quotes/hiddenQuote")));
+  await assertSucceeds(getDocs(query(collection(user, "quotes"), where("isHidden", "==", false))));
+  await assertFails(getDocs(collection(user, "quotes")));
+  await assertFails(getDocs(query(collection(user, "quotes"), where("isHidden", "==", true))));
   await assertFails(updateDoc(doc(other, "quotes/hiddenQuote"), {
     text: "Hidden edit attempt",
     updatedAt: serverTimestamp(),
@@ -407,6 +417,19 @@ async function main() {
     reviewedBy: null,
     isValidReport: null,
   }));
+  await assertFails(setDoc(doc(user, "reports/hiddenQuote_userA"), {
+    reportId: "hiddenQuote_userA",
+    quoteId: "hiddenQuote",
+    reportedUserId: "userB",
+    reporterUserId: "userA",
+    reason: "SPAM",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+  }));
   await assertFails(setDoc(doc(user, "reports/quoteD_userA"), {
     reportId: "quoteD_userA",
     quoteId: "quoteD",
@@ -533,6 +556,7 @@ function validQuote(quoteId, userId, favoriteCount) {
     tags: [],
     spoiler: false,
     favoriteCount,
+    isHidden: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };

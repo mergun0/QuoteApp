@@ -298,6 +298,7 @@ public class UserStatsRepository {
                                        UserStatsCallback callback) {
         firestore.collection(QUOTES_COLLECTION)
                 .whereEqualTo("userId", userId)
+                .whereEqualTo("isHidden", false)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     List<DocumentSnapshot> documents = snapshot.getDocuments();

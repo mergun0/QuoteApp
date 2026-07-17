@@ -83,6 +83,7 @@ public class ProfileRepository {
                                 ProfileCallback callback) {
         firestore.collection("quotes")
                 .whereEqualTo("userId", uid)
+                .whereEqualTo("isHidden", false)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     int movieCount = 0;

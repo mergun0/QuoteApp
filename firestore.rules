@@ -49,7 +49,7 @@ service cloud.firestore {
     }
 
     function visibleQuoteData(data) {
-      return !data.keys().hasAny(["isHidden"]) || data.isHidden == false;
+      return data.isHidden == false;
     }
 
     function userPath(userId) {
@@ -119,6 +119,7 @@ service cloud.firestore {
           "tags",
           "spoiler",
           "favoriteCount",
+          "isHidden",
           "createdAt",
           "updatedAt"
         ])
@@ -136,6 +137,7 @@ service cloud.firestore {
         && request.resource.data.tags.size() <= 20
         && request.resource.data.spoiler is bool
         && request.resource.data.favoriteCount == 0
+        && request.resource.data.isHidden == false
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
     }
@@ -341,7 +343,7 @@ service cloud.firestore {
 
     match /quotes/{quoteId} {
       allow get: if signedIn() && visibleQuoteData(resource.data);
-      allow list: if signedIn();
+      allow list: if signedIn() && visibleQuoteData(resource.data);
       allow create: if validQuoteCreate(quoteId);
       allow update: if validQuoteOwnerUpdate()
         || validFavoriteCounterCreate(quoteId)
