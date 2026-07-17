@@ -10,6 +10,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.merg.quoteapp.model.Quote;
+import com.merg.quoteapp.utils.QuoteVisibilityUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -42,7 +43,7 @@ public class DiscoverRepository {
                     if (snapshot != null) {
                         for (DocumentSnapshot document : snapshot.getDocuments()) {
                             Quote quote = document.toObject(Quote.class);
-                            if (quote != null) {
+                            if (quote != null && QuoteVisibilityUtils.isVisible(document)) {
                                 if (quote.getQuoteId() == null || quote.getQuoteId().isEmpty()) {
                                     quote.setQuoteId(document.getId());
                                 }

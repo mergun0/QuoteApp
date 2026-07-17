@@ -16,6 +16,7 @@ import com.merg.quoteapp.model.UserAchievement;
 import com.merg.quoteapp.model.UserStats;
 import com.merg.quoteapp.model.XpRewards;
 import com.merg.quoteapp.utils.AchievementFeedbackCenter;
+import com.merg.quoteapp.utils.QuoteVisibilityUtils;
 
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -97,7 +98,7 @@ public class AchievementEngineRepository {
                 .document(quoteId)
                 .get()
                 .addOnSuccessListener(document -> {
-                    if (document.exists()) {
+                    if (document.exists() && QuoteVisibilityUtils.isVisible(document)) {
                         handleLikedQuoteDocument(document, likerUserId);
                         return;
                     }
@@ -106,7 +107,8 @@ public class AchievementEngineRepository {
                             .limit(1)
                             .get()
                             .addOnSuccessListener(snapshot -> {
-                                if (!snapshot.isEmpty()) {
+                                if (!snapshot.isEmpty()
+                                        && QuoteVisibilityUtils.isVisible(snapshot.getDocuments().get(0))) {
                                     handleLikedQuoteDocument(snapshot.getDocuments().get(0), likerUserId);
                                 }
                             })
@@ -124,7 +126,7 @@ public class AchievementEngineRepository {
                 .document(quoteId)
                 .get()
                 .addOnSuccessListener(document -> {
-                    if (document.exists()) {
+                    if (document.exists() && QuoteVisibilityUtils.isVisible(document)) {
                         Quote quote = document.toObject(Quote.class);
                         if (quote != null && !isBlank(quote.getUserId())) {
                             recalculateLikeStatsAndAchievements(quote.getUserId(), 0);
@@ -226,6 +228,10 @@ public class AchievementEngineRepository {
             return;
         }
         DocumentSnapshot quoteDocument = quoteDocuments.get(index);
+        if (QuoteVisibilityUtils.isHidden(quoteDocument)) {
+            countOwnerQuoteLikes(userId, xpAmount, quoteDocuments, index + 1, totals);
+            return;
+        }
         String quoteId = quoteDocument.getString("quoteId");
         if (isBlank(quoteId)) {
             quoteId = quoteDocument.getId();

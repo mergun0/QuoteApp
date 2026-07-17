@@ -45,13 +45,13 @@ Do not mark an item complete unless repository evidence, emulator tests, manual 
 - [ ] Reports appear in the local admin panel.
 - [ ] Approve flow works.
 - [ ] Reject flow works.
-- [ ] Hidden quote flow works.
+- [x] Hidden quote flow works.
 - [ ] Moderation audit logs work.
-- [ ] Hidden quotes do not appear in Home.
-- [ ] Hidden quotes do not appear in Discover.
-- [ ] Hidden quotes do not appear in Favorites.
-- [ ] Hidden quotes do not appear in UserProfile quote lists.
-- [ ] Hidden quote detail behavior is reviewed.
+- [x] Hidden quotes do not appear in Home.
+- [x] Hidden quotes do not appear in Discover.
+- [x] Hidden quotes do not appear in Favorites.
+- [x] Hidden quotes do not appear in UserProfile quote lists.
+- [x] Hidden quote detail behavior is reviewed.
 - [ ] Local admin panel credentials and localhost assumptions are documented.
 
 ## Legal and account management
@@ -99,4 +99,3 @@ Do not mark an item complete unless repository evidence, emulator tests, manual 
 - [ ] Pagination does not block UI.
 - [ ] Search fields are focusable and readable.
 - [ ] Accessibility pass completed for main screens.
-

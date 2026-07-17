@@ -3,7 +3,6 @@ package com.merg.quoteapp.repository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -12,6 +11,7 @@ import com.google.firebase.firestore.Query;
 
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.utils.FriendlyErrorMapper;
+import com.merg.quoteapp.utils.QuoteVisibilityUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,9 +81,7 @@ public class QuoteRepository {
                     String username = task.isSuccessful() && task.getResult() != null
                             ? task.getResult().getString("username") : null;
                     if (username == null || username.trim().isEmpty()) {
-                        String email = user.getEmail();
-                        username = email != null && email.contains("@")
-                                ? email.substring(0, email.indexOf('@')) : "Kullanıcı";
+                        username = "Kullanıcı";
                     }
                     quote.setUsername(username);
                     writeNewQuote(document, quote, callback);
@@ -124,6 +122,9 @@ public class QuoteRepository {
                     List<Quote> quotes = new ArrayList<>();
                     if (snapshot != null) {
                         snapshot.getDocuments().forEach(document -> {
+                            if (!QuoteVisibilityUtils.isVisible(document)) {
+                                return;
+                            }
                             Quote quote = document.toObject(Quote.class);
                             if (quote != null) {
                                 if (quote.getQuoteId() == null || quote.getQuoteId().isEmpty()) {
@@ -149,6 +150,10 @@ public class QuoteRepository {
                 .addOnSuccessListener(document -> {
                     if (!document.exists()) {
                         callback.onError("Bu alıntı artık mevcut değil.");
+                        return;
+                    }
+                    if (QuoteVisibilityUtils.isHidden(document)) {
+                        callback.onError(QuoteVisibilityUtils.HIDDEN_QUOTE_MESSAGE);
                         return;
                     }
                     Quote quote = document.toObject(Quote.class);
@@ -204,8 +209,17 @@ public class QuoteRepository {
 
         firestore.collection(QUOTES_COLLECTION)
                 .document(quote.getQuoteId())
-                .update(data)
-                .addOnSuccessListener(unused -> callback.onSuccess())
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (!document.exists() || QuoteVisibilityUtils.isHidden(document)) {
+                        callback.onError(QuoteVisibilityUtils.HIDDEN_QUOTE_MESSAGE);
+                        return;
+                    }
+                    document.getReference()
+                            .update(data)
+                            .addOnSuccessListener(unused -> callback.onSuccess())
+                            .addOnFailureListener(error -> callback.onError(readableError(error)));
+                })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 
@@ -254,7 +268,7 @@ public class QuoteRepository {
             FirebaseFirestoreException firestoreError = (FirebaseFirestoreException) error;
             String details = firestoreError.getMessage();
             if (firestoreError.getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                return "Bu işlem için Firestore izniniz yok. Güvenlik kurallarını kontrol edin.";
+                return QuoteVisibilityUtils.HIDDEN_QUOTE_MESSAGE;
             }
             if (firestoreError.getCode() == FirebaseFirestoreException.Code.NOT_FOUND
                     || (details != null && details.toLowerCase(Locale.ROOT)

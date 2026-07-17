@@ -2,7 +2,11 @@ const crypto = require("crypto");
 
 const SESSION_COOKIE = "qa_admin_session";
 const CSRF_COOKIE = "qa_admin_csrf";
+const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 5;
 const sessions = new Map();
+const loginAttempts = new Map();
 
 function parseCookies(cookieHeader = "") {
   return cookieHeader.split(";").reduce((cookies, part) => {
@@ -35,6 +39,7 @@ function createSession() {
   sessions.set(sessionId, {
     csrfToken,
     createdAt: Date.now(),
+    expiresAt: Date.now() + SESSION_MAX_AGE_MS,
   });
   return { sessionId, csrfToken };
 }
@@ -49,6 +54,10 @@ function sessionFromRequest(req) {
   const cookies = parseCookies(req.headers.cookie);
   const sessionId = cookies[SESSION_COOKIE];
   const session = sessionId ? sessions.get(sessionId) : null;
+  if (session && session.expiresAt <= Date.now()) {
+    sessions.delete(sessionId);
+    return null;
+  }
   return session ? { sessionId, session } : null;
 }
 
@@ -101,9 +110,39 @@ function verifyPassword(input, expected) {
   return crypto.timingSafeEqual(inputBuffer, expectedBuffer);
 }
 
+function loginThrottleKey(req) {
+  return req.ip || req.socket?.remoteAddress || "local";
+}
+
+function isLoginThrottled(req) {
+  const key = loginThrottleKey(req);
+  const now = Date.now();
+  const current = loginAttempts.get(key);
+  if (!current || current.resetAt <= now) {
+    return false;
+  }
+  return current.count >= LOGIN_MAX_ATTEMPTS;
+}
+
+function recordLoginFailure(req) {
+  const key = loginThrottleKey(req);
+  const now = Date.now();
+  const current = loginAttempts.get(key);
+  if (!current || current.resetAt <= now) {
+    loginAttempts.set(key, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+    return;
+  }
+  current.count += 1;
+}
+
+function clearLoginFailures(req) {
+  loginAttempts.delete(loginThrottleKey(req));
+}
+
 module.exports = {
   SESSION_COOKIE,
   CSRF_COOKIE,
+  SESSION_MAX_AGE_MS,
   parseCookies,
   createSession,
   destroySession,
@@ -113,4 +152,7 @@ module.exports = {
   setSessionCookies,
   clearSessionCookies,
   verifyPassword,
+  isLoginThrottled,
+  recordLoginFailure,
+  clearLoginFailures,
 };

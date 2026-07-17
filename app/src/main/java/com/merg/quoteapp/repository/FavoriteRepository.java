@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.utils.FriendlyErrorMapper;
+import com.merg.quoteapp.utils.QuoteVisibilityUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,6 +22,10 @@ import java.util.Map;
 public class FavoriteRepository {
 
     private static final String TAG = "FavoriteRepository";
+    private static final String FAVORITES_COLLECTION = "favorites";
+    private static final String QUOTES_COLLECTION = "quotes";
+    private static final String USERS_COLLECTION = "users";
+    private static volatile FavoriteRepository instance;
 
     public interface OperationCallback {
         void onSuccess();
@@ -46,11 +51,6 @@ public class FavoriteRepository {
         void onError(String message);
     }
 
-    private static final String FAVORITES_COLLECTION = "favorites";
-    private static final String QUOTES_COLLECTION = "quotes";
-    private static final String USERS_COLLECTION = "users";
-    private static volatile FavoriteRepository instance;
-
     private final FirebaseAuth auth;
     private final FirebaseFirestore firestore;
     private final Map<String, String> usernameCache = new HashMap<>();
@@ -60,11 +60,6 @@ public class FavoriteRepository {
         firestore = FirebaseFirestore.getInstance();
     }
 
-    /**
-     * Returns the shared FavoriteRepository instance.
-     *
-     * @return singleton repository instance
-     */
     public static FavoriteRepository getInstance() {
         if (instance == null) {
             synchronized (FavoriteRepository.class) {
@@ -76,20 +71,14 @@ public class FavoriteRepository {
         return instance;
     }
 
-    /**
-     * Saves a quote for the current user.
-     *
-     * @param quoteId quote id to save
-     * @param callback operation callback
-     */
     public void saveQuote(String quoteId, OperationCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError("AlÄ±ntÄ± kaydetmek iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.");
+            callback.onError("Alıntı kaydetmek için giriş yapmalısınız.");
             return;
         }
         if (isBlank(quoteId)) {
-            callback.onError("Kaydedilecek alÄ±ntÄ± bulunamadÄ±.");
+            callback.onError("Kaydedilecek alıntı bulunamadı.");
             return;
         }
 
@@ -119,6 +108,11 @@ public class FavoriteRepository {
                                 "Quote document not found for favorite save.",
                                 FirebaseFirestoreException.Code.NOT_FOUND);
                     }
+                    if (QuoteVisibilityUtils.isHidden(quoteSnapshot)) {
+                        throw new FirebaseFirestoreException(
+                                "Quote document is hidden.",
+                                FirebaseFirestoreException.Code.PERMISSION_DENIED);
+                    }
                     transactionStep[0] = "create favorite document";
                     transaction.set(favoriteRef, data);
                     transactionStep[0] = "update quote favoriteCount";
@@ -136,20 +130,14 @@ public class FavoriteRepository {
                 });
     }
 
-    /**
-     * Removes a saved quote for the current user.
-     *
-     * @param quoteId quote id to remove from saved collection
-     * @param callback operation callback
-     */
     public void unsaveQuote(String quoteId, OperationCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError("KaydÄ± kaldÄ±rmak iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.");
+            callback.onError("Kaydı kaldırmak için giriş yapmalısınız.");
             return;
         }
         if (isBlank(quoteId)) {
-            callback.onError("KaydÄ± kaldÄ±rÄ±lacak alÄ±ntÄ± bulunamadÄ±.");
+            callback.onError("Kaydı kaldırılacak alıntı bulunamadı.");
             return;
         }
 
@@ -189,20 +177,14 @@ public class FavoriteRepository {
                 });
     }
 
-    /**
-     * Checks whether the current user saved a quote.
-     *
-     * @param quoteId quote id to check
-     * @param callback saved state callback
-     */
     public void isSavedByCurrentUser(String quoteId, SavedStateCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError("KayÄ±t durumunu gÃ¶rmek iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.");
+            callback.onError("Kayıt durumunu görmek için giriş yapmalısınız.");
             return;
         }
         if (isBlank(quoteId)) {
-            callback.onError("AlÄ±ntÄ± bilgisi bulunamadÄ±.");
+            callback.onError("Alıntı bilgisi bulunamadı.");
             return;
         }
 
@@ -218,15 +200,9 @@ public class FavoriteRepository {
                 });
     }
 
-    /**
-     * Loads how many users saved a quote.
-     *
-     * @param quoteId quote id whose save count will be loaded
-     * @param callback count callback
-     */
     public void getFavoriteCount(String quoteId, FavoriteCountCallback callback) {
         if (isBlank(quoteId)) {
-            callback.onError("AlÄ±ntÄ± bilgisi bulunamadÄ±.");
+            callback.onError("Alıntı bilgisi bulunamadı.");
             return;
         }
 
@@ -238,20 +214,19 @@ public class FavoriteRepository {
                         callback.onError("Alıntı artık mevcut değil.");
                         return;
                     }
+                    if (QuoteVisibilityUtils.isHidden(document)) {
+                        callback.onError(QuoteVisibilityUtils.HIDDEN_QUOTE_MESSAGE);
+                        return;
+                    }
                     callback.onSuccess(favoriteCountFrom(document));
                 })
                 .addOnFailureListener(error -> callback.onError(readableError(error)));
     }
 
-    /**
-     * Loads saved quotes for the current user.
-     *
-     * @param callback saved quotes callback
-     */
     public void getSavedQuotesForCurrentUser(SavedQuotesCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onError("Kaydedilen alÄ±ntÄ±larÄ± gÃ¶rmek iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z.");
+            callback.onError("Kaydedilen alıntıları görmek için giriş yapmalısınız.");
             return;
         }
 
@@ -292,7 +267,7 @@ public class FavoriteRepository {
                             return;
                         }
                         Quote quote = document.toObject(Quote.class);
-                        if (quote != null) {
+                        if (quote != null && QuoteVisibilityUtils.isVisible(document)) {
                             if (isBlank(quote.getQuoteId())) {
                                 quote.setQuoteId(document.getId());
                             }
@@ -306,6 +281,10 @@ public class FavoriteRepository {
                     })
                     .addOnFailureListener(error -> {
                         if (failed[0]) {
+                            return;
+                        }
+                        if (isHiddenOrMissingQuoteError(error)) {
+                            completeFavoriteQuoteLoad(orderedQuotes, remaining, callback);
                             return;
                         }
                         failed[0] = true;
@@ -335,7 +314,7 @@ public class FavoriteRepository {
             return;
         }
         if (isBlank(quote.getUserId())) {
-            quote.setUsername("kullanÄ±cÄ±");
+            quote.setUsername("kullanıcı");
             callback.onComplete(quote);
             return;
         }
@@ -353,7 +332,7 @@ public class FavoriteRepository {
                     String username = task.isSuccessful() && task.getResult() != null
                             ? task.getResult().getString("username") : null;
                     if (isBlank(username)) {
-                        username = "kullanÄ±cÄ±";
+                        username = "kullanıcı";
                     }
                     usernameCache.put(quote.getUserId(), username);
                     quote.setUsername(username);
@@ -364,7 +343,7 @@ public class FavoriteRepository {
     private List<Quote> compactQuotes(List<Quote> quotes) {
         List<Quote> result = new ArrayList<>();
         for (Quote quote : quotes) {
-            if (quote != null) {
+            if (quote != null && QuoteVisibilityUtils.isVisible(quote)) {
                 result.add(quote);
             }
         }
@@ -392,6 +371,16 @@ public class FavoriteRepository {
         return 0L;
     }
 
+    private boolean isHiddenOrMissingQuoteError(Exception error) {
+        if (error instanceof FirebaseFirestoreException) {
+            FirebaseFirestoreException.Code code =
+                    ((FirebaseFirestoreException) error).getCode();
+            return code == FirebaseFirestoreException.Code.PERMISSION_DENIED
+                    || code == FirebaseFirestoreException.Code.NOT_FOUND;
+        }
+        return false;
+    }
+
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
@@ -401,7 +390,7 @@ public class FavoriteRepository {
             FirebaseFirestoreException firestoreError = (FirebaseFirestoreException) error;
             switch (firestoreError.getCode()) {
                 case PERMISSION_DENIED:
-                    return "Bu işlem için gerekli izin alınamadı.";
+                    return QuoteVisibilityUtils.HIDDEN_QUOTE_MESSAGE;
                 case UNAVAILABLE:
                     return "İnternet bağlantısı kurulamadı.";
                 case ABORTED:
@@ -439,5 +428,3 @@ public class FavoriteRepository {
         void onComplete(Quote quote);
     }
 }
-
-

@@ -11,6 +11,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.UserStats;
 import com.merg.quoteapp.utils.FriendlyErrorMapper;
+import com.merg.quoteapp.utils.QuoteVisibilityUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -301,12 +302,15 @@ public class UserStatsRepository {
                 .addOnSuccessListener(snapshot -> {
                     List<DocumentSnapshot> documents = snapshot.getDocuments();
                     RecalculatedStats totals = new RecalculatedStats();
-                    totals.totalQuotes = documents.size();
                     for (DocumentSnapshot document : documents) {
+                        if (QuoteVisibilityUtils.isHidden(document)) {
+                            continue;
+                        }
                         Quote quote = document.toObject(Quote.class);
                         if (quote == null) {
                             continue;
                         }
+                        totals.totalQuotes++;
                         countType(quote.getType(), totals);
                     }
                     if (documents.isEmpty()) {
@@ -329,6 +333,11 @@ public class UserStatsRepository {
         }
 
         DocumentSnapshot quoteDocument = quoteDocuments.get(index);
+        if (QuoteVisibilityUtils.isHidden(quoteDocument)) {
+            countLikesForQuotes(userId, existingStats, quoteDocuments, totals,
+                    index + 1, callback);
+            return;
+        }
         String quoteId = quoteDocument.getId();
         Quote quote = quoteDocument.toObject(Quote.class);
         if (quote != null && !isBlank(quote.getQuoteId())) {

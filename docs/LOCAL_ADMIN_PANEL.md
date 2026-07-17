@@ -125,7 +125,20 @@ quotes/{quoteId}.hiddenBy = LOCAL_ADMIN
 quotes/{quoteId}.hiddenReason = approved report id
 ```
 
-Before relying on soft hidden quotes in production feeds, Android queries should be updated to exclude `isHidden == true`.
+Android treats only `isHidden == true` as hidden. Missing `isHidden` is treated as legacy visible content so old quote documents do not silently disappear.
+
+Current Android behavior:
+
+- Home, Discover, Favorites and public profile lists suppress hidden quote documents.
+- Quote Detail shows `Bu alıntı artık görüntülenemiyor.` for hidden or inaccessible quote IDs.
+- Like and save actions reject hidden quote documents.
+- Existing favorite/like documents may remain, but they must not expose hidden quote content.
+
+Current Rules behavior:
+
+- direct normal-user `get` reads for `quotes/{quoteId}` are denied when `isHidden == true`
+- normal-user list queries remain compatible with legacy documents and Android performs client-side suppression
+- a future production hardening pass should backfill legacy visible quotes with `isHidden = false`, then require visible-quote constraints in all quote list queries
 
 ## Audit log
 

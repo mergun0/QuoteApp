@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.merg.quoteapp.model.ProfileStats;
+import com.merg.quoteapp.utils.QuoteVisibilityUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -90,6 +91,9 @@ public class ProfileRepository {
                     List<String> quoteIds = new ArrayList<>();
 
                     for (int index = 0; index < snapshot.size(); index++) {
+                        if (QuoteVisibilityUtils.isHidden(snapshot.getDocuments().get(index))) {
+                            continue;
+                        }
                         String quoteId = snapshot.getDocuments().get(index).getString("quoteId");
                         if (quoteId == null || quoteId.trim().isEmpty()) {
                             quoteId = snapshot.getDocuments().get(index).getId();
@@ -118,7 +122,7 @@ public class ProfileRepository {
                             callback.onSuccess(new ProfileStats(
                                     username,
                                     email,
-                                    snapshot.size(),
+                                    quoteIds.size(),
                                     finalMovieCount,
                                     finalSeriesCount,
                                     finalBookCount,

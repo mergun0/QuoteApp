@@ -48,6 +48,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/quotes/$(quoteId);
     }
 
+    function visibleQuoteData(data) {
+      return !data.keys().hasAny(["isHidden"]) || data.isHidden == false;
+    }
+
     function userPath(userId) {
       return /databases/$(database)/documents/users/$(userId);
     }
@@ -139,6 +143,7 @@ service cloud.firestore {
     function validQuoteOwnerUpdate() {
       return signedIn()
         && resource.data.userId == request.auth.uid
+        && visibleQuoteData(resource.data)
         && request.resource.data.userId == resource.data.userId
         && request.resource.data.quoteId == resource.data.quoteId
         && request.resource.data.createdAt == resource.data.createdAt
@@ -161,6 +166,7 @@ service cloud.firestore {
 
     function validFavoriteCounterCreate(quoteId) {
       return signedIn()
+        && visibleQuoteData(resource.data)
         && changedOnly(["favoriteCount"])
         && resource.data.favoriteCount is int
         && request.resource.data.favoriteCount == resource.data.favoriteCount + 1
@@ -170,6 +176,7 @@ service cloud.firestore {
 
     function validFavoriteCounterDelete(quoteId) {
       return signedIn()
+        && visibleQuoteData(resource.data)
         && changedOnly(["favoriteCount"])
         && resource.data.favoriteCount is int
         && resource.data.favoriteCount > 0
@@ -186,6 +193,7 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && nonEmptyString(request.resource.data.quoteId, 128)
         && exists(quotePath(request.resource.data.quoteId))
+        && visibleQuoteData(get(quotePath(request.resource.data.quoteId)).data)
         && request.resource.data.createdAt == request.time;
     }
 
@@ -197,6 +205,7 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && nonEmptyString(request.resource.data.quoteId, 128)
         && exists(quotePath(request.resource.data.quoteId))
+        && visibleQuoteData(get(quotePath(request.resource.data.quoteId)).data)
         && request.resource.data.createdAt == request.time
         && getAfter(quotePath(request.resource.data.quoteId)).data.favoriteCount
           == get(quotePath(request.resource.data.quoteId)).data.favoriteCount + 1;
@@ -221,6 +230,7 @@ service cloud.firestore {
         && request.resource.data.reportId == reportId
         && request.resource.data.reporterUserId == request.auth.uid
         && exists(quotePath(request.resource.data.quoteId))
+        && visibleQuoteData(get(quotePath(request.resource.data.quoteId)).data)
         && request.resource.data.reportedUserId == get(quotePath(request.resource.data.quoteId)).data.userId
         && request.resource.data.reportedUserId != request.auth.uid
         && request.resource.data.reason in [
@@ -330,7 +340,8 @@ service cloud.firestore {
     }
 
     match /quotes/{quoteId} {
-      allow get, list: if signedIn();
+      allow get: if signedIn() && visibleQuoteData(resource.data);
+      allow list: if signedIn();
       allow create: if validQuoteCreate(quoteId);
       allow update: if validQuoteOwnerUpdate()
         || validFavoriteCounterCreate(quoteId)

@@ -19,6 +19,7 @@ public class Quote {
     private String episode;
     private List<String> tags;
     private boolean spoiler;
+    private boolean isHidden;
     private long favoriteCount;
     private Timestamp createdAt;
     private Timestamp updatedAt;
@@ -121,6 +122,22 @@ public class Quote {
 
     public void setSpoiler(boolean spoiler) {
         this.spoiler = spoiler;
+    }
+
+    public boolean isHidden() {
+        return isHidden;
+    }
+
+    public boolean getIsHidden() {
+        return isHidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        isHidden = hidden;
+    }
+
+    public void setIsHidden(boolean hidden) {
+        isHidden = hidden;
     }
 
     public long getFavoriteCount() {

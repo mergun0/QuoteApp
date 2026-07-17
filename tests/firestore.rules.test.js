@@ -88,6 +88,18 @@ async function main() {
     await setDoc(doc(db, "quotes/quoteG"), validQuote("quoteG", "userB", 0));
     await setDoc(doc(db, "quotes/quoteH"), validQuote("quoteH", "userB", 0));
     await setDoc(doc(db, "quotes/quoteI"), validQuote("quoteI", "userB", 0));
+    await setDoc(doc(db, "quotes/legacyVisibleQuote"), validQuote("legacyVisibleQuote", "userB", 0));
+    await setDoc(doc(db, "quotes/explicitVisibleQuote"), {
+      ...validQuote("explicitVisibleQuote", "userB", 0),
+      isHidden: false,
+    });
+    await setDoc(doc(db, "quotes/hiddenQuote"), {
+      ...validQuote("hiddenQuote", "userB", 0),
+      isHidden: true,
+      hiddenAt: new Date(),
+      hiddenBy: "admin1",
+      hiddenReason: "APPROVED_REPORT",
+    });
     await setDoc(doc(db, "reports/quoteB_userA"), {
       reportId: "quoteB_userA",
       quoteId: "quoteB",
@@ -207,6 +219,13 @@ async function main() {
   await assertFails(updateDoc(doc(other, "quotes/quoteA"), { text: "Nope" }));
   await assertSucceeds(deleteDoc(doc(user, "quotes/userAQuote")));
   await assertFails(deleteDoc(doc(other, "quotes/quoteA")));
+  await assertSucceeds(getDoc(doc(user, "quotes/legacyVisibleQuote")));
+  await assertSucceeds(getDoc(doc(user, "quotes/explicitVisibleQuote")));
+  await assertFails(getDoc(doc(user, "quotes/hiddenQuote")));
+  await assertFails(updateDoc(doc(other, "quotes/hiddenQuote"), {
+    text: "Hidden edit attempt",
+    updatedAt: serverTimestamp(),
+  }));
 
   await assertSucceeds(setDoc(doc(user, "likes/userA_quoteB"), {
     likeId: "userA_quoteB",
@@ -230,6 +249,12 @@ async function main() {
     likeId: "userA_missing",
     userId: "userA",
     quoteId: "missing",
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(setDoc(doc(user, "likes/userA_hiddenQuote"), {
+    likeId: "userA_hiddenQuote",
+    userId: "userA",
+    quoteId: "hiddenQuote",
     createdAt: serverTimestamp(),
   }));
   await assertFails(deleteDoc(doc(other, "likes/userA_quoteB")));
@@ -266,6 +291,15 @@ async function main() {
   await assertSucceeds(unfavoriteBatch.commit());
   await assertFails(updateDoc(doc(user, "quotes/quoteB"), { favoriteCount: -1 }));
   await assertFails(deleteDoc(doc(other, "favorites/userA_quoteB")));
+  const hiddenFavoriteBatch = writeBatch(user);
+  hiddenFavoriteBatch.set(doc(user, "favorites/userA_hiddenQuote"), {
+    favoriteId: "userA_hiddenQuote",
+    userId: "userA",
+    quoteId: "hiddenQuote",
+    createdAt: serverTimestamp(),
+  });
+  hiddenFavoriteBatch.update(doc(user, "quotes/hiddenQuote"), { favoriteCount: 1 });
+  await assertFails(hiddenFavoriteBatch.commit());
 
   await assertSucceeds(getDoc(doc(user, "reports/quoteC_userA")));
   await assertFails(getDoc(doc(other, "reports/quoteC_userA")));

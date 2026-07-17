@@ -1,10 +1,6 @@
 package com.merg.quoteapp.repository;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.AggregateQuerySnapshot;
-import com.google.firebase.firestore.AggregateSource;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -12,6 +8,7 @@ import com.google.firebase.firestore.Query;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.UserProfileData;
 import com.merg.quoteapp.model.UserProfilePage;
+import com.merg.quoteapp.utils.QuoteVisibilityUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,19 +91,28 @@ public class UserProfileRepository {
     }
 
     private void loadAggregateCounts(String userId, UserProfileCallback callback) {
-        Query baseQuery = firestore.collection("quotes").whereEqualTo("userId", userId);
-        List<Task<AggregateQuerySnapshot>> tasks = new ArrayList<>();
-        tasks.add(baseQuery.count().get(AggregateSource.SERVER));
-        tasks.add(baseQuery.whereEqualTo("type", "Film").count().get(AggregateSource.SERVER));
-        tasks.add(baseQuery.whereEqualTo("type", "Dizi").count().get(AggregateSource.SERVER));
-        tasks.add(baseQuery.whereEqualTo("type", "Kitap").count().get(AggregateSource.SERVER));
-
-        Tasks.whenAllSuccess(tasks)
-                .addOnSuccessListener(results -> {
-                    totalCount = (int) ((AggregateQuerySnapshot) results.get(0)).getCount();
-                    movieCount = (int) ((AggregateQuerySnapshot) results.get(1)).getCount();
-                    seriesCount = (int) ((AggregateQuerySnapshot) results.get(2)).getCount();
-                    bookCount = (int) ((AggregateQuerySnapshot) results.get(3)).getCount();
+        firestore.collection("quotes")
+                .whereEqualTo("userId", userId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    totalCount = 0;
+                    movieCount = 0;
+                    seriesCount = 0;
+                    bookCount = 0;
+                    for (DocumentSnapshot document : snapshot.getDocuments()) {
+                        if (QuoteVisibilityUtils.isHidden(document)) {
+                            continue;
+                        }
+                        totalCount++;
+                        String type = document.getString("type");
+                        if ("Film".equals(type)) {
+                            movieCount++;
+                        } else if ("Dizi".equals(type)) {
+                            seriesCount++;
+                        } else if ("Kitap".equals(type)) {
+                            bookCount++;
+                        }
+                    }
                     loadTotalLikeCount(userId, callback);
                 })
                 .addOnFailureListener(error -> {
@@ -122,6 +128,9 @@ public class UserProfileRepository {
                 .addOnSuccessListener(snapshot -> {
                     List<String> quoteIds = new ArrayList<>();
                     for (DocumentSnapshot document : snapshot.getDocuments()) {
+                        if (QuoteVisibilityUtils.isHidden(document)) {
+                            continue;
+                        }
                         String quoteId = document.getString("quoteId");
                         quoteIds.add(quoteId == null || quoteId.trim().isEmpty()
                                 ? document.getId() : quoteId);
@@ -163,7 +172,7 @@ public class UserProfileRepository {
                     List<Quote> quotes = new ArrayList<>();
                     for (DocumentSnapshot document : snapshot.getDocuments()) {
                         Quote quote = document.toObject(Quote.class);
-                        if (quote == null) {
+                        if (quote == null || QuoteVisibilityUtils.isHidden(document)) {
                             continue;
                         }
                         if (quote.getQuoteId() == null || quote.getQuoteId().isEmpty()) {

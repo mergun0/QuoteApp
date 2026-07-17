@@ -4,10 +4,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.AggregateSource;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.merg.quoteapp.utils.FriendlyErrorMapper;
+import com.merg.quoteapp.utils.QuoteVisibilityUtils;
 
 import android.util.Log;
 
@@ -143,7 +145,14 @@ public class LikeRepository {
         data.put("createdAt", FieldValue.serverTimestamp());
 
         DocumentReference document = firestore.collection(LIKES_COLLECTION).document(likeId);
+        DocumentReference quoteRef = firestore.collection("quotes").document(quoteId);
         firestore.runTransaction(transaction -> {
+                    DocumentSnapshot quoteSnapshot = transaction.get(quoteRef);
+                    if (!quoteSnapshot.exists() || QuoteVisibilityUtils.isHidden(quoteSnapshot)) {
+                        throw new FirebaseFirestoreException(
+                                "Quote document is hidden or unavailable.",
+                                FirebaseFirestoreException.Code.PERMISSION_DENIED);
+                    }
                     if (transaction.get(document).exists()) {
                         return false;
                     }
@@ -335,6 +344,9 @@ public class LikeRepository {
     private String readableError(Exception error) {
         if (error instanceof FirebaseFirestoreException) {
             FirebaseFirestoreException firestoreError = (FirebaseFirestoreException) error;
+            if (firestoreError.getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                return QuoteVisibilityUtils.HIDDEN_QUOTE_MESSAGE;
+            }
             String details = firestoreError.getMessage();
             if (firestoreError.getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
                 return "Beğeni işlemi için Firestore kurallarını kontrol edin.";
