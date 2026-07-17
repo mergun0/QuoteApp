@@ -46,7 +46,7 @@ Do not mark an item complete unless repository evidence, emulator tests, manual 
 - [ ] Approve flow works.
 - [ ] Reject flow works.
 - [x] Hidden quote flow works.
-- [ ] Production quote visibility backfill completed and verified.
+- [x] Production quote visibility backfill completed and verified.
 - [ ] Quote visibility Firestore indexes deployed and enabled.
 - [ ] Tightened quote visibility Rules deployed after Android visible-only query release.
 - [ ] Moderation audit logs work.

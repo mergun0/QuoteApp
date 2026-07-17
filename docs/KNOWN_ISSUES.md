@@ -41,7 +41,9 @@ Low
 
 - Temporary no-billing v1.0 uses direct Firestore pending report creation instead of deployed Cloud Functions.
 - Reliable daily report limits, same-target daily limits, invalid-report streak restrictions and moderation counters require the trusted Functions backend and are deferred.
-- Hidden quote v1.0 migration is prepared in code, tests and documentation, but production is not complete until `docs/QUOTE_VISIBILITY_MIGRATION.md` is executed: dry-run backfill, apply backfill, verification, index deployment, Rules deployment and Android release verification.
+- Hidden quote backfill has been reported complete, but the v1.0 visibility migration is not fully complete until required Firestore indexes are deployed/enabled, tightened Rules are deployed, and Android QA confirms visible-only quote lists.
+- Android Home can show a missing-index error until the `quotes: userId ASC, isHidden ASC, createdAt DESC` composite index is deployed and enabled.
+- A previous index deploy prompt deleted required remote indexes that were missing locally. Future `firestore:indexes` deploys must choose `No` on deletion prompts unless `firestore.indexes.json` has been reviewed as complete.
 - Local admin panel is single-password and localhost-only; it is not a hosted multi-moderator product.
 - Firestore indexes in `firestore.indexes.json` must be reviewed and deployed manually before production-scale panel use.
 - Before switching back to callable-only moderation, deploy Functions first, migrate Android report submission to `submitReport`, then deploy stricter report-denying Rules.

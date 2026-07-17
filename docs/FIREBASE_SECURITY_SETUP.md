@@ -136,8 +136,12 @@ npm --prefix admin-panel run backfill:quote-visibility -- --verify
 Then deploy and wait for required indexes:
 
 ```bash
-firebase deploy --project <real-firebase-project-id> --only firestore:indexes
+firebase deploy --project quoteapp-a92e4 --only firestore:indexes
 ```
+
+If Firebase CLI asks whether to delete indexes that exist remotely but are absent locally, choose `No` until `firestore.indexes.json` is reviewed. Required production indexes were previously deleted by accepting this prompt accidentally.
+
+Indexes can be visible as `Building` before they become `Enabled`. Android Home depends on the `quotes: userId ASC, isHidden ASC, createdAt DESC` index and may continue to show a missing-index error until it is enabled.
 
 Only after the updated Android build uses `whereEqualTo("isHidden", false)` and production data is verified should tightened Rules be deployed:
 

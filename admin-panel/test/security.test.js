@@ -1,4 +1,6 @@
 const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
 const {
   parseCookies,
   verifyPassword,
@@ -12,7 +14,10 @@ const { loginPage, page } = require("../src/views/layout");
 const { dashboardView } = require("../src/views/dashboard");
 const { reportsView, detailView } = require("../src/views/reports");
 const { actionsView } = require("../src/views/actions");
-const { runBackfillQuoteVisibility } = require("../scripts/backfillQuoteVisibility");
+const {
+  parseArgs,
+  runBackfillQuoteVisibility,
+} = require("../scripts/backfillQuoteVisibility");
 
 function req(cookie = "", ip = "127.0.0.1") {
   return { headers: { cookie }, ip, socket: { remoteAddress: ip } };
@@ -124,6 +129,36 @@ const actionsHtml = actionsView({
 assert.ok(actionsHtml.includes("REPORT_APPROVED"));
 assert.ok(!actionsHtml.includes("<private>"));
 assert.ok(actionsHtml.includes("&lt;private&gt;"));
+
+assert.deepStrictEqual(parseArgs([], {}), { apply: false, verify: false });
+assert.deepStrictEqual(parseArgs(["--", "--apply"], {}), { apply: true, verify: false });
+assert.deepStrictEqual(parseArgs(["--", "--verify"], {}), { apply: false, verify: true });
+assert.deepStrictEqual(parseArgs([], { npm_config_apply: "true" }), { apply: true, verify: false });
+assert.deepStrictEqual(parseArgs([], { npm_config_verify: "true" }), { apply: false, verify: true });
+assert.deepStrictEqual(parseArgs([], {
+  npm_config_argv: JSON.stringify({ original: ["run", "backfill:quote-visibility", "--", "--verify"] }),
+}), { apply: false, verify: true });
+assert.throws(() => parseArgs(["--wat"], {}), /Unknown argument/);
+assert.throws(() => parseArgs(["--apply", "--verify"], {}), /either --verify or --apply/);
+
+const indexesPath = path.resolve(__dirname, "..", "..", "firestore.indexes.json");
+const firestoreIndexes = JSON.parse(fs.readFileSync(indexesPath, "utf8"));
+assert.ok(Array.isArray(firestoreIndexes.indexes));
+assert.ok(Array.isArray(firestoreIndexes.fieldOverrides));
+const indexKeys = new Set();
+for (const index of firestoreIndexes.indexes) {
+  assert.ok(index.collectionGroup);
+  assert.strictEqual(index.queryScope, "COLLECTION");
+  assert.ok(Array.isArray(index.fields));
+  assert.ok(index.fields.length > 0);
+  const key = JSON.stringify({
+    collectionGroup: index.collectionGroup,
+    queryScope: index.queryScope,
+    fields: index.fields,
+  });
+  assert.ok(!indexKeys.has(key), `Duplicate Firestore index: ${key}`);
+  indexKeys.add(key);
+}
 
 function createFakeQuoteDb(seedQuotes) {
   const quotes = new Map(Object.entries(seedQuotes).map(([id, data]) => [id, { ...data }]));

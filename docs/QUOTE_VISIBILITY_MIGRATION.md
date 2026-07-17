@@ -1,6 +1,6 @@
 # Quote Visibility Migration
 
-Status: prepared for v1.0 rollout. Do not mark complete until production backfill, index deployment, Rules deployment and Android release verification are finished.
+Status: production backfill has been reported complete. Do not mark the full migration complete until index deployment, Rules deployment and Android release verification are finished.
 
 ## Why this migration is required
 
@@ -72,12 +72,24 @@ It prints:
 Deploy indexes manually after review:
 
 ```bash
-firebase deploy --project <real-project-id> --only firestore:indexes
+firebase deploy --project quoteapp-a92e4 --only firestore:indexes
 ```
 
-Required quote indexes:
+If Firebase CLI asks to delete remote indexes that are absent locally, choose `No` unless the local `firestore.indexes.json` has been reviewed and confirmed as the complete source of truth.
+
+New or restored indexes may remain in `Building` before becoming `Enabled`. Android can continue to show a missing-index error until the required index is enabled.
+
+Required composite indexes:
 
 ```text
+favorites:
+  userId ASC
+  createdAt DESC
+
+quotes:
+  userId ASC
+  createdAt DESC
+
 quotes:
   isHidden ASC
   createdAt DESC
@@ -86,9 +98,48 @@ quotes:
   userId ASC
   isHidden ASC
   createdAt DESC
+
+achievements:
+  isActive ASC
+  sortOrder ASC
+
+userAchievements:
+  userId ASC
+  unlockedAt DESC
+
+reports:
+  status ASC
+  createdAt DESC
+
+reports:
+  reporterUserId ASC
+  createdAt ASC
+
+moderationActions:
+  actionType ASC
+  createdAt DESC
 ```
 
 Existing category, spoiler and search filters are local filters after a visible quote query, so they do not require additional Firestore indexes right now.
+
+Home depends on:
+
+```text
+quotes:
+  userId ASC
+  isHidden ASC
+  createdAt DESC
+```
+
+Source query:
+
+```text
+QuoteRepository.getCurrentUserQuotes()
+quotes
+  where userId == currentUser.uid
+  where isHidden == false
+  orderBy createdAt DESC
+```
 
 ## Safe production rollout order
 
@@ -114,7 +165,7 @@ Existing category, spoiler and search filters are local filters after a visible 
    ```
 7. Deploy indexes:
    ```bash
-   firebase deploy --project <real-project-id> --only firestore:indexes
+   firebase deploy --project quoteapp-a92e4 --only firestore:indexes
    ```
 8. Wait until the Firebase Console shows every index as enabled.
 9. Test the updated Android build against production-compatible data.
@@ -141,6 +192,12 @@ Recommended staged strategy:
 5. Deploy tightened Rules after the updated build is available and verified.
 
 This avoids legacy visible quotes disappearing and reduces old-client breakage risk.
+
+## Accidental index deletion incident
+
+A previous `firebase deploy --only firestore:indexes` reported remote indexes missing from the local file. Selecting `Yes` deleted required production indexes for favorites, quotes, achievements, userAchievements and reports.
+
+Those indexes have been restored in `firestore.indexes.json`. Future index deploys must treat the file as the complete source of truth and must not approve remote index deletion prompts without reviewing the diff.
 
 ## Rollback considerations
 

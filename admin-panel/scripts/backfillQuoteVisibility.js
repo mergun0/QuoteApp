@@ -8,11 +8,41 @@ function hasOwn(object, key) {
   return Object.prototype.hasOwnProperty.call(object || {}, key);
 }
 
-function parseArgs(argv = process.argv.slice(2)) {
-  return {
-    apply: argv.includes("--apply"),
-    verify: argv.includes("--verify"),
-  };
+function npmConfigEnabled(value) {
+  return value === true || value === "true" || value === "1";
+}
+
+function parseNpmOriginalArgs(env = process.env) {
+  if (!env.npm_config_argv) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(env.npm_config_argv);
+    const original = Array.isArray(parsed.original) ? parsed.original : [];
+    return original.filter((arg) => typeof arg === "string" && arg.startsWith("--"));
+  } catch {
+    return [];
+  }
+}
+
+function parseArgs(argv = process.argv.slice(2), env = process.env) {
+  const validFlags = new Set(["--", "--dry-run", "--apply", "--verify"]);
+  const args = [
+    ...argv,
+    ...parseNpmOriginalArgs(env),
+  ].filter((arg) => typeof arg === "string" && arg.length > 0);
+
+  const unknown = args.filter((arg) => arg.startsWith("-") && !validFlags.has(arg));
+  if (unknown.length > 0) {
+    throw new Error(`Unknown argument: ${unknown.join(", ")}`);
+  }
+
+  const apply = args.includes("--apply") || npmConfigEnabled(env.npm_config_apply);
+  const verify = args.includes("--verify") || npmConfigEnabled(env.npm_config_verify);
+  if (apply && verify) {
+    throw new Error("Use either --verify or --apply, not both.");
+  }
+  return { apply, verify };
 }
 
 function createTotals() {
@@ -137,9 +167,6 @@ async function runBackfillQuoteVisibility({ db, apply = false, verify = false, l
 async function main() {
   const options = parseArgs();
   const { db } = initializeFirebaseAdmin();
-  if (options.verify && options.apply) {
-    throw new Error("Use either --verify or --apply, not both.");
-  }
   await runBackfillQuoteVisibility({ db, ...options });
 }
 
