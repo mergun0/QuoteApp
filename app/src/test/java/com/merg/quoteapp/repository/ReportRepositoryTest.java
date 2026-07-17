@@ -27,7 +27,7 @@ public class ReportRepositoryTest {
                 " quote123 ",
                 " owner123 ",
                 " reporter456 ",
-                " Spam ",
+                " SPAM ",
                 " optional description ",
                 createdAt
         );
@@ -37,7 +37,7 @@ public class ReportRepositoryTest {
         assertEquals("quote123", data.get("quoteId"));
         assertEquals("owner123", data.get("reportedUserId"));
         assertEquals("reporter456", data.get("reporterUserId"));
-        assertEquals("Spam", data.get("reason"));
+        assertEquals("SPAM", data.get("reason"));
         assertEquals("optional description", data.get("description"));
         assertEquals(Report.STATUS_PENDING, data.get("status"));
         assertEquals(createdAt, data.get("createdAt"));
@@ -54,7 +54,7 @@ public class ReportRepositoryTest {
                 "quote123",
                 "owner123",
                 "reporter456",
-                "Other",
+                "OTHER",
                 null,
                 new Date()
         );

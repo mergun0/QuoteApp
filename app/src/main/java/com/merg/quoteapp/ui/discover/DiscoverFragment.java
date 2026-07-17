@@ -362,6 +362,7 @@ public class DiscoverFragment extends Fragment {
         reportViewModel.getAlreadyReported().observe(getViewLifecycleOwner(), already -> {
             if (Boolean.TRUE.equals(already)) {
                 resetReportSheetLoading();
+                showReportSheetMessage(getString(R.string.report_already_sent), true);
                 showStatus(getString(R.string.report_already_sent), true);
                 reportViewModel.clearResultStates();
             }
@@ -369,6 +370,7 @@ public class DiscoverFragment extends Fragment {
         reportViewModel.getDailyLimitReached().observe(getViewLifecycleOwner(), reached -> {
             if (Boolean.TRUE.equals(reached)) {
                 resetReportSheetLoading();
+                showReportSheetMessage(getString(R.string.report_daily_limit_reached), true);
                 showStatus(getString(R.string.report_daily_limit_reached), true);
                 reportViewModel.clearResultStates();
             }
@@ -376,6 +378,7 @@ public class DiscoverFragment extends Fragment {
         reportViewModel.getError().observe(getViewLifecycleOwner(), message -> {
             if (message != null && !message.trim().isEmpty()) {
                 resetReportSheetLoading();
+                showReportSheetMessage(message, true);
                 showStatus(message, true);
                 reportViewModel.clearResultStates();
             }
@@ -537,6 +540,12 @@ public class DiscoverFragment extends Fragment {
             reportSheetController.dismiss();
         }
         reportSheetController = null;
+    }
+
+    private void showReportSheetMessage(String message, boolean error) {
+        if (reportSheetController != null && reportSheetController.isShowing()) {
+            reportSheetController.showMessage(message, error);
+        }
     }
 
     private void resetReportSheetLoading() {

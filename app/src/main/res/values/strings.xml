@@ -228,7 +228,7 @@
     <string name="report_sent">Raporunuz inceleme için iletildi.</string>
     <string name="report_already_sent">Bu alıntıyı daha önce raporladınız.</string>
     <string name="report_daily_limit_reached">Şu anda daha fazla rapor gönderemezsiniz. Lütfen daha sonra tekrar deneyin.</string>
-    <string name="report_reason_other">Other</string>
+    <string name="report_reason_other">OTHER</string>
     <string name="discover_subtitle">Film, dizi ve kitaplardan paylaşılan en yeni alıntıları keşfet.</string>
     <string name="search_discover">Toplulukta ara...</string>
     <string name="discover_empty">Henüz keşfedilecek alıntı yok.</string>
@@ -272,11 +272,20 @@
     </string-array>
 
     <string-array name="report_reasons">
-        <item>Spam</item>
-        <item>Hate Speech</item>
-        <item>Offensive Content</item>
-        <item>Wrong Category</item>
-        <item>Copyright</item>
-        <item>Other</item>
+        <item>Spam veya yanıltıcı içerik</item>
+        <item>Nefret veya taciz</item>
+        <item>Uygunsuz içerik</item>
+        <item>Yanlış kategori</item>
+        <item>Telif ihlali</item>
+        <item>Diğer</item>
+    </string-array>
+
+    <string-array name="report_reason_codes">
+        <item>SPAM</item>
+        <item>HARASSMENT</item>
+        <item>INAPPROPRIATE</item>
+        <item>WRONG_CATEGORY</item>
+        <item>COPYRIGHT</item>
+        <item>OTHER</item>
     </string-array>
 </resources>

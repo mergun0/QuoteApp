@@ -85,12 +85,15 @@ async function main() {
     await setDoc(doc(db, "quotes/quoteD"), validQuote("quoteD", "userB", 0));
     await setDoc(doc(db, "quotes/quoteE"), validQuote("quoteE", "userB", 0));
     await setDoc(doc(db, "quotes/quoteF"), validQuote("quoteF", "userB", 0));
+    await setDoc(doc(db, "quotes/quoteG"), validQuote("quoteG", "userB", 0));
+    await setDoc(doc(db, "quotes/quoteH"), validQuote("quoteH", "userB", 0));
+    await setDoc(doc(db, "quotes/quoteI"), validQuote("quoteI", "userB", 0));
     await setDoc(doc(db, "reports/quoteB_userA"), {
       reportId: "quoteB_userA",
       quoteId: "quoteB",
       reportedUserId: "userB",
       reporterUserId: "userA",
-      reason: "Spam",
+      reason: "SPAM",
       description: "",
       status: "PENDING",
       createdAt: new Date(),
@@ -264,12 +267,14 @@ async function main() {
   await assertFails(updateDoc(doc(user, "quotes/quoteB"), { favoriteCount: -1 }));
   await assertFails(deleteDoc(doc(other, "favorites/userA_quoteB")));
 
+  await assertSucceeds(getDoc(doc(user, "reports/quoteC_userA")));
+  await assertFails(getDoc(doc(other, "reports/quoteC_userA")));
   await assertSucceeds(setDoc(doc(user, "reports/quoteC_userA"), {
     reportId: "quoteC_userA",
     quoteId: "quoteC",
     reportedUserId: "userB",
     reporterUserId: "userA",
-    reason: "Spam",
+    reason: "SPAM",
     description: "",
     status: "PENDING",
     createdAt: serverTimestamp(),
@@ -277,12 +282,51 @@ async function main() {
     reviewedBy: null,
     isValidReport: null,
   }));
+  await assertFails(setDoc(doc(user, "reports/quoteG_userA"), {
+    reportId: "quoteG_userA",
+    quoteId: "quoteG",
+    reportedUserId: "userB",
+    reporterUserId: "userA",
+    reason: "Spam veya yanıltıcı içerik",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+  }));
+  await assertFails(setDoc(doc(user, "reports/quoteH_userA"), {
+    reportId: "quoteH_userA",
+    quoteId: "quoteH",
+    reportedUserId: "userB",
+    reporterUserId: "userA",
+    reason: "SPAM",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+  }));
+  await assertFails(setDoc(doc(user, "reports/quoteI_userA"), {
+    reportId: "quoteI_userA",
+    quoteId: "quoteI",
+    reportedUserId: "userB",
+    reporterUserId: "userA",
+    reason: "SPAM",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
+    extraField: true,
+  }));
   await assertFails(setDoc(doc(user, "reports/quoteC_userA"), {
     reportId: "quoteC_userA",
     quoteId: "quoteC",
     reportedUserId: "userB",
     reporterUserId: "userA",
-    reason: "Spam",
+    reason: "SPAM",
     description: "",
     status: "PENDING",
     createdAt: serverTimestamp(),
@@ -295,7 +339,7 @@ async function main() {
     quoteId: "quoteB",
     reportedUserId: "userB",
     reporterUserId: "userA",
-    reason: "Spam",
+    reason: "SPAM",
     description: "",
     status: "PENDING",
     createdAt: serverTimestamp(),
@@ -308,7 +352,7 @@ async function main() {
     quoteId: "quoteA",
     reportedUserId: "userA",
     reporterUserId: "userA",
-    reason: "Spam",
+    reason: "SPAM",
     description: "",
     status: "PENDING",
     createdAt: serverTimestamp(),
@@ -321,7 +365,7 @@ async function main() {
     quoteId: "quoteF",
     reportedUserId: "userA",
     reporterUserId: "userA",
-    reason: "Spam",
+    reason: "SPAM",
     description: "",
     status: "PENDING",
     createdAt: serverTimestamp(),
@@ -334,7 +378,7 @@ async function main() {
     quoteId: "quoteD",
     reportedUserId: "userB",
     reporterUserId: "userA",
-    reason: "Spam",
+    reason: "SPAM",
     description: "",
     status: "APPROVED",
     createdAt: serverTimestamp(),
@@ -347,7 +391,7 @@ async function main() {
     quoteId: "quoteE",
     reportedUserId: "userB",
     reporterUserId: "userA",
-    reason: "Spam",
+    reason: "SPAM",
     description: "",
     status: "PENDING",
     createdAt: serverTimestamp(),

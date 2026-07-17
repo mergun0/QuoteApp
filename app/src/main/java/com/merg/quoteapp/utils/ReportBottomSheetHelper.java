@@ -24,17 +24,29 @@ public final class ReportBottomSheetHelper {
     public static class ReportSheetController {
         private final BottomSheetDialog dialog;
         private final MaterialButton submitButton;
+        private final TextView statusText;
         private final String submitText;
 
-        ReportSheetController(BottomSheetDialog dialog, MaterialButton submitButton, String submitText) {
+        ReportSheetController(BottomSheetDialog dialog, MaterialButton submitButton,
+                              TextView statusText, String submitText) {
             this.dialog = dialog;
             this.submitButton = submitButton;
+            this.statusText = statusText;
             this.submitText = submitText;
         }
 
         public void setLoading(boolean loading) {
             submitButton.setEnabled(!loading);
             submitButton.setText(loading ? R.string.operation_in_progress : R.string.submit_report);
+        }
+
+        public void showMessage(String message, boolean error) {
+            statusText.setText(message);
+            statusText.setTextColor(ContextCompat.getColor(
+                    statusText.getContext(),
+                    error ? R.color.quote_status_error : R.color.quote_text_secondary));
+            statusText.setVisibility(message == null || message.trim().isEmpty()
+                    ? View.GONE : View.VISIBLE);
         }
 
         public void dismiss() {
@@ -83,12 +95,14 @@ public final class ReportBottomSheetHelper {
 
         RadioGroup reasonGroup = new RadioGroup(context);
         reasonGroup.setOrientation(RadioGroup.VERTICAL);
-        String[] reasons = context.getResources().getStringArray(R.array.report_reasons);
-        for (int index = 0; index < reasons.length; index++) {
+        String[] reasonLabels = context.getResources().getStringArray(R.array.report_reasons);
+        String[] reasonCodes = context.getResources().getStringArray(R.array.report_reason_codes);
+        int reasonCount = Math.min(reasonLabels.length, reasonCodes.length);
+        for (int index = 0; index < reasonCount; index++) {
             MaterialRadioButton button = new MaterialRadioButton(context);
             button.setId(View.generateViewId());
-            button.setText(reasons[index]);
-            button.setTag(reasons[index]);
+            button.setText(reasonLabels[index]);
+            button.setTag(reasonCodes[index]);
             button.setTextColor(ContextCompat.getColor(context, R.color.quote_text_primary));
             reasonGroup.addView(button);
             if (index == 0) {
@@ -105,6 +119,13 @@ public final class ReportBottomSheetHelper {
         descriptionInput.setMaxLines(4);
         descriptionLayout.addView(descriptionInput);
         container.addView(descriptionLayout);
+
+        TextView statusText = new TextView(context);
+        statusText.setTextColor(ContextCompat.getColor(context, R.color.quote_text_secondary));
+        statusText.setTextSize(13);
+        statusText.setVisibility(View.GONE);
+        statusText.setPadding(0, dp(context, 10), 0, 0);
+        container.addView(statusText);
 
         MaterialButton submitButton = new MaterialButton(context);
         submitButton.setText(R.string.submit_report);
@@ -124,7 +145,8 @@ public final class ReportBottomSheetHelper {
                             ? View.VISIBLE : View.GONE);
         });
 
-        ReportSheetController controller = new ReportSheetController(dialog, submitButton, submitText);
+        ReportSheetController controller = new ReportSheetController(
+                dialog, submitButton, statusText, submitText);
 
         submitButton.setOnClickListener(view -> {
             if (!submitButton.isEnabled()) {
@@ -134,6 +156,7 @@ public final class ReportBottomSheetHelper {
             String reason = checked == null ? "" : String.valueOf(checked.getTag());
             String description = descriptionInput.getText() == null
                     ? "" : descriptionInput.getText().toString();
+            controller.showMessage("", false);
             controller.setLoading(true);
             listener.onSubmit(reason, description);
         });

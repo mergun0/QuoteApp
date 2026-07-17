@@ -224,12 +224,12 @@ service cloud.firestore {
         && request.resource.data.reportedUserId == get(quotePath(request.resource.data.quoteId)).data.userId
         && request.resource.data.reportedUserId != request.auth.uid
         && request.resource.data.reason in [
-          "Spam",
-          "Hate Speech",
-          "Offensive Content",
-          "Wrong Category",
-          "Copyright",
-          "Other"
+          "SPAM",
+          "HARASSMENT",
+          "INAPPROPRIATE",
+          "WRONG_CATEGORY",
+          "COPYRIGHT",
+          "OTHER"
         ]
         && optionalString(request.resource.data.description, 1000)
         && request.resource.data.status == "PENDING"
@@ -240,7 +240,10 @@ service cloud.firestore {
     }
 
     function isOwnReportDocument(reportId) {
-      return signedIn() && resource.data.reporterUserId == request.auth.uid;
+      return signedIn()
+        && reportId.matches(".*_" + request.auth.uid)
+        && (!exists(/databases/$(database)/documents/reports/$(reportId))
+          || resource.data.reporterUserId == request.auth.uid);
     }
 
     function validModeratorReportUpdate() {

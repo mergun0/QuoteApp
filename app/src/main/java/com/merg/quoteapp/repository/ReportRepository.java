@@ -73,7 +73,7 @@ public class ReportRepository {
      *
      * @param quoteId id of the reported quote
      * @param reportedUserId owner id of the reported quote
-     * @param reason selected report reason
+     * @param reason selected stable report reason code
      * @param description optional report description
      * @param callback result callback
      */
@@ -108,6 +108,7 @@ public class ReportRepository {
                 description,
                 FieldValue.serverTimestamp()
         );
+        logReportPayload(reportId, data);
 
         firestore.collection(REPORTS_COLLECTION)
                 .document(reportId)
@@ -126,7 +127,7 @@ public class ReportRepository {
                             })
                             .addOnFailureListener(error -> handleCreateFailure(reportId, error, callback));
                 })
-                .addOnFailureListener(error -> handleCreateFailure(reportId, error, callback));
+                .addOnFailureListener(error -> handleDuplicateCheckFailure(reportId, error, callback));
     }
 
     /**
@@ -145,7 +146,7 @@ public class ReportRepository {
                 .document(reportDocumentId(quoteId.trim(), reporterUserId.trim()))
                 .get()
                 .addOnSuccessListener(document -> callback.onSuccess(document.exists()))
-                .addOnFailureListener(error -> callback.onError(mapFirestoreError(error)));
+                .addOnFailureListener(error -> callback.onError("Rapor bilgisi kontrol edilemedi."));
     }
 
     /**
@@ -177,7 +178,7 @@ public class ReportRepository {
      * @param quoteId quote id
      * @param reportedUserId quote owner uid
      * @param reporterUserId current user uid
-     * @param reason selected reason
+     * @param reason selected stable reason code
      * @param description optional description
      * @param createdAt server timestamp sentinel for production, test value for unit tests
      * @return report payload
@@ -207,14 +208,15 @@ public class ReportRepository {
         return data;
     }
 
+    private void handleDuplicateCheckFailure(String reportId, Exception error, ReportCallback callback) {
+        Log.e(TAG, "direct report duplicate check failed. reportId=" + reportId
+                + ", code=" + firestoreCode(error), error);
+        callback.onError("Rapor gönderilemedi. Lütfen tekrar deneyin.");
+    }
+
     private void handleCreateFailure(String reportId, Exception error, ReportCallback callback) {
         Log.e(TAG, "direct report create failed. reportId=" + reportId
                 + ", code=" + firestoreCode(error), error);
-        String code = firestoreCode(error);
-        if ("already-exists".equals(code) || "permission-denied".equals(code)) {
-            callback.onError("Rapor gönderilemedi. Lütfen tekrar deneyin.");
-            return;
-        }
         callback.onError(mapFirestoreError(error));
     }
 
@@ -222,7 +224,7 @@ public class ReportRepository {
         String code = firestoreCode(error);
         switch (code) {
             case "permission-denied":
-                return "Bu alıntıyı raporlayamazsınız.";
+                return "Rapor gönderilemedi. Lütfen tekrar deneyin.";
             case "not-found":
                 return "Raporlamak istediğiniz alıntı artık mevcut değil.";
             case "unavailable":
@@ -241,6 +243,29 @@ public class ReportRepository {
             return firestoreError.getCode().name().replace("_", "-").toLowerCase(Locale.ROOT);
         }
         return "unknown";
+    }
+
+    private void logReportPayload(String reportId, Map<String, Object> data) {
+        Log.d(TAG, "direct report payload. reportId=" + reportId
+                + ", fields=" + data.keySet()
+                + ", quoteId=" + safeString(data.get("quoteId"))
+                + ", reportedUserId=" + safeString(data.get("reportedUserId"))
+                + ", reporterUserId=" + safeString(data.get("reporterUserId"))
+                + ", reason=" + safeString(data.get("reason"))
+                + ", descriptionLength=" + safeString(data.get("description")).length()
+                + ", status=" + safeString(data.get("status"))
+                + ", createdAtType=" + typeName(data.get("createdAt"))
+                + ", reviewedAtType=" + typeName(data.get("reviewedAt"))
+                + ", reviewedByType=" + typeName(data.get("reviewedBy"))
+                + ", isValidReportType=" + typeName(data.get("isValidReport")));
+    }
+
+    private String safeString(Object value) {
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    private String typeName(Object value) {
+        return value == null ? "null" : value.getClass().getSimpleName();
     }
 
     private boolean isBlank(String value) {
