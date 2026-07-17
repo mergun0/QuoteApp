@@ -8,9 +8,12 @@ import android.os.Looper;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
+import com.merg.quoteapp.repository.AccountDeletionRepository;
 import com.merg.quoteapp.ui.auth.LoginActivity;
+import com.merg.quoteapp.ui.profile.AccountDeletionActivity;
 
 public class SplashActivity extends AppCompatActivity {
 
@@ -18,13 +21,13 @@ public class SplashActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private final Runnable openNextScreen = () -> {
-        boolean signedIn = FirebaseAuth.getInstance().getCurrentUser() != null;
-        Class<?> destination = signedIn ? MainActivity.class : LoginActivity.class;
-
-        Intent intent = new Intent(this, destination);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            openScreen(LoginActivity.class, false);
+            return;
+        }
+        AccountDeletionRepository.getInstance().checkCurrentUserPending(pending ->
+                openScreen(pending ? AccountDeletionActivity.class : MainActivity.class, pending));
     };
 
     @Override
@@ -38,5 +41,15 @@ public class SplashActivity extends AppCompatActivity {
     protected void onDestroy() {
         handler.removeCallbacks(openNextScreen);
         super.onDestroy();
+    }
+
+    private void openScreen(Class<?> destination, boolean pendingOnly) {
+        Intent intent = new Intent(this, destination);
+        if (pendingOnly) {
+            intent.putExtra(AccountDeletionActivity.EXTRA_PENDING_ONLY, true);
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

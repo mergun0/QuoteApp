@@ -21,6 +21,7 @@ function createApp(dependencies = null) {
   }));
   app.use(createAdminRoutes({
     db: firebase.db,
+    auth: firebase.auth,
     FieldValue: firebase.FieldValue,
     adminPassword: LOCAL_ADMIN_PASSWORD,
     actor: LOCAL_ADMIN_ACTOR,

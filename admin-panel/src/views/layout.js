@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { href: "/reports/PENDING", key: "pending", label: "Bekleyen Raporlar", icon: "!" },
   { href: "/reports/APPROVED", key: "approved", label: "Onaylanan Raporlar", icon: "✓" },
   { href: "/reports/REJECTED", key: "rejected", label: "Reddedilen Raporlar", icon: "×" },
+  { href: "/account-deletions/PENDING", key: "account-deletions", label: "Hesap Silme Talepleri", icon: "!" },
   { href: "/actions", key: "actions", label: "İşlem Geçmişi", icon: "↻" },
 ];
 

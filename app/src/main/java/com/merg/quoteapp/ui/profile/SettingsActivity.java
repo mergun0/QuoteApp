@@ -57,6 +57,9 @@ public class SettingsActivity extends AppCompatActivity {
         resetPasswordRow = addRow(accountContainer, "🔐", getString(R.string.settings_reset_password),
                 getString(R.string.settings_reset_password_subtitle), "›",
                 view -> sendPasswordReset());
+        addRow(accountContainer, "!", getString(R.string.account_delete_title),
+                getString(R.string.account_delete_settings_subtitle), "›",
+                view -> startActivity(new Intent(this, AccountDeletionActivity.class)));
         addRow(appearanceContainer, "🌙", getString(R.string.settings_theme),
                 getString(R.string.settings_dark_theme_soon), getString(R.string.coming_soon),
                 null);

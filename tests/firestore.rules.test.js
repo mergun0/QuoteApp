@@ -52,6 +52,14 @@ async function main() {
     email: "c@example.com",
     role: "user",
   }).firestore();
+  const deleteUser = testEnv.authenticatedContext("deleteUser", {
+    email: "delete@example.com",
+    role: "user",
+  }).firestore();
+  const pendingUser = testEnv.authenticatedContext("pendingUser", {
+    email: "pending@example.com",
+    role: "user",
+  }).firestore();
 
   await testEnv.withSecurityRulesDisabled(async (context) => {
     const db = context.firestore();
@@ -75,9 +83,57 @@ async function main() {
       reportRestrictionUntil: null,
       createdAt: new Date(),
     });
+    await setDoc(doc(db, "users/deleteUser"), {
+      uid: "deleteUser",
+      username: "Delete Me",
+      usernameLowercase: "deleteme",
+      role: "user",
+      validReports: 0,
+      invalidReports: 0,
+      reportRestrictionUntil: null,
+      createdAt: new Date(),
+    });
+    await setDoc(doc(db, "users/pendingUser"), {
+      uid: "pendingUser",
+      username: "Pending",
+      usernameLowercase: "pending",
+      role: "user",
+      validReports: 0,
+      invalidReports: 0,
+      reportRestrictionUntil: null,
+      deletionPending: true,
+      profileHidden: true,
+      deletionRequestedAt: new Date(),
+      createdAt: new Date(),
+    });
     await setDoc(doc(db, "usernames/alice"), {
       uid: "userA",
       createdAt: new Date(),
+    });
+    await setDoc(doc(db, "usernames/deleteme"), {
+      uid: "deleteUser",
+      createdAt: new Date(),
+    });
+    await setDoc(doc(db, "usernames/pending"), {
+      uid: "pendingUser",
+      createdAt: new Date(),
+    });
+    await setDoc(doc(db, "accountDeletionRequests/pendingUser"), {
+      userId: "pendingUser",
+      username: "Pending",
+      normalizedUsername: "pending",
+      status: "PENDING",
+      requestedAt: new Date(),
+      requestedBy: "pendingUser",
+      reason: "",
+      profileHidden: true,
+      deletionVersion: 1,
+      completedAt: null,
+      completedBy: null,
+      failureCode: null,
+      failureMessage: null,
+      currentPhase: "REQUESTED",
+      completedPhases: [],
     });
     await setDoc(doc(db, "quotes/quoteA"), validQuote("quoteA", "userA", 0));
     await setDoc(doc(db, "quotes/quoteB"), validQuote("quoteB", "userB", 0));
@@ -178,6 +234,7 @@ async function main() {
   await assertFails(updateDoc(doc(user, "users/userB"), { username: "Eve" }));
   await assertFails(deleteDoc(doc(user, "users/userA")));
   await assertSucceeds(updateDoc(doc(admin, "users/userA"), { role: "moderator" }));
+  await assertFails(getDoc(doc(other, "users/pendingUser")));
   await assertFails(getDoc(doc(unauth, "usernameLogins/alice")));
   await assertFails(getDocs(collection(unauth, "usernameLogins")));
   await assertFails(getDoc(doc(user, "usernameLogins/alice")));
@@ -208,6 +265,79 @@ async function main() {
   await assertFails(setDoc(doc(other, "usernames/alice"), {
     uid: "userB",
     createdAt: serverTimestamp(),
+  }));
+
+  const deletionBatch = writeBatch(deleteUser);
+  deletionBatch.set(doc(deleteUser, "accountDeletionRequests/deleteUser"), validDeletionRequest("deleteUser", "Delete Me", "deleteme"));
+  deletionBatch.update(doc(deleteUser, "users/deleteUser"), {
+    deletionPending: true,
+    profileHidden: true,
+    deletionRequestedAt: serverTimestamp(),
+  });
+  await assertSucceeds(deletionBatch.commit());
+  await assertSucceeds(getDoc(doc(deleteUser, "accountDeletionRequests/deleteUser")));
+  await assertFails(getDoc(doc(other, "accountDeletionRequests/deleteUser")));
+  await assertFails(getDocs(collection(deleteUser, "accountDeletionRequests")));
+  await assertFails(updateDoc(doc(deleteUser, "accountDeletionRequests/deleteUser"), { status: "COMPLETED" }));
+  await assertFails(deleteDoc(doc(deleteUser, "accountDeletionRequests/deleteUser")));
+  const duplicateDeletionBatch = writeBatch(deleteUser);
+  duplicateDeletionBatch.set(doc(deleteUser, "accountDeletionRequests/deleteUser"), validDeletionRequest("deleteUser", "Delete Me", "deleteme"));
+  duplicateDeletionBatch.update(doc(deleteUser, "users/deleteUser"), {
+    deletionPending: true,
+    profileHidden: true,
+    deletionRequestedAt: serverTimestamp(),
+  });
+  await assertFails(duplicateDeletionBatch.commit());
+  const badDeletionBatch = writeBatch(other);
+  badDeletionBatch.set(doc(other, "accountDeletionRequests/userA"), validDeletionRequest("userA", "Alice", "alice"));
+  badDeletionBatch.update(doc(other, "users/userB"), {
+    deletionPending: true,
+    profileHidden: true,
+    deletionRequestedAt: serverTimestamp(),
+  });
+  await assertFails(badDeletionBatch.commit());
+  const completedDeletionBatch = writeBatch(other);
+  completedDeletionBatch.set(doc(other, "accountDeletionRequests/userB"), {
+    ...validDeletionRequest("userB", "Bob", "bob"),
+    status: "COMPLETED",
+  });
+  completedDeletionBatch.update(doc(other, "users/userB"), {
+    deletionPending: true,
+    profileHidden: true,
+    deletionRequestedAt: serverTimestamp(),
+  });
+  await assertFails(completedDeletionBatch.commit());
+  await assertFails(getDocs(collection(user, "accountDeletionActions")));
+  await assertFails(getDoc(doc(user, "accountDeletionActions/action1")));
+  await assertFails(setDoc(doc(user, "accountDeletionActions/action1"), { requestId: "userA" }));
+  await assertFails(setDoc(doc(pendingUser, "quotes/pendingQuote"), validQuote("pendingQuote", "pendingUser", 0)));
+  await assertFails(setDoc(doc(pendingUser, "likes/pendingUser_quoteB"), {
+    likeId: "pendingUser_quoteB",
+    userId: "pendingUser",
+    quoteId: "quoteB",
+    createdAt: serverTimestamp(),
+  }));
+  const pendingFavoriteBatch = writeBatch(pendingUser);
+  pendingFavoriteBatch.set(doc(pendingUser, "favorites/pendingUser_quoteB"), {
+    favoriteId: "pendingUser_quoteB",
+    userId: "pendingUser",
+    quoteId: "quoteB",
+    createdAt: serverTimestamp(),
+  });
+  pendingFavoriteBatch.update(doc(pendingUser, "quotes/quoteB"), { favoriteCount: 1 });
+  await assertFails(pendingFavoriteBatch.commit());
+  await assertFails(setDoc(doc(pendingUser, "reports/quoteB_pendingUser"), {
+    reportId: "quoteB_pendingUser",
+    quoteId: "quoteB",
+    reportedUserId: "userB",
+    reporterUserId: "pendingUser",
+    reason: "SPAM",
+    description: "",
+    status: "PENDING",
+    createdAt: serverTimestamp(),
+    reviewedAt: null,
+    reviewedBy: null,
+    isValidReport: null,
   }));
 
   await assertSucceeds(setDoc(doc(user, "quotes/userAQuote"), validQuote("userAQuote", "userA", 0)));
@@ -559,6 +689,26 @@ function validQuote(quoteId, userId, favoriteCount) {
     isHidden: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
+  };
+}
+
+function validDeletionRequest(userId, username, normalizedUsername) {
+  return {
+    userId,
+    username,
+    normalizedUsername,
+    status: "PENDING",
+    requestedAt: serverTimestamp(),
+    requestedBy: userId,
+    reason: "",
+    profileHidden: true,
+    deletionVersion: 1,
+    completedAt: null,
+    completedBy: null,
+    failureCode: null,
+    failureMessage: null,
+    currentPhase: "REQUESTED",
+    completedPhases: [],
   };
 }
 

@@ -17,6 +17,10 @@ const { dashboardView } = require("../views/dashboard");
 const { reportsView, detailView } = require("../views/reports");
 const { actionsView } = require("../views/actions");
 const {
+  accountDeletionListView,
+  accountDeletionDetailView,
+} = require("../views/accountDeletions");
+const {
   REPORT_STATUS,
   loadDashboard,
   listReports,
@@ -25,12 +29,18 @@ const {
   reviewReport,
   deleteReportedQuote,
 } = require("../moderationService");
+const {
+  REQUEST_STATUS,
+  listDeletionRequests,
+  loadDeletionRequestDetail,
+  executeAccountDeletion,
+} = require("../accountDeletionService");
 
 function safeErrorMessage() {
   return "İşlem tamamlanamadı. Lütfen sunucu loglarını kontrol edin.";
 }
 
-function createAdminRoutes({ db, FieldValue, adminPassword, actor }) {
+function createAdminRoutes({ db, auth, FieldValue, adminPassword, actor }) {
   const router = express.Router();
 
   router.get("/login", (req, res) => {
@@ -142,6 +152,64 @@ function createAdminRoutes({ db, FieldValue, adminPassword, actor }) {
         active: "actions",
         body: actionsView(pageData, filters),
       }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/account-deletions/:status", requireSession, async (req, res, next) => {
+    try {
+      const status = String(req.params.status || "").toUpperCase();
+      if (![REQUEST_STATUS.pending, REQUEST_STATUS.completed, REQUEST_STATUS.failed].includes(status)) {
+        res.status(404).send("Geçersiz hesap silme talebi durumu.");
+        return;
+      }
+      const pageData = await listDeletionRequests(db, {
+        status,
+        page: Number(req.query.page || 1),
+      });
+      res.send(page({
+        title: "Hesap Silme Talepleri",
+        subtitle: "Bekleyen, tamamlanan ve başarısız hesap silme işlemleri.",
+        active: "account-deletions",
+        body: accountDeletionListView(status, pageData),
+        flash: req.query.message ? { type: "success", message: req.query.message } : null,
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/account-deletion/:userId", requireSession, async (req, res, next) => {
+    try {
+      const detail = await loadDeletionRequestDetail(db, req.params.userId);
+      if (!detail) {
+        res.status(404).send("Hesap silme talebi bulunamadı.");
+        return;
+      }
+      res.send(page({
+        title: "Hesap Silme Talebi",
+        subtitle: "Talep, veri matrisi, ilerleme ve audit log.",
+        active: "account-deletions",
+        body: accountDeletionDetailView(detail, req.adminSession.csrfToken),
+        flash: req.query.message ? { type: "success", message: req.query.message } : null,
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/account-deletion/:userId/execute", requireCsrf, async (req, res, next) => {
+    try {
+      await executeAccountDeletion({
+        db,
+        auth,
+        FieldValue,
+        userId: req.params.userId,
+        actor,
+        confirmation: req.body.confirmation,
+      });
+      res.redirect(`/account-deletion/${encodeURIComponent(req.params.userId)}?message=${encodeURIComponent("Hesap silme işlemi tamamlandı veya idempotent olarak zaten tamamlanmıştı.")}`);
     } catch (error) {
       next(error);
     }

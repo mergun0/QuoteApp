@@ -174,6 +174,47 @@ note
 
 Normal clients cannot read or write this collection. The local panel uses Firebase Admin SDK, which bypasses Firestore Rules.
 
+## Account deletion requests
+
+The panel includes a `Hesap Silme Talepleri` page for the v1.0 account deletion completion workflow.
+
+Pages:
+
+- pending deletion requests
+- completed deletion requests
+- failed deletion requests
+- request detail
+
+The detail view shows the request, affected collection counts, progress phases and deletion audit records. Execution is POST-only, CSRF-protected and requires typing the target UID as explicit confirmation.
+
+Deletion phases:
+
+```text
+PROFILE
+QUOTES
+LIKES
+FAVORITES
+ACHIEVEMENTS
+STATS
+SOCIAL_RELATIONS
+REPORTS_ANONYMIZED
+USERNAME_RELEASED
+AUTH_DELETED
+COMPLETED
+```
+
+Firebase Auth deletion happens last. If Auth deletion fails, the request remains `FAILED` and can be retried. If Auth is already missing, the Auth phase is treated as idempotently complete.
+
+Deletion audit records are written to:
+
+```text
+accountDeletionActions/{autoId}
+```
+
+They must not include email, password, raw tokens or service-account data.
+
+See `docs/ACCOUNT_DELETION.md` for the full data deletion matrix and safe rollout order.
+
 ## Required Firestore indexes
 
 Defined in `firestore.indexes.json`:

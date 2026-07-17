@@ -15,6 +15,14 @@ const { dashboardView } = require("../src/views/dashboard");
 const { reportsView, detailView } = require("../src/views/reports");
 const { actionsView } = require("../src/views/actions");
 const {
+  accountDeletionListView,
+  accountDeletionDetailView,
+} = require("../src/views/accountDeletions");
+const {
+  anonymizedUserRef,
+  PHASES,
+} = require("../src/accountDeletionService");
+const {
   parseArgs,
   runBackfillQuoteVisibility,
 } = require("../scripts/backfillQuoteVisibility");
@@ -57,6 +65,7 @@ const shell = page({
 });
 assert.ok(shell.includes("Dashboard"));
 assert.ok(shell.includes("Bekleyen Raporlar"));
+assert.ok(shell.includes("Hesap Silme Talepleri"));
 assert.ok(shell.includes("/css/admin.css"));
 assert.ok(shell.includes("/js/admin.js"));
 
@@ -129,6 +138,56 @@ const actionsHtml = actionsView({
 assert.ok(actionsHtml.includes("REPORT_APPROVED"));
 assert.ok(!actionsHtml.includes("<private>"));
 assert.ok(actionsHtml.includes("&lt;private&gt;"));
+
+const deletionListHtml = accountDeletionListView("PENDING", {
+  items: [{
+    id: "deleteUser",
+    userId: "deleteUser",
+    username: "Delete Me",
+    status: "PENDING",
+    requestedAt: new Date(),
+    currentPhase: "REQUESTED",
+  }],
+  page: 1,
+  totalPages: 1,
+  totalItems: 1,
+  hasPrevious: false,
+  hasNext: false,
+});
+assert.ok(deletionListHtml.includes("Delete Me"));
+assert.ok(deletionListHtml.includes("/account-deletion/deleteUser"));
+
+const deletionDetailHtml = accountDeletionDetailView({
+  request: {
+    id: "deleteUser",
+    userId: "deleteUser",
+    username: "Delete Me",
+    status: "PENDING",
+    requestedAt: new Date(),
+    reason: "<private>",
+    profileHidden: true,
+    completedPhases: ["PROFILE"],
+  },
+  user: { id: "deleteUser" },
+  counts: {
+    quotes: 2,
+    likes: 3,
+    favorites: 4,
+    achievements: 1,
+    stats: 1,
+    moderationReferences: 5,
+  },
+  actions: [],
+}, "csrf-token");
+assert.ok(deletionDetailHtml.includes("_csrf"));
+assert.ok(deletionDetailHtml.includes("confirmation"));
+assert.ok(deletionDetailHtml.includes("Firebase Auth kullanıcısı en son silinir"));
+assert.ok(!deletionDetailHtml.includes("<private>"));
+assert.ok(deletionDetailHtml.includes("&lt;private&gt;"));
+assert.strictEqual(PHASES[PHASES.length - 1], "COMPLETED");
+assert.strictEqual(anonymizedUserRef("deleteUser"), anonymizedUserRef("deleteUser"));
+assert.notStrictEqual(anonymizedUserRef("deleteUser"), anonymizedUserRef("otherUser"));
+assert.ok(anonymizedUserRef("deleteUser").startsWith("deleted_"));
 
 assert.deepStrictEqual(parseArgs([], {}), { apply: false, verify: false });
 assert.deepStrictEqual(parseArgs(["--", "--apply"], {}), { apply: true, verify: false });

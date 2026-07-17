@@ -225,6 +225,25 @@ Future callable order:
 See `docs/MODERATION_BACKEND.md` for callable contracts and collection details.
 See `docs/LOCAL_ADMIN_PANEL.md` for the temporary local review panel.
 
+## Account deletion rollout
+
+Android creates a deterministic request:
+
+```text
+accountDeletionRequests/{uid}
+```
+
+The same batch marks:
+
+```text
+users/{uid}.deletionPending = true
+users/{uid}.profileHidden = true
+```
+
+Firestore Rules then block normal client writes for pending users, including quotes, likes, favorites, reports and stats. Normal clients can exact-get only their own deletion request and cannot list, update or delete requests. `accountDeletionActions` is denied to all normal clients.
+
+The local admin panel completes deletion with Firebase Admin SDK. Firebase Auth deletion is the final phase. Do not deploy Rules or run a real deletion until `docs/ACCOUNT_DELETION.md` has been reviewed.
+
 ## App Check rollout
 
 Android is prepared for:

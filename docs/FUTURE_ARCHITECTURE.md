@@ -263,3 +263,16 @@ Security concerns:
 - Avoid replacing existing documents with broad `set()` calls when field-level updates are safer.
 - Keep deterministic document IDs for like, favorite, report and future idempotent reward records.
 - Keep old clients in mind when changing public profile or quote document fields.
+
+## Account deletion migration
+
+v1.0 uses Android request creation plus a localhost Admin SDK completion panel. A future trusted backend should replace the manual completion step with an authenticated, audited server workflow.
+
+Future backend responsibilities:
+
+- validate pending deletion requests
+- execute the deletion matrix idempotently
+- anonymize retained moderation records
+- delete Firebase Auth users last
+- expose a safe public account-deletion support flow
+- retain audit logs without storing email, passwords, tokens or service-account data

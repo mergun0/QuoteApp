@@ -56,6 +56,24 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(userId);
     }
 
+    function visibleUserData(data) {
+      return (!data.keys().hasAny(["profileHidden"]) || data.profileHidden != true)
+        && (!data.keys().hasAny(["deletionPending"]) || data.deletionPending != true);
+    }
+
+    function deletionRequestPath(userId) {
+      return /databases/$(database)/documents/accountDeletionRequests/$(userId);
+    }
+
+    function deletionPending(userId) {
+      return exists(deletionRequestPath(userId))
+        && get(deletionRequestPath(userId)).data.status in ["PENDING", "PROCESSING", "FAILED"];
+    }
+
+    function activeRequester() {
+      return signedIn() && !deletionPending(request.auth.uid);
+    }
+
     function usernamePath(usernameId) {
       return /databases/$(database)/documents/usernames/$(usernameId);
     }
@@ -104,7 +122,7 @@ service cloud.firestore {
     }
 
     function validQuoteCreate(quoteId) {
-      return signedIn()
+      return activeRequester()
         && keysOnly([
           "quoteId",
           "userId",
@@ -143,7 +161,7 @@ service cloud.firestore {
     }
 
     function validQuoteOwnerUpdate() {
-      return signedIn()
+      return activeRequester()
         && resource.data.userId == request.auth.uid
         && visibleQuoteData(resource.data)
         && request.resource.data.userId == resource.data.userId
@@ -167,7 +185,7 @@ service cloud.firestore {
     }
 
     function validFavoriteCounterCreate(quoteId) {
-      return signedIn()
+      return activeRequester()
         && visibleQuoteData(resource.data)
         && changedOnly(["favoriteCount"])
         && resource.data.favoriteCount is int
@@ -177,7 +195,7 @@ service cloud.firestore {
     }
 
     function validFavoriteCounterDelete(quoteId) {
-      return signedIn()
+      return activeRequester()
         && visibleQuoteData(resource.data)
         && changedOnly(["favoriteCount"])
         && resource.data.favoriteCount is int
@@ -188,7 +206,7 @@ service cloud.firestore {
     }
 
     function validLikeCreate(likeId) {
-      return signedIn()
+      return activeRequester()
         && likeId == request.auth.uid + "_" + request.resource.data.quoteId
         && keysOnly(["likeId", "quoteId", "userId", "createdAt"])
         && request.resource.data.likeId == likeId
@@ -200,7 +218,7 @@ service cloud.firestore {
     }
 
     function validFavoriteCreate(favoriteId) {
-      return signedIn()
+      return activeRequester()
         && favoriteId == request.auth.uid + "_" + request.resource.data.quoteId
         && keysOnly(["favoriteId", "quoteId", "userId", "createdAt"])
         && request.resource.data.favoriteId == favoriteId
@@ -214,7 +232,7 @@ service cloud.firestore {
     }
 
     function validReportCreate(reportId) {
-      return signedIn()
+      return activeRequester()
         && reportId == request.resource.data.quoteId + "_" + request.auth.uid
         && keysOnly([
           "reportId",
@@ -268,7 +286,7 @@ service cloud.firestore {
     }
 
     function validUserAchievementCreate(userAchievementId) {
-      return signedIn()
+      return activeRequester()
         && userAchievementId == request.auth.uid + "_" + request.resource.data.achievementId
         && keysOnly([
           "userAchievementId",
@@ -292,6 +310,7 @@ service cloud.firestore {
 
     function validUserStatsWrite(userId) {
       return isSelf(userId)
+        && !deletionPending(userId)
         && keysOnly([
           "userId",
           "totalXp",
@@ -326,11 +345,71 @@ service cloud.firestore {
         && request.resource.data.lastUpdatedAt == request.time;
     }
 
+    function validAccountDeletionRequestCreate(userId) {
+      return isSelf(userId)
+        && !exists(deletionRequestPath(userId))
+        && exists(userPath(userId))
+        && existsAfter(userPath(userId))
+        && keysOnly([
+          "userId",
+          "username",
+          "normalizedUsername",
+          "status",
+          "requestedAt",
+          "requestedBy",
+          "reason",
+          "profileHidden",
+          "deletionVersion",
+          "completedAt",
+          "completedBy",
+          "failureCode",
+          "failureMessage",
+          "currentPhase",
+          "completedPhases"
+        ])
+        && request.resource.data.userId == userId
+        && request.resource.data.requestedBy == userId
+        && optionalString(request.resource.data.username, 40)
+        && optionalString(request.resource.data.normalizedUsername, 40)
+        && request.resource.data.normalizedUsername == resourceSafeUsername(userId)
+        && request.resource.data.status == "PENDING"
+        && request.resource.data.requestedAt == request.time
+        && optionalString(request.resource.data.reason, 500)
+        && request.resource.data.profileHidden == true
+        && request.resource.data.deletionVersion is int
+        && request.resource.data.deletionVersion >= 1
+        && request.resource.data.completedAt == null
+        && request.resource.data.completedBy == null
+        && request.resource.data.failureCode == null
+        && request.resource.data.failureMessage == null
+        && request.resource.data.currentPhase == "REQUESTED"
+        && request.resource.data.completedPhases is list
+        && request.resource.data.completedPhases.size() == 0
+        && getAfter(userPath(userId)).data.deletionPending == true
+        && getAfter(userPath(userId)).data.profileHidden == true
+        && getAfter(userPath(userId)).data.deletionRequestedAt == request.time;
+    }
+
+    function resourceSafeUsername(userId) {
+      return get(userPath(userId)).data.usernameLowercase;
+    }
+
+    function validUserDeletionPendingUpdate(userId) {
+      return isSelf(userId)
+        && existsAfter(deletionRequestPath(userId))
+        && getAfter(deletionRequestPath(userId)).data.userId == userId
+        && getAfter(deletionRequestPath(userId)).data.status == "PENDING"
+        && changedOnly(["deletionPending", "profileHidden", "deletionRequestedAt"])
+        && request.resource.data.deletionPending == true
+        && request.resource.data.profileHidden == true
+        && request.resource.data.deletionRequestedAt == request.time;
+    }
+
     match /users/{userId} {
-      allow get: if signedIn();
+      allow get: if signedIn() && (isSelf(userId) || visibleUserData(resource.data));
       allow list: if false;
       allow create: if validUserCreate(userId);
-      allow update: if isAdmin();
+      allow update: if isAdmin() || validUserDeletionPendingUpdate(userId);
       allow delete: if false;
     }
 
@@ -348,14 +427,14 @@ service cloud.firestore {
       allow update: if validQuoteOwnerUpdate()
         || validFavoriteCounterCreate(quoteId)
         || validFavoriteCounterDelete(quoteId);
-      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if activeRequester() && resource.data.userId == request.auth.uid;
     }
 
     match /likes/{likeId} {
       allow get, list: if signedIn();
       allow create: if validLikeCreate(likeId);
       allow update: if false;
-      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if activeRequester() && resource.data.userId == request.auth.uid;
     }
 
     match /favorites/{favoriteId} {
@@ -364,7 +443,7 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid;
       allow create: if validFavoriteCreate(favoriteId);
       allow update: if false;
-      allow delete: if signedIn()
+      allow delete: if activeRequester()
         && resource.data.userId == request.auth.uid
         && getAfter(quotePath(resource.data.quoteId)).data.favoriteCount
           == get(quotePath(resource.data.quoteId)).data.favoriteCount - 1;
@@ -403,6 +482,18 @@ service cloud.firestore {
     }
 
     match /moderationActions/{actionId} {
+      allow get, list: if false;
+      allow create, update, delete: if false;
+    }
+
+    match /accountDeletionRequests/{userId} {
+      allow get: if isSelf(userId);
+      allow list: if false;
+      allow create: if validAccountDeletionRequestCreate(userId);
+      allow update, delete: if false;
+    }
+
+    match /accountDeletionActions/{actionId} {
       allow get, list: if false;
       allow create, update, delete: if false;
     }

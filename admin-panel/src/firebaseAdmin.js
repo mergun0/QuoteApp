@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { initializeApp, cert, getApps } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getAuth } = require("firebase-admin/auth");
 
 function loadServiceAccount() {
   const configuredPath = process.env.GOOGLE_APPLICATION_CREDENTIALS
@@ -31,6 +32,7 @@ function initializeFirebaseAdmin() {
   }
   return {
     db: getFirestore(),
+    auth: getAuth(),
     FieldValue,
   };
 }

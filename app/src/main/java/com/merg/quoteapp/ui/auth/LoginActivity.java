@@ -13,6 +13,8 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.merg.quoteapp.MainActivity;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.AuthState;
+import com.merg.quoteapp.repository.AccountDeletionRepository;
+import com.merg.quoteapp.ui.profile.AccountDeletionActivity;
 import com.merg.quoteapp.viewmodel.AuthViewModel;
 
 public class LoginActivity extends AppCompatActivity {
@@ -57,12 +59,19 @@ public class LoginActivity extends AppCompatActivity {
             showStatus(state.getMessage(), true);
         } else if (state.getStatus() == AuthState.Status.SUCCESS) {
             showStatus(getString(R.string.login_success), false);
-            statusText.postDelayed(() -> {
-                Intent intent = new Intent(this, MainActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-            }, 500L);
+            statusText.postDelayed(this::openPostLoginDestination, 500L);
         }
+    }
+
+    private void openPostLoginDestination() {
+        AccountDeletionRepository.getInstance().checkCurrentUserPending(pending -> {
+            Intent intent = new Intent(this, pending ? AccountDeletionActivity.class : MainActivity.class);
+            if (pending) {
+                intent.putExtra(AccountDeletionActivity.EXTRA_PENDING_ONLY, true);
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+        });
     }
 
     private void showStatus(String message, boolean isError) {

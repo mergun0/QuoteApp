@@ -64,7 +64,10 @@ Do not mark an item complete unless repository evidence, emulator tests, manual 
 - [ ] Community guidelines are written and reviewed.
 - [ ] Report and moderation explanation is written.
 - [ ] Account deletion flow is defined.
+- [ ] Account deletion request flow passes Android QA.
+- [ ] Local admin account deletion completion flow passes dry-run/manual QA.
 - [ ] User-data deletion flow is defined.
+- [ ] Public account deletion page content is reviewed.
 - [ ] Store listing links do not point to broken URLs.
 - [ ] Placeholder legal text is replaced before public production release.
 

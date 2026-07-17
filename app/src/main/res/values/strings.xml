@@ -131,6 +131,15 @@
     <string name="settings_reset_password_subtitle">E-postana sıfırlama bağlantısı gönder</string>
     <string name="settings_reset_email_missing">Şifre sıfırlama için e-posta bilgisi bulunamadı.</string>
     <string name="settings_reset_sent">Şifre sıfırlama bağlantısı e-posta adresine gönderildi.</string>
+    <string name="account_delete_title">Hesabımı Sil</string>
+    <string name="account_delete_settings_subtitle">Kalıcı hesap silme talebi oluştur</string>
+    <string name="account_delete_warning">Hesabınız kalıcı olarak silinecektir. Profiliniz erişilemez hale gelir; yayınladığınız alıntılar, beğeniler, favoriler, başarımlar ve istatistikler kaldırılır. Bu işlem geri alınamaz. Moderasyon kayıtları, kötüye kullanımı önleme ve denetim geçmişi için yalnızca anonimleştirilmiş biçimde saklanabilir.</string>
+    <string name="account_delete_password">Mevcut şifre</string>
+    <string name="account_delete_reason">Silme nedeni (isteğe bağlı)</string>
+    <string name="account_delete_confirmation_hint">Devam etmek için HESABIMI SİL yazın</string>
+    <string name="account_delete_request_button">Hesap Silme Talebi Oluştur</string>
+    <string name="account_delete_request_loading">Talep oluşturuluyor…</string>
+    <string name="account_delete_pending_message">Hesap silme talebiniz alındı. Hesabınız ve ilişkili verileriniz yerel admin işlemi tamamlandıktan sonra kaldırılacaktır. Bu süreçte normal uygulama kullanımı devre dışıdır; isterseniz oturumu kapatabilirsiniz.</string>
     <string name="settings_logout_subtitle">Oturumu kapat ve giriş ekranına dön</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_dark_theme_soon">Koyu Tema • Yakında değiştirilebilir olacak</string>
