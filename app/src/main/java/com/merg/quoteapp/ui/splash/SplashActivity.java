@@ -26,8 +26,13 @@ public class SplashActivity extends AppCompatActivity {
             openScreen(LoginActivity.class, false);
             return;
         }
-        AccountDeletionRepository.getInstance().checkCurrentUserPending(pending ->
-                openScreen(pending ? AccountDeletionActivity.class : MainActivity.class, pending));
+        AccountDeletionRepository.getInstance().checkCurrentUserDeletionState(state -> {
+            boolean locked = state == AccountDeletionRepository.DeletionState.PENDING
+                    || state == AccountDeletionRepository.DeletionState.UNKNOWN;
+            openScreen(locked ? AccountDeletionActivity.class : MainActivity.class,
+                    locked,
+                    state == AccountDeletionRepository.DeletionState.UNKNOWN);
+        });
     };
 
     @Override
@@ -44,9 +49,14 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void openScreen(Class<?> destination, boolean pendingOnly) {
+        openScreen(destination, pendingOnly, false);
+    }
+
+    private void openScreen(Class<?> destination, boolean pendingOnly, boolean checkFailed) {
         Intent intent = new Intent(this, destination);
         if (pendingOnly) {
             intent.putExtra(AccountDeletionActivity.EXTRA_PENDING_ONLY, true);
+            intent.putExtra(AccountDeletionActivity.EXTRA_CHECK_FAILED, checkFailed);
         }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);

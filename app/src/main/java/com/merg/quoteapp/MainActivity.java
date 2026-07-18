@@ -15,10 +15,9 @@ import com.google.android.material.snackbar.Snackbar;
 import com.merg.quoteapp.ui.discover.DiscoverFragment;
 import com.merg.quoteapp.ui.favorites.FavoritesFragment;
 import com.merg.quoteapp.ui.home.HomeFragment;
-import com.merg.quoteapp.repository.AccountDeletionRepository;
-import com.merg.quoteapp.ui.profile.AccountDeletionActivity;
 import com.merg.quoteapp.ui.profile.ProfileFragment;
 import com.merg.quoteapp.model.AchievementFeedbackEvent;
+import com.merg.quoteapp.utils.AccountDeletionGuard;
 import com.merg.quoteapp.utils.AchievementFeedbackCenter;
 
 public class MainActivity extends AppCompatActivity {
@@ -58,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         observeAchievementFeedback();
-        redirectIfDeletionPending();
+        AccountDeletionGuard.enforce(this);
     }
 
     @Override
@@ -185,16 +184,4 @@ public class MainActivity extends AppCompatActivity {
         return value == null ? "" : value;
     }
 
-    private void redirectIfDeletionPending() {
-        AccountDeletionRepository.getInstance().checkCurrentUserPending(pending -> {
-            if (!pending || isFinishing()) {
-                return;
-            }
-            Intent intent = new Intent(this, AccountDeletionActivity.class);
-            intent.putExtra(AccountDeletionActivity.EXTRA_PENDING_ONLY, true);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-        });
-    }
 }

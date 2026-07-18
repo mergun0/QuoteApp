@@ -140,6 +140,20 @@
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonDeletionRetry"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:text="@string/account_delete_retry"
+                android:textAllCaps="false"
+                android:textColor="@color/home_v2_text_primary"
+                android:visibility="gone"
+                app:cornerRadius="16dp"
+                app:strokeColor="@color/home_v2_primary"
+                tools:visibility="visible" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonDeletionSignOut"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"

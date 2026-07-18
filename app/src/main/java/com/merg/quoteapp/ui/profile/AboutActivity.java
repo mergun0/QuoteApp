@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.merg.quoteapp.R;
+import com.merg.quoteapp.utils.AccountDeletionGuard;
 
 public class AboutActivity extends AppCompatActivity {
 
@@ -14,6 +15,7 @@ public class AboutActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
+        AccountDeletionGuard.enforce(this);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarAbout);
         toolbar.setNavigationOnClickListener(view -> finish());

@@ -187,6 +187,20 @@ Pages:
 
 The detail view shows the request, affected collection counts, progress phases and deletion audit records. Execution is POST-only, CSRF-protected and requires typing the target UID as explicit confirmation.
 
+If the list or detail page shows the generic sanitized error, check server logs. Account deletion queries log the exact route, collection, `where`, `orderBy`, Firebase error code and whether a missing index is likely.
+
+Required account deletion indexes:
+
+```text
+accountDeletionRequests:
+  status ASC
+  requestedAt DESC
+
+accountDeletionActions:
+  requestId ASC
+  createdAt DESC
+```
+
 Deletion phases:
 
 ```text
@@ -245,6 +259,13 @@ firebase deploy --project <real-project-id> --only firestore:indexes
 ```
 
 Do not deploy indexes automatically from Codex tasks.
+For the current Firebase project use:
+
+```bash
+firebase deploy --project quoteapp-a92e4 --only firestore:indexes
+```
+
+If Firebase CLI asks whether to delete remote indexes absent locally, answer `No`.
 
 ## Panel security
 

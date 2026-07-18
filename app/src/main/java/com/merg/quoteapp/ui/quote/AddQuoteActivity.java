@@ -18,6 +18,7 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
+import com.merg.quoteapp.utils.AccountDeletionGuard;
 import com.merg.quoteapp.viewmodel.QuoteViewModel;
 
 import java.util.ArrayList;
@@ -63,6 +64,7 @@ public class AddQuoteActivity extends AppCompatActivity {
         bindViews();
         setupTypeSpinner();
         readEditData();
+        AccountDeletionGuard.enforce(this);
 
         QuoteViewModel viewModel = new ViewModelProvider(this).get(QuoteViewModel.class);
         viewModel.getOperationState().observe(this, this::renderState);

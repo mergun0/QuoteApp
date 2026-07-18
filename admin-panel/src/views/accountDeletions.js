@@ -63,12 +63,12 @@ function accountDeletionDetailView(detail, csrfToken) {
       <h2>Veri Matrisi</h2>
       <dl class="detail-list">
         <dt>Profil</dt><dd>${user ? "Var" : "Yok"}</dd>
-        <dt>Alıntılar</dt><dd>${counts.quotes}</dd>
-        <dt>Beğeniler</dt><dd>${counts.likes}</dd>
-        <dt>Favoriler</dt><dd>${counts.favorites}</dd>
-        <dt>Başarımlar</dt><dd>${counts.achievements}</dd>
+        <dt>Alıntılar</dt><dd>${formatCount(counts.quotes)}</dd>
+        <dt>Beğeniler</dt><dd>${formatCount(counts.likes)}</dd>
+        <dt>Favoriler</dt><dd>${formatCount(counts.favorites)}</dd>
+        <dt>Başarımlar</dt><dd>${formatCount(counts.achievements)}</dd>
         <dt>İstatistik</dt><dd>${counts.stats}</dd>
-        <dt>Moderasyon referansı</dt><dd>${counts.moderationReferences}</dd>
+        <dt>Moderasyon referansı</dt><dd>${formatCount(counts.moderationReferences)}</dd>
       </dl>
     </article>
   </section>
@@ -90,6 +90,7 @@ function accountDeletionDetailView(detail, csrfToken) {
   </section>
   <section class="card">
     <h2>Audit Log</h2>
+    ${detail.actionLogUnavailable ? `<p class="muted">Audit kayıtları şu anda yüklenemedi. Sunucu loglarını kontrol edin ve tekrar deneyin.</p>` : ""}
     <div class="table-wrap">
       <table>
         <thead><tr><th>Zaman</th><th>Faz</th><th>Durum</th><th>Not</th></tr></thead>
@@ -97,6 +98,10 @@ function accountDeletionDetailView(detail, csrfToken) {
       </table>
     </div>
   </section>`;
+}
+
+function formatCount(value) {
+  return value == null ? "Ulaşılamadı" : String(value);
 }
 
 module.exports = {

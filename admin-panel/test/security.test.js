@@ -21,6 +21,7 @@ const {
 const {
   anonymizedUserRef,
   PHASES,
+  isMissingIndexError,
 } = require("../src/accountDeletionService");
 const {
   parseArgs,
@@ -182,12 +183,14 @@ const deletionDetailHtml = accountDeletionDetailView({
 assert.ok(deletionDetailHtml.includes("_csrf"));
 assert.ok(deletionDetailHtml.includes("confirmation"));
 assert.ok(deletionDetailHtml.includes("Firebase Auth kullanıcısı en son silinir"));
+assert.ok(deletionDetailHtml.includes("Alıntılar"));
 assert.ok(!deletionDetailHtml.includes("<private>"));
 assert.ok(deletionDetailHtml.includes("&lt;private&gt;"));
 assert.strictEqual(PHASES[PHASES.length - 1], "COMPLETED");
 assert.strictEqual(anonymizedUserRef("deleteUser"), anonymizedUserRef("deleteUser"));
 assert.notStrictEqual(anonymizedUserRef("deleteUser"), anonymizedUserRef("otherUser"));
 assert.ok(anonymizedUserRef("deleteUser").startsWith("deleted_"));
+assert.strictEqual(isMissingIndexError({ message: "The query requires an index." }), true);
 
 assert.deepStrictEqual(parseArgs([], {}), { apply: false, verify: false });
 assert.deepStrictEqual(parseArgs(["--", "--apply"], {}), { apply: true, verify: false });
@@ -218,6 +221,22 @@ for (const index of firestoreIndexes.indexes) {
   assert.ok(!indexKeys.has(key), `Duplicate Firestore index: ${key}`);
   indexKeys.add(key);
 }
+assert.ok(indexKeys.has(JSON.stringify({
+  collectionGroup: "accountDeletionRequests",
+  queryScope: "COLLECTION",
+  fields: [
+    { fieldPath: "status", order: "ASCENDING" },
+    { fieldPath: "requestedAt", order: "DESCENDING" },
+  ],
+})));
+assert.ok(indexKeys.has(JSON.stringify({
+  collectionGroup: "accountDeletionActions",
+  queryScope: "COLLECTION",
+  fields: [
+    { fieldPath: "requestId", order: "ASCENDING" },
+    { fieldPath: "createdAt", order: "DESCENDING" },
+  ],
+})));
 
 function createFakeQuoteDb(seedQuotes) {
   const quotes = new Map(Object.entries(seedQuotes).map(([id, data]) => [id, { ...data }]));

@@ -64,10 +64,14 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void openPostLoginDestination() {
-        AccountDeletionRepository.getInstance().checkCurrentUserPending(pending -> {
-            Intent intent = new Intent(this, pending ? AccountDeletionActivity.class : MainActivity.class);
-            if (pending) {
+        AccountDeletionRepository.getInstance().checkCurrentUserDeletionState(state -> {
+            boolean locked = state == AccountDeletionRepository.DeletionState.PENDING
+                    || state == AccountDeletionRepository.DeletionState.UNKNOWN;
+            Intent intent = new Intent(this, locked ? AccountDeletionActivity.class : MainActivity.class);
+            if (locked) {
                 intent.putExtra(AccountDeletionActivity.EXTRA_PENDING_ONLY, true);
+                intent.putExtra(AccountDeletionActivity.EXTRA_CHECK_FAILED,
+                        state == AccountDeletionRepository.DeletionState.UNKNOWN);
             }
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);

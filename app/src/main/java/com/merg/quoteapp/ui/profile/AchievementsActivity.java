@@ -19,6 +19,7 @@ import com.merg.quoteapp.model.Achievement;
 import com.merg.quoteapp.model.Level;
 import com.merg.quoteapp.model.UserAchievement;
 import com.merg.quoteapp.model.UserStats;
+import com.merg.quoteapp.utils.AccountDeletionGuard;
 import com.merg.quoteapp.viewmodel.AchievementViewModel;
 import com.merg.quoteapp.viewmodel.LevelViewModel;
 import com.merg.quoteapp.viewmodel.UserStatsViewModel;
@@ -61,6 +62,7 @@ public class AchievementsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_achievements);
+        AccountDeletionGuard.enforce(this);
         userId = getIntent().getStringExtra(EXTRA_USER_ID);
         showOnlyUnlocked = getIntent().getBooleanExtra(EXTRA_SHOW_ONLY_UNLOCKED, false);
 

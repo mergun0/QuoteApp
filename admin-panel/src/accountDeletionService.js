@@ -48,19 +48,29 @@ function paginate(items, page = 1, pageSize = PAGE_SIZE) {
 
 async function listDeletionRequests(db, options = {}) {
   const status = options.status || REQUEST_STATUS.pending;
-  const snapshot = await db.collection("accountDeletionRequests")
+  const queryMeta = {
+    route: "GET /account-deletions/:status",
+    collection: "accountDeletionRequests",
+    where: [["status", "==", status]],
+    orderBy: [["requestedAt", "desc"]],
+  };
+  const snapshot = await runLoggedQuery("listDeletionRequests", queryMeta, () => db.collection("accountDeletionRequests")
     .where("status", "==", status)
     .orderBy("requestedAt", "desc")
     .limit(120)
-    .get();
+    .get());
   const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
     .sort((a, b) => toMillis(b.requestedAt) - toMillis(a.requestedAt));
   return paginate(items, options.page);
 }
 
-async function countQuery(query) {
-  const snapshot = await query.get();
-  return snapshot.size;
+async function countQuery(label, queryMeta, query) {
+  try {
+    const snapshot = await runLoggedQuery(label, queryMeta, () => query.get());
+    return snapshot.size;
+  } catch (error) {
+    return null;
+  }
 }
 
 async function loadDeletionRequestDetail(db, userId) {
@@ -80,18 +90,18 @@ async function loadDeletionRequestDetail(db, userId) {
     actions,
   ] = await Promise.all([
     db.collection("users").doc(userId).get(),
-    countQuery(db.collection("quotes").where("userId", "==", userId)),
-    countQuery(db.collection("likes").where("userId", "==", userId)),
-    countQuery(db.collection("favorites").where("userId", "==", userId)),
-    countQuery(db.collection("userAchievements").where("userId", "==", userId)),
+    countQuery("countUserQuotes", queryMeta("GET /account-deletion/:userId", "quotes", [["userId", "==", userId]], []), db.collection("quotes").where("userId", "==", userId)),
+    countQuery("countUserLikes", queryMeta("GET /account-deletion/:userId", "likes", [["userId", "==", userId]], []), db.collection("likes").where("userId", "==", userId)),
+    countQuery("countUserFavorites", queryMeta("GET /account-deletion/:userId", "favorites", [["userId", "==", userId]], []), db.collection("favorites").where("userId", "==", userId)),
+    countQuery("countUserAchievements", queryMeta("GET /account-deletion/:userId", "userAchievements", [["userId", "==", userId]], []), db.collection("userAchievements").where("userId", "==", userId)),
     db.collection("userStats").doc(userId).get(),
-    countQuery(db.collection("reports").where("reporterUserId", "==", userId)),
-    countQuery(db.collection("reports").where("reportedUserId", "==", userId)),
-    db.collection("accountDeletionActions")
+    countQuery("countReportsByDeletedUser", queryMeta("GET /account-deletion/:userId", "reports", [["reporterUserId", "==", userId]], []), db.collection("reports").where("reporterUserId", "==", userId)),
+    countQuery("countReportsAboutDeletedUser", queryMeta("GET /account-deletion/:userId", "reports", [["reportedUserId", "==", userId]], []), db.collection("reports").where("reportedUserId", "==", userId)),
+    runOptionalQuery("listDeletionAuditActions", queryMeta("GET /account-deletion/:userId", "accountDeletionActions", [["requestId", "==", userId]], [["createdAt", "desc"]]), () => db.collection("accountDeletionActions")
       .where("requestId", "==", userId)
       .orderBy("createdAt", "desc")
       .limit(50)
-      .get(),
+      .get()),
   ]);
   return {
     request: { id: requestSnap.id, ...requestSnap.data() },
@@ -102,9 +112,10 @@ async function loadDeletionRequestDetail(db, userId) {
       favorites,
       achievements,
       stats: statsSnap.exists ? 1 : 0,
-      moderationReferences: reportsBy + reportsAbout,
+      moderationReferences: reportsBy == null || reportsAbout == null ? null : reportsBy + reportsAbout,
     },
-    actions: actions.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    actions: actions ? actions.docs.map((doc) => ({ id: doc.id, ...doc.data() })) : [],
+    actionLogUnavailable: !actions,
   };
 }
 
@@ -310,10 +321,53 @@ function safeFailureMessage(error) {
   return "Hesap silme işlemi tamamlanamadı. Sunucu loglarını kontrol edin.";
 }
 
+function queryMeta(route, collection, where, orderBy) {
+  return { route, collection, where, orderBy };
+}
+
+async function runLoggedQuery(operation, meta, queryFactory) {
+  try {
+    return await queryFactory();
+  } catch (error) {
+    logFirestoreQueryError(operation, meta, error);
+    throw error;
+  }
+}
+
+async function runOptionalQuery(operation, meta, queryFactory) {
+  try {
+    return await runLoggedQuery(operation, meta, queryFactory);
+  } catch (error) {
+    return null;
+  }
+}
+
+function logFirestoreQueryError(operation, meta, error) {
+  const code = error && (error.code || error.status || error.details);
+  const message = error && error.message;
+  console.error("Account deletion admin query failed", {
+    operation,
+    route: meta.route,
+    collection: meta.collection,
+    where: meta.where,
+    orderBy: meta.orderBy,
+    firebaseCode: code || "UNKNOWN",
+    message,
+    missingIndexLikely: isMissingIndexError(error),
+  });
+}
+
+function isMissingIndexError(error) {
+  const message = String(error && error.message ? error.message : "").toLowerCase();
+  return message.includes("index") || message.includes("requires an index");
+}
+
 module.exports = {
   REQUEST_STATUS,
   PHASES,
   anonymizedUserRef,
+  queryMeta,
+  isMissingIndexError,
   listDeletionRequests,
   loadDeletionRequestDetail,
   executeAccountDeletion,

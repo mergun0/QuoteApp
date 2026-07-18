@@ -34,6 +34,7 @@ import com.merg.quoteapp.repository.UserStatsRepository;
 import com.merg.quoteapp.ui.auth.LoginActivity;
 import com.merg.quoteapp.ui.quote.AddQuoteActivity;
 import com.merg.quoteapp.ui.quote.QuoteDetailActivity;
+import com.merg.quoteapp.utils.AccountDeletionGuard;
 import com.merg.quoteapp.utils.ReportBottomSheetHelper;
 import com.merg.quoteapp.viewmodel.AchievementViewModel;
 import com.merg.quoteapp.viewmodel.FavoriteViewModel;
@@ -117,6 +118,7 @@ public class UserProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_profile);
+        AccountDeletionGuard.enforce(this);
 
         profileUserId = getIntent().getStringExtra(EXTRA_USER_ID);
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser() == null

@@ -244,6 +244,21 @@ Firestore Rules then block normal client writes for pending users, including quo
 
 The local admin panel completes deletion with Firebase Admin SDK. Firebase Auth deletion is the final phase. Do not deploy Rules or run a real deletion until `docs/ACCOUNT_DELETION.md` has been reviewed.
 
+The account deletion admin panel requires these indexes:
+
+```text
+accountDeletionRequests: status ASC, requestedAt DESC
+accountDeletionActions: requestId ASC, createdAt DESC
+```
+
+Deploy manually only after review:
+
+```bash
+firebase deploy --project quoteapp-a92e4 --only firestore:indexes
+```
+
+If Firebase CLI asks whether to delete remote indexes absent locally, answer `No`.
+
 ## App Check rollout
 
 Android is prepared for:

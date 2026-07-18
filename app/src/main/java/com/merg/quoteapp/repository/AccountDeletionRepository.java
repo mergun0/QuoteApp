@@ -27,7 +27,17 @@ public class AccountDeletionRepository {
         void onResult(boolean pending);
     }
 
-    public static final String CONFIRMATION_TEXT = "HESABIMI SİL";
+    public enum DeletionState {
+        CLEAR,
+        PENDING,
+        UNKNOWN
+    }
+
+    public interface DeletionStateCallback {
+        void onResult(DeletionState state);
+    }
+
+    public static final String CONFIRMATION_TEXT = "HESABIMI S\u0130L";
     private static final String REQUESTS_COLLECTION = "accountDeletionRequests";
     private static final String USERS_COLLECTION = "users";
     private static final long DELETION_VERSION = 1L;
@@ -53,9 +63,13 @@ public class AccountDeletionRepository {
     }
 
     public void checkCurrentUserPending(PendingStatusCallback callback) {
+        checkCurrentUserDeletionState(state -> callback.onResult(state == DeletionState.PENDING));
+    }
+
+    public void checkCurrentUserDeletionState(DeletionStateCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
-            callback.onResult(false);
+            callback.onResult(DeletionState.CLEAR);
             return;
         }
         firestore.collection(REQUESTS_COLLECTION)
@@ -63,13 +77,14 @@ public class AccountDeletionRepository {
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     if (!snapshot.exists()) {
-                        callback.onResult(false);
+                        callback.onResult(DeletionState.CLEAR);
                         return;
                     }
                     String status = snapshot.getString("status");
-                    callback.onResult(isPendingStatus(status));
+                    callback.onResult(isPendingStatus(status)
+                            ? DeletionState.PENDING : DeletionState.CLEAR);
                 })
-                .addOnFailureListener(error -> callback.onResult(false));
+                .addOnFailureListener(error -> callback.onResult(DeletionState.UNKNOWN));
     }
 
     public boolean currentUserUsesPasswordProvider() {

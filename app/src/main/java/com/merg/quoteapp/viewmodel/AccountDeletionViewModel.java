@@ -12,19 +12,21 @@ public class AccountDeletionViewModel extends ViewModel {
         public final boolean loading;
         public final boolean success;
         public final boolean pending;
+        public final boolean unknown;
         public final String message;
 
-        public State(boolean loading, boolean success, boolean pending, String message) {
+        public State(boolean loading, boolean success, boolean pending, boolean unknown, String message) {
             this.loading = loading;
             this.success = success;
             this.pending = pending;
+            this.unknown = unknown;
             this.message = message;
         }
     }
 
     private final AccountDeletionRepository repository = AccountDeletionRepository.getInstance();
     private final MutableLiveData<State> state = new MutableLiveData<>(
-            new State(false, false, false, ""));
+            new State(false, false, false, false, ""));
 
     public LiveData<State> getState() {
         return state;
@@ -35,23 +37,32 @@ public class AccountDeletionViewModel extends ViewModel {
     }
 
     public void checkPending() {
-        repository.checkCurrentUserPending(pending ->
-                state.postValue(new State(false, false, pending, "")));
+        state.setValue(new State(true, false, false, false, ""));
+        repository.checkCurrentUserDeletionState(result -> {
+            if (result == AccountDeletionRepository.DeletionState.UNKNOWN) {
+                state.postValue(new State(false, false, false, true,
+                        "Hesap durumu doğrulanamadı. Lütfen tekrar deneyin veya oturumu kapatın."));
+            } else {
+                state.postValue(new State(false, false,
+                        result == AccountDeletionRepository.DeletionState.PENDING,
+                        false, ""));
+            }
+        });
     }
 
     public void requestDeletion(String password, String confirmation, String reason) {
-        state.setValue(new State(true, false, false, ""));
+        state.setValue(new State(true, false, false, false, ""));
         repository.requestAccountDeletion(password, confirmation, reason,
                 new AccountDeletionRepository.OperationCallback() {
                     @Override
                     public void onSuccess() {
-                        state.postValue(new State(false, true, true,
+                        state.postValue(new State(false, true, true, false,
                                 "Hesap silme talebiniz alındı."));
                     }
 
                     @Override
                     public void onError(String message) {
-                        state.postValue(new State(false, false, false, message));
+                        state.postValue(new State(false, false, false, false, message));
                     }
                 });
     }

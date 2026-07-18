@@ -27,6 +27,8 @@ HESABIMI SİL
 
 After a successful request, the app routes the user to a pending deletion state and disables normal app usage. The app must not claim deletion is complete until the local admin workflow finishes.
 
+The pending screen clears the previous task. Toolbar/system back must not return to Home, Settings, Profile or quote screens. The user can only retry account-state verification when needed or use `Çıkış Yap`, which signs out and clears the task back to Login.
+
 ## Firestore request document
 
 Collection:
@@ -102,6 +104,21 @@ Hesap Silme Talepleri
 
 The detail page shows request metadata, collection counts, phase progress and audit records. Execution requires a local admin session, POST request, CSRF token and explicit UID confirmation.
 
+Required Firestore composite indexes for the account deletion admin pages:
+
+```text
+accountDeletionRequests: status ASC, requestedAt DESC
+accountDeletionActions: requestId ASC, createdAt DESC
+```
+
+Deploy manually only after review:
+
+```bash
+firebase deploy --project quoteapp-a92e4 --only firestore:indexes
+```
+
+If Firebase CLI asks whether to delete remote indexes absent locally, answer `No`.
+
 ## Deletion phases
 
 ```text
@@ -142,9 +159,10 @@ Do not publish a public deletion website until the legal/privacy text is reviewe
 2. Run `npm run test:rules`.
 3. Run `.\gradlew.bat assembleDebug`.
 4. Manually review Firestore Rules diff.
-5. Deploy Firestore Rules manually when ready.
-6. Release Android only after QA confirms pending-routing and sign-out behavior.
-7. Run the admin panel only on a trusted local machine.
-8. Test with a dedicated non-production account before any real user account.
+5. Deploy Firestore indexes manually and answer `No` to unsafe remote index deletion prompts.
+6. Deploy Firestore Rules manually when ready.
+7. Release Android only after QA confirms pending-routing, back-button lock and sign-out behavior.
+8. Run the admin panel only on a trusted local machine.
+9. Test with a dedicated non-production account before any real user account.
 
 This document does not approve production deletion by itself.

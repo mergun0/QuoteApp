@@ -32,6 +32,7 @@ import com.merg.quoteapp.R;
 import com.merg.quoteapp.model.Quote;
 import com.merg.quoteapp.model.QuoteState;
 import com.merg.quoteapp.ui.profile.UserProfileActivity;
+import com.merg.quoteapp.utils.AccountDeletionGuard;
 import com.merg.quoteapp.utils.ReportBottomSheetHelper;
 import com.merg.quoteapp.viewmodel.FavoriteViewModel;
 import com.merg.quoteapp.viewmodel.LikeViewModel;
@@ -76,6 +77,7 @@ public class QuoteDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quote_detail);
         bindStaticViews();
+        AccountDeletionGuard.enforce(this);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbarQuoteDetail);
         toolbar.setNavigationOnClickListener(view -> finish());

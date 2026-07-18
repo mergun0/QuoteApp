@@ -49,6 +49,7 @@ Low
 - Before switching back to callable-only moderation, deploy Functions first, migrate Android report submission to `submitReport`, then deploy stricter report-denying Rules.
 - Functions emulator tests use local Node 22 while the deploy runtime target is Node 18; this is acceptable for local validation but production deploy should use a compatible Firebase CLI/runtime setup.
 - Account deletion is prepared through Android request creation plus a local Admin SDK completion panel, but it must not be considered production-complete until Rules are deployed manually and a dedicated non-production account deletion test has passed.
+- Account deletion admin pages require `accountDeletionRequests(status, requestedAt desc)` and `accountDeletionActions(requestId, createdAt desc)` Firestore composite indexes. Missing indexes are logged server-side; deploy indexes manually and answer `No` to remote index deletion prompts.
 
 Priority:
 High

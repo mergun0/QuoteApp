@@ -19,6 +19,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.repository.AuthRepository;
 import com.merg.quoteapp.repository.ProfileRepository;
+import com.merg.quoteapp.utils.AccountDeletionGuard;
 import com.merg.quoteapp.utils.PasswordResetCooldownManager;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -43,6 +44,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         setupRows();
         updateResetCooldownState();
+        AccountDeletionGuard.enforce(this);
     }
 
     private void setupRows() {

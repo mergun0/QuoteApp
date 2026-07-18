@@ -65,6 +65,9 @@ Do not mark an item complete unless repository evidence, emulator tests, manual 
 - [ ] Report and moderation explanation is written.
 - [ ] Account deletion flow is defined.
 - [ ] Account deletion request flow passes Android QA.
+- [ ] Pending account cannot navigate back to Home/Profile/Settings/AddQuote.
+- [ ] Pending account logout clears the task and returns to Login.
+- [ ] Account deletion Firestore indexes are deployed and enabled.
 - [ ] Local admin account deletion completion flow passes dry-run/manual QA.
 - [ ] User-data deletion flow is defined.
 - [ ] Public account deletion page content is reviewed.
