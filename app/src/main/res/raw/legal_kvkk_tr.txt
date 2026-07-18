@@ -1,0 +1,17 @@
+Satır Arası - KVKK Aydınlatma Metni Taslağı
+Yürürlük tarihi: [YÜRÜRLÜK TARİHİ EKLENECEK]
+Versiyon: [POLİTİKA VERSİYONU EKLENECEK]
+
+Bu aydınlatma metni, Satır Arası uygulamasında işlenen kişisel verilere ilişkin taslak bilgilendirme sağlar. Açık rıza metni değildir.
+
+Veri sorumlusu: [VERİ SORUMLUSU ADI EKLENECEK]
+Adres: [ADRES EKLENECEK]
+İletişim: [GİZLİLİK İLETİŞİM E-POSTASI EKLENECEK]
+
+İşlenen veri kategorileri: Firebase Authentication e-postası ve kullanıcı kimliği; kullanıcı adı; herkese açık alıntı içerikleri; beğeni, favori, başarım, XP/seviye ve istatistik kayıtları; rapor ve moderasyon kayıtları; hesap silme talebi kayıtları; güvenlik ve App Check verileri.
+
+Amaçlar: hesap oluşturma ve giriş, uygulama hizmetini sunma, alıntı paylaşımı ve keşfi, kişisel koleksiyon, sosyal etkileşim, kötüye kullanımı önleme, moderasyon, hesap silme taleplerinin yürütülmesi ve güvenlik.
+
+Toplama yöntemi: kullanıcı tarafından girilen bilgiler, uygulama içi işlemler ve Firebase altyapısı.
+
+Hukuki dayanak, yurt dışı aktarım, saklama süreleri ve başvuru usulü bölümleri nihai yayın öncesinde Türk hukuk danışmanı tarafından doğrulanmalıdır. KVKK kapsamında haklarınızı kullanmak için: [BAŞVURU E-POSTASI EKLENECEK].

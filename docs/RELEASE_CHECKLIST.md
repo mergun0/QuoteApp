@@ -59,9 +59,16 @@ Do not mark an item complete unless repository evidence, emulator tests, manual 
 
 ## Legal and account management
 
-- [ ] Privacy policy is written and reviewed.
-- [ ] Terms of use are written and reviewed.
-- [ ] Community guidelines are written and reviewed.
+- [x] Privacy policy draft is written.
+- [ ] Privacy policy is legally reviewed and published at a stable public URL.
+- [x] Terms of use draft is written.
+- [ ] Terms of use is legally reviewed and published at a stable public URL.
+- [x] Community guidelines draft is written.
+- [ ] Community guidelines are legally reviewed and published at a stable public URL.
+- [x] KVKK information notice draft is written.
+- [ ] KVKK legal bases, transfer language and controller details are reviewed.
+- [x] Google Play Data Safety worksheet is drafted from repository evidence.
+- [ ] Google Play Data Safety form is submitted and matches the final production SDK set.
 - [ ] Report and moderation explanation is written.
 - [ ] Account deletion flow is defined.
 - [ ] Account deletion request flow passes Android QA.
@@ -70,7 +77,8 @@ Do not mark an item complete unless repository evidence, emulator tests, manual 
 - [ ] Account deletion Firestore indexes are deployed and enabled.
 - [ ] Local admin account deletion completion flow passes dry-run/manual QA.
 - [ ] User-data deletion flow is defined.
-- [ ] Public account deletion page content is reviewed.
+- [x] Public account deletion page draft is written.
+- [ ] Public account deletion page content is legally reviewed and published.
 - [ ] Store listing links do not point to broken URLs.
 - [ ] Placeholder legal text is replaced before public production release.
 

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Sözlük</string>
+    <string name="app_name">Satır Arası</string>
     <string name="splash_tagline">Hikâyelerden kalan sözler.</string>
     <string name="quote_mark">“</string>
     <string name="login_title">Tekrar hoş geldin</string>
@@ -112,8 +112,8 @@
     <string name="profile_menu_about">Hakkında</string>
     <string name="profile_menu_chevron">›</string>
     <string name="profile_settings_placeholder">Ayarlar ekranı yakında burada olacak.</string>
-    <string name="profile_about_title">QuoteApp</string>
-    <string name="profile_about_message">QuoteApp, film, dizi ve kitaplardan aklında kalan alıntıları saklamak ve paylaşmak için geliştiriliyor.\n\nv0.5.0 Beta</string>
+    <string name="profile_about_title">Satır Arası</string>
+    <string name="profile_about_message">Satır Arası, film, dizi ve kitaplardan aklında kalan alıntıları saklamak ve paylaşmak için geliştiriliyor.\n\nv0.5.0 Beta</string>
     <string name="profile_app_version">v0.5.0 Beta</string>
     <string name="settings_title">Ayarlar</string>
     <string name="settings_subtitle">Hesabını, güvenlik tercihlerini ve uygulama bilgilerini yönet.</string>
@@ -158,10 +158,10 @@
     <string name="settings_feedback">Geri Bildirim Gönder</string>
     <string name="settings_feedback_subtitle">Görüşlerini e-posta ile paylaş</string>
     <string name="settings_feedback_email">feedback@quoteapp.example</string>
-    <string name="settings_feedback_subject">QuoteApp Geri Bildirim</string>
+    <string name="settings_feedback_subject">Satır Arası Geri Bildirim</string>
     <string name="settings_feedback_no_app">Bu cihazda e-posta gönderebilecek bir uygulama bulunamadı.</string>
     <string name="about_title">Hakkında</string>
-    <string name="about_app_name">QuoteApp</string>
+    <string name="about_app_name">Satır Arası</string>
     <string name="about_description">Film, dizi ve kitaplardan sevdiğin alıntıları paylaşabileceğin, keşfedebileceğin ve ilerlemeni takip edebileceğin sosyal alıntı platformu.</string>
     <string name="about_status_beta">Beta</string>
     <string name="about_version_status_format">v%1$s • %2$s</string>
@@ -275,6 +275,18 @@
     <string name="user_profile_quotes_title">Paylaşılan Alıntılar</string>
     <string name="user_has_no_quotes">Bu kullanıcının henüz alıntısı yok.</string>
     <string name="no_more_quotes">Daha fazla alıntı yok</string>
+
+    <string name="legal_document_title">Yasal Bilgilendirme</string>
+    <string name="legal_content_missing">Bu yasal içerik şu anda yüklenemedi.</string>
+    <string name="legal_community_guidelines_title">Topluluk Kuralları</string>
+    <string name="legal_kvkk_title">KVKK Aydınlatma Metni</string>
+    <string name="legal_account_deletion_info_title">Hesap Silme Bilgileri</string>
+    <string name="settings_legal_read_subtitle">Uygulama içinde oku</string>
+    <string name="register_legal_notice">Kayıt olmadan önce KVKK Aydınlatma Metni, Gizlilik Politikası ve Kullanım Koşullarını okuyabilirsin.</string>
+    <string name="registration_kvkk_link">KVKK</string>
+    <string name="registration_terms_link">Koşullar</string>
+    <string name="register_terms_acceptance">Kullanım Koşullarını okudum ve kabul ediyorum.</string>
+    <string name="register_terms_required">Devam etmek için Kullanım Koşullarını kabul etmelisin.</string>
 
     <string-array name="quote_types">
         <item>Film</item>

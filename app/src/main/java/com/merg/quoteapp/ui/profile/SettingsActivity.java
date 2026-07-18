@@ -12,10 +12,10 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.merg.quoteapp.R;
 import com.merg.quoteapp.repository.AuthRepository;
 import com.merg.quoteapp.repository.ProfileRepository;
@@ -62,18 +62,31 @@ public class SettingsActivity extends AppCompatActivity {
         addRow(accountContainer, "!", getString(R.string.account_delete_title),
                 getString(R.string.account_delete_settings_subtitle), "›",
                 view -> startActivity(new Intent(this, AccountDeletionActivity.class)));
+
         addRow(appearanceContainer, "🌙", getString(R.string.settings_theme),
                 getString(R.string.settings_dark_theme_soon), getString(R.string.coming_soon),
                 null);
 
         addRow(privacyContainer, "🛡️", getString(R.string.settings_privacy_policy),
-                getString(R.string.settings_legal_placeholder_subtitle), "›",
-                view -> showLegalPlaceholder(R.string.settings_privacy_policy,
-                        R.string.settings_privacy_placeholder_message));
+                getString(R.string.settings_legal_read_subtitle), "›",
+                view -> openLegalDocument(R.string.settings_privacy_policy,
+                        R.raw.legal_privacy_policy_tr));
         addRow(privacyContainer, "📄", getString(R.string.settings_terms),
-                getString(R.string.settings_legal_placeholder_subtitle), "›",
-                view -> showLegalPlaceholder(R.string.settings_terms,
-                        R.string.settings_terms_placeholder_message));
+                getString(R.string.settings_legal_read_subtitle), "›",
+                view -> openLegalDocument(R.string.settings_terms,
+                        R.raw.legal_terms_tr));
+        addRow(privacyContainer, "🧭", getString(R.string.legal_community_guidelines_title),
+                getString(R.string.settings_legal_read_subtitle), "›",
+                view -> openLegalDocument(R.string.legal_community_guidelines_title,
+                        R.raw.legal_community_guidelines_tr));
+        addRow(privacyContainer, "🔍", getString(R.string.legal_kvkk_title),
+                getString(R.string.settings_legal_read_subtitle), "›",
+                view -> openLegalDocument(R.string.legal_kvkk_title,
+                        R.raw.legal_kvkk_tr));
+        addRow(privacyContainer, "🗑", getString(R.string.legal_account_deletion_info_title),
+                getString(R.string.settings_legal_read_subtitle), "›",
+                view -> openLegalDocument(R.string.legal_account_deletion_info_title,
+                        R.raw.legal_account_deletion_tr));
         addRow(privacyContainer, "🚫", getString(R.string.settings_blocked_users),
                 getString(R.string.settings_blocked_users_subtitle), getString(R.string.coming_soon),
                 null);
@@ -192,12 +205,11 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
-    private void showLegalPlaceholder(int titleRes, int messageRes) {
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(titleRes)
-                .setMessage(messageRes)
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+    private void openLegalDocument(int titleRes, int rawResId) {
+        Intent intent = new Intent(this, LegalDocumentActivity.class);
+        intent.putExtra(LegalDocumentActivity.EXTRA_TITLE, getString(titleRes));
+        intent.putExtra(LegalDocumentActivity.EXTRA_RAW_RES_ID, rawResId);
+        startActivity(intent);
     }
 
     private void openAbout() {

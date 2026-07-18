@@ -16,6 +16,10 @@
             android:exported="false"
             android:theme="@style/Theme.QuoteApp.DarkSurface" />
         <activity
+            android:name=".ui.profile.LegalDocumentActivity"
+            android:exported="false"
+            android:theme="@style/Theme.QuoteApp.DarkSurface" />
+        <activity
             android:name=".ui.profile.AboutActivity"
             android:exported="false"
             android:theme="@style/Theme.QuoteApp.DarkSurface" />

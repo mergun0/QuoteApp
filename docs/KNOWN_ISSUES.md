@@ -53,3 +53,15 @@ Low
 
 Priority:
 High
+
+-------------------------
+
+## Legal / Store Readiness
+
+- Legal, KVKK, Terms, Community Guidelines, account deletion page and Play Data Safety worksheet drafts exist under `docs/legal/`, but they are not final legal approval.
+- Developer identity, address, privacy/support emails, country, public website domain, account deletion URL, policy effective date and policy version are still placeholders.
+- Public legal pages are not deployed yet; Google Play URLs must not point to broken or private pages.
+- Google Play Data Safety answers must be reviewed again if analytics, Crashlytics, ads, billing, push notifications, uploads/media or other SDKs are added.
+
+Priority:
+High

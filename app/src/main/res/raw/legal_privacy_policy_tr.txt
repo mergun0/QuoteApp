@@ -1,0 +1,16 @@
+Satır Arası - Gizlilik Politikası Taslağı
+Yürürlük tarihi: [YÜRÜRLÜK TARİHİ EKLENECEK]
+Versiyon: [POLİTİKA VERSİYONU EKLENECEK]
+
+Bu metin, Satır Arası uygulamasının v1.0 hazırlığı için uygulama içinde okunabilir taslak bilgilendirmedir. Nihai metin geliştirici/veri sorumlusu bilgileri ve hukuk incelemesi tamamlandıktan sonra yayınlanmalıdır.
+
+Veri sorumlusu / geliştirici: [VERİ SORUMLUSU ADI EKLENECEK]
+İletişim: [GİZLİLİK İLETİŞİM E-POSTASI EKLENECEK]
+
+Uygulama Firebase Authentication, Cloud Firestore ve Firebase App Check ile çalışır. Hesap oluşturma ve giriş için e-posta adresi Firebase Authentication tarafından işlenir. Firestore'da herkese açık kullanıcı kimliği olarak kullanıcı adı tutulur; kayıt e-postası herkese açık profil belgesi olarak saklanmamalıdır.
+
+Kullanıcıların paylaştığı alıntılar, başlık, tür, yazar/yönetmen, karakter, sezon/bölüm, etiket ve spoiler bilgisi diğer giriş yapmış kullanıcılar tarafından görülebilir. Beğeniler sosyal etkileşimdir; favoriler/kaydedilenler kullanıcının özel koleksiyonudur. Raporlar ve moderasyon kayıtları kötüye kullanımı önleme amacıyla sınırlı erişimli tutulur.
+
+Hesap silme talebi uygulama içinden oluşturulabilir. Silme tamamlanana kadar hesap bekleme durumuna alınabilir. Bazı moderasyon ve güvenlik kayıtları kötüye kullanımı önlemek ve denetim amacıyla anonimleştirilmiş biçimde sınırlı süre saklanabilir. Saklama süreleri: [SAKLAMA SÜRELERİ HUKUK İNCELEMESİ GEREKTİRİR].
+
+Haklarınız, iletişim yöntemleri, yurt dışı aktarım ve hukuki dayanak bölümleri nihai yayın öncesinde hukuk danışmanı tarafından doğrulanmalıdır.

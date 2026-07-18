@@ -1,0 +1,15 @@
+Satır Arası - Kullanım Koşulları Taslağı
+Yürürlük tarihi: [YÜRÜRLÜK TARİHİ EKLENECEK]
+Versiyon: [POLİTİKA VERSİYONU EKLENECEK]
+
+Satır Arası; film, dizi ve kitaplardan sevilen alıntıları paylaşmak, keşfetmek ve kişisel ilerlemeyi takip etmek için geliştirilen sosyal alıntı uygulamasıdır.
+
+Hesabınızın güvenliğinden siz sorumlusunuz. Başkalarını taklit eden, hak ihlali oluşturan, yasa dışı, tehdit edici, nefret veya taciz içeren, spam niteliğinde veya yanıltıcı içerikler paylaşılmamalıdır.
+
+Paylaştığınız alıntıların doğru kategori, spoiler işareti ve mümkünse kaynak bilgisiyle eklenmesinden siz sorumlusunuz. İçeriğinizin sahibi olduğumuzu iddia etmiyoruz; ancak uygulamayı çalıştırmak, alıntıları göstermek, paylaşmak ve moderasyon yapmak için sınırlı bir işletim lisansı gerekebilir. Bu lisans dili hukuk incelemesi gerektirir.
+
+Raporlanan içerikler incelenebilir, gizlenebilir veya kaldırılabilir. Her raporun kaldırmayla sonuçlanacağı garanti edilmez.
+
+Hesap silme talebi uygulama içinden başlatılabilir. Silme tamamlandığında işlem geri alınamayabilir. Bazı kayıtlar yasal, güvenlik veya kötüye kullanımı önleme amaçlarıyla anonimleştirilmiş şekilde saklanabilir.
+
+Uygulama beta aşamasındadır. Yürürlük, yetkili hukuk ve uyuşmazlık çözümü alanları için geliştirici bilgisi ve hukuk incelemesi gerekir: [YETKİLİ HUKUK / YETKİLİ MAHKEME EKLENECEK].

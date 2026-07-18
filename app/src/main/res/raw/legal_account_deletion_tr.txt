@@ -1,0 +1,17 @@
+Satır Arası - Hesap Silme Bilgileri Taslağı
+Yürürlük tarihi: [YÜRÜRLÜK TARİHİ EKLENECEK]
+Versiyon: [POLİTİKA VERSİYONU EKLENECEK]
+
+Hesap silme talebi uygulama içinden başlatılır:
+
+Profil > Ayarlar > Hesabımı Sil
+
+Talep oluşturmak için mevcut şifre gerekebilir ve onay metni istenir. Talep alındığında hesap bekleme durumuna alınabilir; normal uygulama kullanımı devre dışı bırakılabilir. Silme işlemi yerel admin panelindeki güvenli tamamlanma adımlarından sonra sonuçlanır.
+
+Silinebilecek veriler: Firebase Auth hesabı, kullanıcı profili, kullanıcı adı rezervasyonu, alıntılar, kullanıcının beğenileri, favorileri, başarımları ve istatistikleri.
+
+Anonimleştirilebilecek veya sınırlı tutulabilecek veriler: raporlar, moderasyon aksiyonları ve kötüye kullanımı önleme kayıtları. Bu tutma gerekçesi ve süresi hukuk incelemesi gerektirir.
+
+Uygulamayı kaldırmak hesabı silmez. Alternatif dış talep yöntemi için ileride herkese açık bir sayfa kullanılmalıdır: [ACCOUNT DELETION URL EKLENECEK].
+
+Destek: [DESTEK E-POSTASI EKLENECEK]

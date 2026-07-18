@@ -151,7 +151,13 @@ Admin SDK remains unrestricted because it bypasses Firestore Rules.
 
 A future public web page should include app name, developer/company identification, request steps, deleted data categories, anonymized/retained categories, retention explanation, contact method and processing expectations.
 
-Do not publish a public deletion website until the legal/privacy text is reviewed.
+Draft page content is now tracked in:
+
+```text
+docs/legal/ACCOUNT_DELETION_PAGE_TR.md
+```
+
+Do not publish a public deletion website until the legal/privacy text is reviewed and `[ACCOUNT DELETION URL EKLENECEK]` is replaced with the final stable HTTPS URL.
 
 ## Safe rollout order
 
